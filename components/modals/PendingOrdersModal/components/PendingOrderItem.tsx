@@ -108,7 +108,7 @@ function PendingOrderItem({
           {/* )} */}
           <Pressable
             onPress={() => {
-              if (storeDetails.settingsPassword.length > 0) {
+              if (storeDetails.settingsPassword?.length > 0) {
                 updatePosHomeState({
                   authPasswordModal: true,
                   pendingAuthAction: `cancelOrder${element.id}`,

@@ -37,9 +37,9 @@ const CustomcustomCashModal = () => {
       return;
     }
     if (
-      (storeDetails.settingsPassword.length > 0 &&
+      (storeDetails.settingsPassword?.length > 0 &&
         storeDetails.settingsPassword === managerCodeEntered) ||
-      storeDetails.settingsPassword.length === 0
+      storeDetails.settingsPassword?.length === 0
     ) {
       if (parseFloat(total) > 0 && parseFloat(cash) > 0) {
         qz.websocket
@@ -127,14 +127,14 @@ const CustomcustomCashModal = () => {
       return;
     }
     if (
-      (storeDetails.settingsPassword.length > 0 &&
+      (storeDetails.settingsPassword?.length > 0 &&
         storeDetails.settingsPassword === managerCodeEntered) ||
-      storeDetails.settingsPassword.length === 0
+      storeDetails.settingsPassword?.length === 0
     ) {
       qz.websocket
         .connect()
         .then(function () {
-          if(!myDeviceDetails.printToPrinter) return
+          if (!myDeviceDetails.printToPrinter) return;
           const config = qz.configs.create(myDeviceDetails.printToPrinter);
           return qz.print(config, [
             "\x1B" + "\x40", // init
@@ -344,14 +344,14 @@ const CustomcustomCashModal = () => {
                   <Pressable
                     style={[
                       styles.finishPaymentBtn,
-                      storeDetails.settingsPassword.length > 0 &&
+                      storeDetails.settingsPassword?.length > 0 &&
                         managerCodeEntered.length < 1 && { opacity: 0.8 },
                     ]}
                     onPress={() => {
                       OpenRegister();
                     }}
                     disabled={
-                      storeDetails.settingsPassword.length > 0 &&
+                      storeDetails.settingsPassword?.length > 0 &&
                       managerCodeEntered.length < 1
                     }
                   >

@@ -139,7 +139,7 @@ function PendingOrderShowDetails({
               // disabled={!(element.method !== "inStoreOrder" && !element.online)}
               disabled={!!element?.online}
               onPress={() => {
-                if (storeDetails.settingsPassword.length > 0) {
+                if (storeDetails.settingsPassword?.length > 0) {
                   updatePosHomeState({
                     authPasswordModal: true,
                     pendingAuthAction: `updateOrder${element?.id}`,
@@ -179,7 +179,7 @@ function PendingOrderShowDetails({
           <Pressable
             style={styles.cancelBtn}
             onPress={() => {
-              if (storeDetails.settingsPassword.length > 0) {
+              if (storeDetails.settingsPassword?.length > 0) {
                 updatePosHomeState({
                   authPasswordModal: true,
                   pendingAuthAction: `cancelOrder${element?.id}`,
