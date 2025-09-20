@@ -25,9 +25,9 @@ const AuthPasswordModal = () => {
 
   const Authorize = () => {
     if (
-      (storeDetails.settingsPassword.length > 0 &&
+      (storeDetails.settingsPassword?.length > 0 &&
         storeDetails.settingsPassword === password) ||
-      storeDetails.settingsPassword.length === 0
+      storeDetails.settingsPassword?.length === 0
     ) {
       updatePosHomeState({
         managerAuthorizedStatus: true,
