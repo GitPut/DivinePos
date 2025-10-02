@@ -1,10 +1,11 @@
 // Importing modules with ES6 syntax
-import functions from "firebase-functions";
 import admin from "firebase-admin";
 import nodemailer from "nodemailer";
 import stripe from "stripe";
 import cors from "cors";
 import axios from "axios";
+import { onRequest } from "firebase-functions/v2/https";
+import * as functions from "firebase-functions/v1";
 
 // Additional constants
 const GOOGLE_API_KEY = "AIzaSyDjx4LBIEDNRYKEt-0_TJ6jUcst4a2YON4";
@@ -187,7 +188,7 @@ export const processPayment = functions.https.onRequest(async (req, res) => {
   });
 });
 
-export const getLatLng = functions.https.onRequest(async (req, res) => {
+export const getLatLng = onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
     try {
       const { placeId } = req.body;
@@ -204,9 +205,11 @@ export const getLatLng = functions.https.onRequest(async (req, res) => {
         data.result.geometry.location
       ) {
         const { lat, lng } = data.result.geometry.location;
-        res
-          .status(200)
-          .json({ success: true, message: "Success", data: { lat, lng } });
+        res.status(200).json({
+          success: true,
+          message: "Success",
+          data: { lat, lng },
+        });
       } else {
         res.status(500).json({
           success: false,
@@ -215,9 +218,10 @@ export const getLatLng = functions.https.onRequest(async (req, res) => {
       }
     } catch (error) {
       console.error("Error during request:", error);
-      res
-        .status(500)
-        .json({ success: false, message: `Error: ${error.message}` });
+      res.status(500).json({
+        success: false,
+        message: `Error: ${error.message}`,
+      });
     }
   });
 });

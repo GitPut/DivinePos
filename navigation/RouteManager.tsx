@@ -70,6 +70,7 @@ const RouteManager = () => {
   }
 
   useEffect(() => {
+    console.log("Website updated");
     if (myDeviceDetails.docID && auth.currentUser) {
       // console.log("Listening for print requests");
       db.collection("users")
