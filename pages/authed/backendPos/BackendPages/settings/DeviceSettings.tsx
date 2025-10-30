@@ -91,6 +91,7 @@ function Index() {
   };
 
   useEffect(() => {
+    console.log("Extra device paying for: ", deviceTree.extraDevicesPayingFor);
     if (deviceTree.devices.length > 0) {
       setOtherDeviceOptions([]);
       deviceTree.devices.map((deviceSearch) => {

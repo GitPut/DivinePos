@@ -43,27 +43,20 @@ function PayForOnlineStore({ payOnlineStore }: PayForOnlineStoreProps) {
             <View style={styles.benefit1}>
               <MaterialCommunityIcons name="check" style={styles.checkIcon1} />
               <Text style={styles.informationTxt1}>
-                Online busienss success
+                Manage straight from pos
               </Text>
             </View>
             <View style={styles.benefit2}>
               <MaterialCommunityIcons name="check" style={styles.checkIcon4} />
-              <Text style={styles.informationTxt2}>
-                Online busienss success
-              </Text>
+              <Text style={styles.informationTxt2}>24/7 Support</Text>
             </View>
             <View style={styles.benefit3}>
               <MaterialCommunityIcons name="check" style={styles.checkIcon5} />
-              <Text style={styles.informationTxt3}>
-                Online busienss success
-              </Text>
+              <Text style={styles.informationTxt3}>Simple and powerful</Text>
             </View>
           </View>
         </View>
-        <Pressable
-          style={styles.getStartedBox}
-          onPress={payOnlineStore}
-        >
+        <Pressable style={styles.getStartedBox} onPress={payOnlineStore}>
           <Text style={styles.getStartedTxt}>Get Started</Text>
         </Pressable>
       </View>

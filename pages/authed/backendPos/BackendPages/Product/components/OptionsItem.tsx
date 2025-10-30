@@ -54,6 +54,19 @@ function OptionsItem({
   const [moveToOptionPos, setmoveToOptionPos] = useState<number | null>(null);
   const alertP = useAlert();
 
+  const isValidOption = (obj: any): boolean => {
+    return (
+      obj &&
+      typeof obj === "object" &&
+      "label" in obj &&
+      Array.isArray(obj.optionsList) &&
+      "id" in obj &&
+      "optionType" in obj &&
+      Array.isArray(obj.selectedCaseList) &&
+      "isRequired" in obj
+    );
+  };
+
   const scrollToPositionIncluding = (position: number) => {
     scrollViewRef.current?.measure(
       (
@@ -400,29 +413,49 @@ function OptionsItem({
           </Pressable>
           <Pressable
             style={[styles.createOptionBtn, { marginLeft: 20 }]}
-            onPress={() => {
-              navigator.clipboard.readText().then((text) => {
-                try {
-                  const parsed = JSON.parse(text);
-                  setnewProductOptions((prev) => {
-                    const clone = structuredClone(prev);
-                    if (prev.findIndex((e) => e.id === parsed.id) > -1) {
-                      const newCopy = {
-                        ...parsed,
-                        id: Math.random().toString(36).substr(2, 9),
-                        name: parsed.name + " Copy",
-                      };
-                      clone.push(newCopy);
-                    } else {
-                      clone.push(parsed);
-                    }
-                    return clone;
-                  });
-                  setindexOn(newProductOptions.length);
-                } catch (e) {
-                  alertP.error("Invalid JSON");
+            onPress={async () => {
+              try {
+                const text = await navigator.clipboard.readText();
+                const parsed = JSON.parse(text);
+
+                if (!isValidOption(parsed)) {
+                  alertP.error("Clipboard data is not a valid option");
+                  return;
                 }
-              });
+
+                setnewProductOptions((prev) => {
+                  const clone = structuredClone(prev);
+                  const existingIndex = prev.findIndex(
+                    (e) => e.id === parsed.id
+                  );
+
+                  if (existingIndex > -1) {
+                    const newCopy = {
+                      ...parsed,
+                      id: Math.random().toString(36).substr(2, 9),
+                      label: (parsed.label || "Untitled") + " Copy",
+                    };
+                    clone.push(newCopy);
+                  } else {
+                    clone.push(parsed);
+                  }
+                  return clone;
+                });
+
+                setindexOn(newProductOptions.length);
+              } catch (err) {
+                console.error(err);
+                if (
+                  err instanceof DOMException &&
+                  err.name === "NotAllowedError"
+                ) {
+                  alertP.error(
+                    "Clipboard access denied. Try copying again and clicking Paste right after."
+                  );
+                } else {
+                  alertP.error("Invalid or blocked clipboard content.");
+                }
+              }
             }}
           >
             <Text style={styles.createOptionTxt}>Paste Option</Text>

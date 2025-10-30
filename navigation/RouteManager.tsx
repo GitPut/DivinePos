@@ -244,7 +244,16 @@ const RouteManager = () => {
               .get()
               .then((docs) => {
                 if (!docs.empty) {
+                  console.log("Files: ", docs.docs);
                   docs.forEach((element) => {
+                    console.log("SUBSCRIPTION ELEMENT: ", element.data());
+                    if (element.data().role === "Extra Device") {
+                      console.log("Extra device found");
+                      if (element.data().status === "active") {
+                        extraDevicesPayingFor += 1;
+                      }
+                    }
+
                     if (element.data().role === "Test Plan") {
                       if (element.data().status === "active") {
                         setisSubscribed(true);
@@ -371,12 +380,12 @@ const RouteManager = () => {
                       }
                     }
                   });
-                  const devicesAmount = docs.docs.filter(
-                    (e) =>
-                      e.data().role === "Extra Device" &&
-                      e.data().status === "active"
-                  ).length;
-                  extraDevicesPayingFor = devicesAmount;
+                  // const devicesAmount = docs.docs.filter(
+                  //   (e) =>
+                  //     e.data().role === "Extra Device" &&
+                  //     e.data().status === "active"
+                  // ).length;
+                  // extraDevicesPayingFor = devicesAmount;
                 } else if (doc.data()?.freeTrial) {
                   setisSubscribed(true);
                   setisNewUser(false);

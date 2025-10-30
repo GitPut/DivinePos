@@ -18,6 +18,7 @@ import { setCartState } from "state/state";
 import { auth, db } from "state/firebaseConfig";
 import { CurrentOrderProp, OngoingListStateProp } from "types/global";
 import ParseDate from "components/functional/ParseDate";
+import KitchenViewOrders from "./KitchenView/KitchenViewOrders";
 
 const PendingOrdersModal = () => {
   const { height, width } = useWindowDimensions();
@@ -25,10 +26,11 @@ const PendingOrdersModal = () => {
     element: null,
     index: null,
     cart: [],
-    date: null
+    date: null,
   });
   const xPos = useRef(new Animated.Value(0)).current;
   const { ongoingListState, ongoingOrderListModal } = posHomeState.use();
+  const [maximizeScreen, setmaximizeScreen] = useState(false);
 
   const updateOrderHandler = (order: OngoingListStateProp) => {
     setCartState(order.cart);
@@ -117,8 +119,26 @@ const PendingOrdersModal = () => {
         >
           <Pressable>
             <div style={{ cursor: "default" }}>
-              <View style={styles.pendingOrdersModalContainer}>
-                <View style={styles.closeIconContainer}>
+              <View
+                style={
+                  maximizeScreen
+                    ? [
+                        styles.pendingOrdersModalContainerMaximize,
+                        { width: width, height: height },
+                      ]
+                    : styles.pendingOrdersModalContainer
+                }
+              >
+                <View
+                  style={
+                    maximizeScreen
+                      ? styles.closeIconContainerMaximize
+                      : styles.closeIconContainer
+                  }
+                >
+                  <Pressable onPress={() => setmaximizeScreen(!maximizeScreen)}>
+                    <Ionicons name="open" style={styles.closeIcon} />
+                  </Pressable>
                   <Pressable
                     onPress={() =>
                       updatePosHomeState({ ongoingOrderListModal: false })
@@ -129,83 +149,113 @@ const PendingOrdersModal = () => {
                 </View>
                 <View style={styles.secondAreaContainer}>
                   <Text style={styles.pendingOrderLabel}>Pending Orders</Text>
-                  <View style={styles.pendingOrderScrollView}>
-                    <ScrollView
-                      horizontal={false}
-                      contentContainerStyle={
-                        styles.pendingOrderScrollView_contentContainerStyle
-                      }
-                    >
-                      {ongoingListState?.length > 0 ? (
-                        ongoingListState?.map((element, index) => {
-                          let date = null;
-
-                          const parsedDate = ParseDate(element.date);
-                          if (parsedDate !== null) {
-                            date = parsedDate;
+                  <View
+                    style={
+                      maximizeScreen
+                        ? {
+                            height: height * 0.9,
+                            width: width * 0.9,
                           }
-
-                          let cartString = "";
-
-                          element.cart?.map((cartItem, index) => {
-                            cartString += `${index + 1}. Name: ${
-                              cartItem.name
-                            }\n`;
-
-                            if (cartItem.quantity) {
-                              cartString += `     Quantity: ${cartItem.quantity}\n`;
-                              cartString += `     Price: $${
-                                parseFloat(cartItem.price) * parseFloat(cartItem.quantity)
-                              }`;
-                            } else {
-                              cartString += `    Price: $${cartItem.price}`;
+                        : styles.pendingOrderScrollView
+                    }
+                  >
+                    {maximizeScreen ? (
+                      <KitchenViewOrders />
+                    ) : (
+                      <ScrollView
+                        horizontal={false}
+                        contentContainerStyle={
+                          maximizeScreen
+                            ? { backgroundColor: "black", padding: 20 }
+                            : styles.pendingOrderScrollView_contentContainerStyle
+                        }
+                      >
+                        {ongoingListState?.length > 0 ? (
+                          <View
+                            style={
+                              maximizeScreen
+                                ? {
+                                    flexDirection: "row",
+                                    flexWrap: "wrap",
+                                  }
+                                : {}
                             }
+                          >
+                            {ongoingListState?.map((element, index) => {
+                              let date = null;
 
-                            if (cartItem.description) {
-                              cartString += `     \n${cartItem.description}`;
-                            }
+                              const parsedDate = ParseDate(element.date);
+                              if (parsedDate !== null) {
+                                date = parsedDate;
+                              }
 
-                            if (cartItem.options) {
-                              cartString += `\n`;
-                              cartItem.options.map((option) => {
-                                cartString += `    ${option}\n`;
+                              let cartString = "";
+
+                              element.cart?.map((cartItem, index) => {
+                                cartString += `${index + 1}. Name: ${
+                                  cartItem.name
+                                }\n`;
+
+                                if (cartItem.quantity) {
+                                  cartString += `     Quantity: ${cartItem.quantity}\n`;
+                                  cartString += `     Price: $${
+                                    parseFloat(cartItem.price) *
+                                    parseFloat(cartItem.quantity)
+                                  }`;
+                                } else {
+                                  cartString += `    Price: $${cartItem.price}`;
+                                }
+
+                                if (cartItem.description) {
+                                  cartString += `     \n${cartItem.description}`;
+                                }
+
+                                if (cartItem.options) {
+                                  cartString += `\n`;
+                                  cartItem.options.map((option) => {
+                                    cartString += `    ${option}\n`;
+                                  });
+                                }
+
+                                if (cartItem.extraDetails) {
+                                  cartString += `     Note: ${cartItem.extraDetails}\n`;
+                                }
                               });
-                            }
 
-                            if (cartItem.extraDetails) {
-                              cartString += `     Note: ${cartItem.extraDetails}\n`;
-                            }
-                          });
-
-                          if (element.cartNote?.length ?? 0 > 0) {
-                            cartString += `\nNote: ${element.cartNote}`;
-                          }
-                          return (
-                            <PendingOrderItem
-                              style={styles.pendingOrderItem1}
-                              element={element}
-                              index={index}
-                              date={date}
-                              cartString={cartString}
-                              key={index}
-                              setcurrentOrder={setcurrentOrder}
-                              fadeIn={fadeIn}
-                            />
-                          );
-                        })
-                      ) : (
-                        <View
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Text>No Orders Yet</Text>
-                        </View>
-                      )}
-                    </ScrollView>
+                              if (element.cartNote?.length ?? 0 > 0) {
+                                cartString += `\nNote: ${element.cartNote}`;
+                              }
+                              return (
+                                <PendingOrderItem
+                                  style={[
+                                    styles.pendingOrderItem1,
+                                    maximizeScreen && { marginRight: 10 },
+                                  ]}
+                                  element={element}
+                                  index={index}
+                                  date={date}
+                                  cartString={cartString}
+                                  key={index}
+                                  setcurrentOrder={setcurrentOrder}
+                                  fadeIn={fadeIn}
+                                />
+                              );
+                            })}
+                          </View>
+                        ) : (
+                          <View
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              justifyContent: "center",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Text>No Orders Yet</Text>
+                          </View>
+                        )}
+                      </ScrollView>
+                    )}
                   </View>
                 </View>
                 {currentOrder.element && (
@@ -269,11 +319,29 @@ const styles = StyleSheet.create({
     // left: 270,
     // top: 304,
   },
+  pendingOrdersModalContainerMaximize: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(255,255,255,1)",
+    borderRadius: 10,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    // position: "absolute",
+    // left: 270,
+    // top: 304,
+  },
   closeIconContainer: {
     width: 540,
     height: 58,
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  closeIconContainerMaximize: {
+    width: "95%",
+    height: 58,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "flex-start",
   },
   closeIcon: {
@@ -296,12 +364,25 @@ const styles = StyleSheet.create({
     height: 470,
     margin: 0,
   },
+  pendingOrderScrollViewMaximize: {
+    height: "80%",
+    margin: 0,
+  },
   pendingOrderScrollView_contentContainerStyle: {
     width: 421,
     alignItems: "center",
     paddingTop: 3,
     paddingRight: 25,
     marginLeft: 25,
+  },
+  pendingOrderScrollView_contentContainerStyleMaximize: {
+    height: "90%",
+    width: "90%",
+    alignItems: "center",
+    paddingTop: 3,
+    paddingRight: 25,
+    marginLeft: 25,
+    backgroundColor: "black",
   },
   pendingOrderItem: {
     height: 84,

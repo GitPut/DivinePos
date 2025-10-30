@@ -195,11 +195,34 @@ export const updateStoreDetails = (
   }
 };
 
-export const updateFreeTrial = (endDate: Date) => {
-  db.collection("users")
-    .doc(auth.currentUser?.uid)
+export const updateFreeTrial = (endDate: Date | null) => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    console.warn("updateFreeTrial: no authenticated user");
+    return;
+  }
+
+  const userRef = db.collection("users").doc(currentUser.uid);
+
+  // 🛡️ Handle null safely — clears or ends the free trial
+  if (!endDate) {
+    console.log("updateFreeTrial called with null — clearing freeTrial field");
+
+    return userRef
+      .update({
+        freeTrial: firebase.firestore.FieldValue.delete(),
+      })
+      .finally(() => {
+        window.location.reload();
+      });
+  }
+
+  // ✅ Normal behavior if we have a Date
+  const timestamp = firebase.firestore.Timestamp.fromDate(endDate);
+
+  return userRef
     .update({
-      freeTrial: firebase.firestore.Timestamp.fromDate(endDate),
+      freeTrial: timestamp,
     })
     .finally(() => {
       window.location.reload();

@@ -113,19 +113,22 @@ function PendingOrderShowDetails({
                 {element.method === "deliveryOrder" && "Delivery"}
               </Text>
             )}
-            {!element?.online && element?.customer && (
-              <Text style={[styles.orderType, { color: "#FF0F00" }]}>
-                Phone Order{"\n"}
-                {element.method === "pickupOrder" && "Pickup"}
-                {element.method === "deliveryOrder" && "Delivery"}
-              </Text>
-            )}
-            {!element?.online && !element?.customer && (
-              <Text style={[styles.orderType]}>
-                POS Order{"\n"}
-                {element?.method === "pickupOrder" && "Pickup"}
-                {element?.method === "deliveryOrder" && "Delivery"}
-              </Text>
+            {!element?.online && (
+              <>
+                {(element?.customer?.name?.length ?? 0) > 0 ? (
+                  <Text style={[styles.orderType, { color: "#FF0F00" }]}>
+                    Phone Order{"\n"}
+                    {element?.method === "pickupOrder" && "Pickup"}
+                    {element?.method === "deliveryOrder" && "Delivery"}
+                  </Text>
+                ) : (
+                  <Text style={[styles.orderType]}>
+                    POS Order{"\n"}
+                    {element?.method === "pickupOrder" && "Pickup"}
+                    {element?.method === "deliveryOrder" && "Delivery"}
+                  </Text>
+                )}
+              </>
             )}
             <Text style={styles.orderDate}>
               {parsedDate?.toLocaleTimeString()}
