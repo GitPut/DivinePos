@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -18,6 +18,7 @@ import { auth, db } from "state/firebaseConfig";
 import ComponentLoader from "components/ComponentLoader";
 import { UserStoreStateProps } from "types/global";
 
+// ------------------ Types ------------------
 interface ProductCount {
   [key: string]: number;
 }
@@ -71,182 +72,159 @@ interface DetailsProps {
   };
 }
 
+// ------------------ Default State ------------------
+const defaultDetails: DetailsProps = {
+  averageWaitTime: { shortest: 0, longest: 0, average: 0, mean: 0 },
+  inStoreOrders: { orders: 0, revenue: 0 },
+  deliveryOrders: { orders: 0, revenue: 0 },
+  pickupOrders: { orders: 0, revenue: 0 },
+  totalRevenue: { orders: 0, revenue: 0 },
+  mostOrderProducts: [],
+  newCustomers: 0,
+  days: {},
+};
+
+// ------------------ Utils ------------------
+const getDateRange = (
+  period: string
+): { start: string; end: string } | null => {
+  const today = new Date();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+  const yearEnd = new Date(today.getFullYear(), 11, 31);
+
+  const fmt = (d: Date) => d.toISOString().split("T")[0];
+
+  switch (period) {
+    case "Today":
+      return { start: fmt(today), end: fmt(today) };
+    case "This Week":
+      return { start: fmt(weekStart), end: fmt(weekEnd) };
+    case "This Month":
+      return { start: fmt(monthStart), end: fmt(monthEnd) };
+    case "This Year":
+      return { start: fmt(yearStart), end: fmt(yearEnd) };
+    case "All Time":
+      return { start: "1970-01-01", end: fmt(today) };
+    default:
+      return null;
+  }
+};
+
+const filterDays = (
+  days: { [key: string]: DayStats },
+  start: string,
+  end: string
+) => {
+  return Object.keys(days)
+    .filter((date) => date >= start && date <= end)
+    .reduce((obj, key) => {
+      obj[key] = days[key];
+      return obj;
+    }, {} as { [key: string]: DayStats });
+};
+
+const calculateDetails = (
+  days: { [key: string]: DayStats },
+  catalog: UserStoreStateProps,
+  customersLength: number
+): DetailsProps => {
+  let shortest = Infinity;
+  let longest = 0;
+  let totalWaitTime = 0;
+  let waitCount = 0;
+  let totalOrders = 0;
+  let totalRevenue = 0;
+
+  const inStoreOrders = { orders: 0, revenue: 0 };
+  const deliveryOrders = { orders: 0, revenue: 0 };
+  const pickupOrders = { orders: 0, revenue: 0 };
+  const mostOrderedItems: ProductCount = {};
+
+  Object.values(days).forEach((dayStats) => {
+    totalOrders += dayStats.orders;
+    totalRevenue += dayStats.revenue;
+
+    inStoreOrders.orders += dayStats.inStore;
+    inStoreOrders.revenue += dayStats.inStoreRevenue;
+    deliveryOrders.orders += dayStats.delivery;
+    deliveryOrders.revenue += dayStats.deliveryRevenue;
+    pickupOrders.orders += dayStats.pickup;
+    pickupOrders.revenue += dayStats.pickupRevenue;
+
+    totalWaitTime += dayStats.totalWaitTime;
+    waitCount += dayStats.waitCount;
+
+    Object.entries(dayStats.productCounts).forEach(([itemName, count]) => {
+      mostOrderedItems[itemName] = (mostOrderedItems[itemName] || 0) + count;
+    });
+
+    const avgWait = dayStats.averageWaitTime ?? 0;
+    if (avgWait > 0) {
+      shortest = Math.min(shortest, avgWait);
+      longest = Math.max(longest, avgWait);
+    }
+  });
+
+  const sortedItems = Object.entries(mostOrderedItems).sort(
+    (a, b) => b[1] - a[1]
+  );
+  const mostOrderProducts = sortedItems.slice(0, 3).map(([name, orders]) => ({
+    name,
+    orders,
+    imageUrl:
+      catalog.products.find((p) => p.name === name)?.imageUrl ??
+      "https://via.placeholder.com/50",
+  }));
+
+  return {
+    averageWaitTime: {
+      shortest: shortest === Infinity ? 0 : shortest,
+      longest,
+      average: totalWaitTime / (waitCount || 1),
+      mean: totalWaitTime / (totalOrders || 1),
+    },
+    inStoreOrders,
+    deliveryOrders,
+    pickupOrders,
+    totalRevenue: { orders: totalOrders, revenue: totalRevenue },
+    mostOrderProducts,
+    newCustomers: customersLength,
+    days,
+  };
+};
+
+// ------------------ Main Component ------------------
 const Dashboard: React.FC = () => {
   const { width } = useWindowDimensions();
   const catalog = userStoreState.use();
   const customers = customersList.use();
   const [period, setPeriod] = useState<string>("Today");
-  const [details, setDetails] = useState<DetailsProps>({
-    averageWaitTime: { shortest: 0, longest: 0, average: 0, mean: 0 },
-    inStoreOrders: { orders: 0, revenue: 0 },
-    deliveryOrders: { orders: 0, revenue: 0 },
-    pickupOrders: { orders: 0, revenue: 0 },
-    totalRevenue: { orders: 0, revenue: 0 },
-    mostOrderProducts: [],
-    newCustomers: 0,
-    days: {},
-  });
+  const [allStats, setAllStats] = useState<DetailsProps | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const getDateRange = (
-    period: string
-  ): { start: string; end: string } | null => {
-    const today = new Date();
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay());
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const yearStart = new Date(today.getFullYear(), 0, 1);
-    const yearEnd = new Date(today.getFullYear(), 11, 31);
-
-    switch (period) {
-      case "Today":
-        return {
-          start: today.toISOString().split("T")[0],
-          end: today.toISOString().split("T")[0],
-        };
-      case "This Week":
-        return {
-          start: weekStart.toISOString().split("T")[0],
-          end: weekEnd.toISOString().split("T")[0],
-        };
-      case "This Month":
-        return {
-          start: monthStart.toISOString().split("T")[0],
-          end: monthEnd.toISOString().split("T")[0],
-        };
-      case "This Year":
-        return {
-          start: yearStart.toISOString().split("T")[0],
-          end: yearEnd.toISOString().split("T")[0],
-        };
-      case "All Time":
-        return {
-          start: "1970-01-01",
-          end: today.toISOString().split("T")[0],
-        };
-      default:
-        return null;
-    }
-  };
-
-  const calculateDetails = (
-    days: { [key: string]: DayStats },
-    statsData: DetailsProps,
-    catalog: UserStoreStateProps
-  ): DetailsProps => {
-    let shortest = 0;
-    let longest = 0;
-    let totalWaitTime = 0;
-    let waitCount = 0;
-    let totalOrders = 0;
-    let totalRevenue = 0;
-    const inStoreOrders = { orders: 0, revenue: 0 };
-    const deliveryOrders = { orders: 0, revenue: 0 };
-    const pickupOrders = { orders: 0, revenue: 0 };
-    const mostOrderedItems: ProductCount = {};
-
-    Object.keys(days).forEach((date) => {
-      const dayStats = days[date];
-      totalOrders += dayStats.orders;
-      totalRevenue += dayStats.revenue;
-
-      inStoreOrders.orders += dayStats.inStore;
-      inStoreOrders.revenue += dayStats.inStoreRevenue;
-      deliveryOrders.orders += dayStats.delivery;
-      deliveryOrders.revenue += dayStats.deliveryRevenue;
-      pickupOrders.orders += dayStats.pickup;
-      pickupOrders.revenue += dayStats.pickupRevenue;
-
-      totalWaitTime += dayStats.totalWaitTime;
-      waitCount += dayStats.waitCount;
-
-      Object.keys(dayStats.productCounts).forEach((itemName) => {
-        mostOrderedItems[itemName] =
-          (mostOrderedItems[itemName] || 0) + dayStats.productCounts[itemName];
-      });
-
-      const averageWaitTime = dayStats.averageWaitTime ?? 0;
-
-      if (averageWaitTime < shortest) {
-        shortest = averageWaitTime;
-      }
-
-      if (averageWaitTime > longest) {
-        longest = averageWaitTime;
-      }
-    });
-
-    const sortedItems = Object.entries(mostOrderedItems).sort(
-      (a, b) => b[1] - a[1]
-    );
-    const mostOrderProducts = sortedItems.slice(0, 3).map((item) => ({
-      name: item[0],
-      orders: item[1],
-      imageUrl:
-        catalog.products.find((product) => product.name === item[0])
-          ?.imageUrl ?? "https://via.placeholder.com/50",
-    }));
-
-    return {
-      averageWaitTime: {
-        shortest,
-        longest,
-        average: totalWaitTime / waitCount || 0,
-        mean: totalWaitTime / totalOrders || 0,
-      },
-      inStoreOrders,
-      deliveryOrders,
-      pickupOrders,
-      totalRevenue: {
-        orders: totalOrders,
-        revenue: totalRevenue,
-      },
-      mostOrderProducts,
-      newCustomers: customers.length,
-      days,
-    };
-  };
-
+  // Fetch once
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
       const userId = auth.currentUser?.uid;
-      const statsRef = db
-        .collection("users")
-        .doc(userId)
-        .collection("stats")
-        .doc("monthly");
+      if (!userId) return;
 
       try {
+        const statsRef = db
+          .collection("users")
+          .doc(userId)
+          .collection("stats")
+          .doc("monthly");
+
         const statsDoc = await statsRef.get();
         if (statsDoc.exists) {
-          const statsData = statsDoc.data() as DetailsProps;
-          const { start, end } = getDateRange(period) ?? {};
-
-          // Filter statsData.days based on the selected period
-          if (start && end) {
-            const filteredDays = Object.keys(statsData.days)
-              .filter((date) => date >= start && date <= end)
-              .reduce((obj, key) => {
-                obj[key] = statsData.days[key];
-                return obj;
-              }, {} as { [key: string]: DayStats });
-
-            // Calculate the details from the filtered days
-            const newDetails = calculateDetails(
-              filteredDays,
-              statsData,
-              catalog
-            );
-            setDetails((prevDetails) => ({
-              ...prevDetails,
-              ...newDetails,
-              days: statsData.days,
-            }));
-          }
+          setAllStats(statsDoc.data() as DetailsProps);
         }
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -256,18 +234,29 @@ const Dashboard: React.FC = () => {
     };
 
     fetchStats();
-  }, [period]);
+  }, []);
 
+  // Compute filtered details
+  const details = useMemo(() => {
+    if (!allStats) return defaultDetails;
+    const { start, end } = getDateRange(period) ?? {};
+    if (!start || !end) return defaultDetails;
+    const filteredDays = filterDays(allStats.days, start, end);
+    return calculateDetails(filteredDays, catalog, customers.length);
+  }, [period, allStats, catalog, customers.length]);
+
+  // ------------------ Render ------------------
   return (
     <View style={styles.container}>
       <ScrollView
-        style={{ height: "100%", width: "100%" }}
+        style={{ width: "100%" }}
         contentContainerStyle={{ paddingRight: 30 }}
       >
         {loading ? (
           <ComponentLoader />
         ) : (
           <View style={styles.wrap}>
+            {/* Top Revenue and Most Ordered */}
             <TotalRevenueBox
               style={width < 1300 ? { width: "100%" } : {}}
               period={period}
@@ -276,12 +265,13 @@ const Dashboard: React.FC = () => {
             />
             {width > 1300 && (
               <MostOrderedItemsBox
-                style={{}}
                 period={period}
                 setperiod={setPeriod}
                 details={details.mostOrderProducts}
               />
             )}
+
+            {/* Wait Time + Customers */}
             <View style={{ justifyContent: "space-between" }}>
               <OrderWaitTimeBox
                 period={period}
@@ -304,43 +294,30 @@ const Dashboard: React.FC = () => {
                 />
               )}
             </View>
-            {width < 1300 ? (
-              <View style={{ justifyContent: "space-between" }}>
-                <PickupOrdersBox
-                  period={period}
-                  setperiod={setPeriod}
-                  details={details.pickupOrders}
-                />
-                <DeliveryOrdersBox
-                  period={period}
-                  setperiod={setPeriod}
-                  details={details.deliveryOrders}
-                />
-                <InStoreOrdersBox
-                  period={period}
-                  setperiod={setPeriod}
-                  details={details.inStoreOrders}
-                />
-              </View>
-            ) : (
-              <>
-                <PickupOrdersBox
-                  period={period}
-                  setperiod={setPeriod}
-                  details={details.pickupOrders}
-                />
-                <DeliveryOrdersBox
-                  period={period}
-                  setperiod={setPeriod}
-                  details={details.deliveryOrders}
-                />
-                <InStoreOrdersBox
-                  period={period}
-                  setperiod={setPeriod}
-                  details={details.inStoreOrders}
-                />
-              </>
-            )}
+
+            {/* Orders by Type */}
+            <View
+              style={[
+                styles.ordersWrap,
+                width < 1300 && { flexDirection: "column" },
+              ]}
+            >
+              <PickupOrdersBox
+                period={period}
+                setperiod={setPeriod}
+                details={details.pickupOrders}
+              />
+              <DeliveryOrdersBox
+                period={period}
+                setperiod={setPeriod}
+                details={details.deliveryOrders}
+              />
+              <InStoreOrdersBox
+                period={period}
+                setperiod={setPeriod}
+                details={details.inStoreOrders}
+              />
+            </View>
           </View>
         )}
       </ScrollView>
@@ -348,6 +325,7 @@ const Dashboard: React.FC = () => {
   );
 };
 
+// ------------------ Styles ------------------
 const styles = StyleSheet.create({
   container: {
     width: "100%",
@@ -358,7 +336,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     width: "100%",
-    height: "100%",
+  },
+  ordersWrap: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
   },
 });
 

@@ -21,7 +21,7 @@ function PlanStage({
     <View style={styles.container}>
       <HeaderTxt
         Txt="Step 1: Pick Your Plan"
-        SubTxt="Get started with a 14-day free trial"
+        SubTxt="Get started with a 1 month free trial"
       />
       <View style={styles.contentContainer}>
         <View style={styles.topSectionOfContainer}>
@@ -33,7 +33,7 @@ function PlanStage({
             <Plan
               planName="Free Trial"
               planPrice="0"
-              planPeriodDesc="For 14 days"
+              planPeriodDesc="For 1 month"
               planDescription={`
 - Data Anylitics on your store
 - Universal Device Compatibility

@@ -18,7 +18,7 @@ const ViewPlan = ({ planType, paymentTerm, setstageNum }: PlanProps) => {
     if (planType === "freeTrial") {
       setplanName("Free Trial");
       setplanPrice("0");
-      setplanPeriodDesc("For 14 days");
+      setplanPeriodDesc("For 1 month");
       setplanDescription(
         `
 - Data Anylitics on your store

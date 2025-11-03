@@ -6,73 +6,102 @@ import {
 } from "types/global";
 import { auth, db } from "./firebaseConfig";
 import firebase from "firebase/compat/app";
+import { Timestamp } from "firebase/firestore";
 
+// -------------------
+// 🔐 AUTH FUNCTIONS
+// -------------------
 export const signIn = (email: string, password: string) =>
   auth.signInWithEmailAndPassword(email, password);
 
-export const signUp = (
+export const signUp = async (
   email: string,
   password: string,
   name: string,
   phoneNumber: string
-) =>
-  auth.createUserWithEmailAndPassword(email, password).then((userAuth) => {
-    if (userAuth.user) {
-      db.collection("users")
-        .doc(userAuth.user.uid)
-        .set({
-          categories: [],
-          wooCredentials: { ck: null, cs: null, useWoocommerce: false },
-          storeDetails: {
-            name: null,
-            address: null,
-            phoneNumber: null,
-            website: null,
-            deliveryPrice: null,
-            taxRate: 13,
-          },
-          ownerDetails: {
-            name: name,
-            address: null,
-            phoneNumber: phoneNumber,
-            email: email,
-          },
-        });
-      userAuth.user.updateProfile({
-        displayName: name,
-      });
-    }
-  });
+) => {
+  const userAuth = await auth.createUserWithEmailAndPassword(email, password);
 
-export const updateData = (categories: string[]) => {
-  db.collection("users").doc(auth.currentUser?.uid).update({
-    categories: categories,
-  });
+  if (userAuth.user) {
+    const userDoc = db.collection("users").doc(userAuth.user.uid);
+    await userDoc.set({
+      categories: [],
+      wooCredentials: { ck: null, cs: null, useWoocommerce: false },
+      storeDetails: {
+        name: null,
+        address: null,
+        phoneNumber: null,
+        website: null,
+        deliveryPrice: null,
+        taxRate: 13,
+      },
+      ownerDetails: {
+        name,
+        address: null,
+        phoneNumber,
+        email,
+      },
+    });
+
+    await userAuth.user.updateProfile({ displayName: name });
+  }
 };
 
-const initializeStatsData = () => ({
-  totalRevenue: 0,
-  totalOrders: 0,
-  days: {} as Record<
-    string,
-    {
-      revenue: number;
-      orders: number;
-      inStore: number;
-      inStoreRevenue: number;
-      delivery: number;
-      deliveryRevenue: number;
-      pickup: number;
-      pickupRevenue: number;
-      productCounts: { [itemName: string]: number };
-      totalWaitTime: number;
-      waitCount: number;
-      averageWaitTime?: number;
-    }
-  >,
+// -------------------
+// 🧩 DATA UPDATES
+// -------------------
+export const updateData = async (categories: string[]) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  await db.collection("users").doc(uid).update({ categories });
+};
+
+// -------------------
+// 📊 STATS HELPERS
+// -------------------
+interface ProductCount {
+  [productName: string]: number;
+}
+
+interface DayStats {
+  revenue: number;
+  orders: number;
+  inStore: number;
+  inStoreRevenue: number;
+  delivery: number;
+  deliveryRevenue: number;
+  pickup: number;
+  pickupRevenue: number;
+  productCounts: ProductCount;
+  totalWaitTime: number;
+  waitCount: number;
+  averageWaitTime?: number;
+}
+
+const initializeDayStats = (): DayStats => ({
+  revenue: 0,
+  orders: 0,
+  inStore: 0,
+  inStoreRevenue: 0,
+  delivery: 0,
+  deliveryRevenue: 0,
+  pickup: 0,
+  pickupRevenue: 0,
+  productCounts: {},
+  totalWaitTime: 0,
+  waitCount: 0,
 });
 
-const updateStats = async (
+const initializeStatsData = (): StatsDataProps => ({
+  totalRevenue: 0,
+  totalOrders: 0,
+  days: {},
+});
+
+// -------------------
+// 📈 UPDATE STATS
+// -------------------
+export const updateStats = async (
   userId: string,
   receipt: Partial<TransListStateItem>
 ) => {
@@ -89,84 +118,77 @@ const updateStats = async (
       ? (statsDoc.data() as StatsDataProps)
       : initializeStatsData();
 
-    const transactionDate = receipt.date?.toDate().toISOString().slice(0, 10);
-
-    if (transactionDate) {
-      if (!statsData.days[transactionDate]) {
-        statsData.days[transactionDate] = {
-          revenue: 0,
-          orders: 0,
-          inStore: 0,
-          inStoreRevenue: 0,
-          delivery: 0,
-          deliveryRevenue: 0,
-          pickup: 0,
-          pickupRevenue: 0,
-          productCounts: {},
-          totalWaitTime: 0,
-          waitCount: 0,
-        };
-      }
-
-      statsData.days[transactionDate].orders++;
-      statsData.days[transactionDate].revenue += parseFloat(
-        receipt.total ?? "0"
-      );
-      statsData.totalOrders++;
-      statsData.totalRevenue += parseFloat(receipt.total ?? "0");
-
-      if (receipt.method === "inStoreOrder") {
-        statsData.days[transactionDate].inStore++;
-        statsData.days[transactionDate].inStoreRevenue += parseFloat(
-          receipt.total ?? "0"
-        );
-      } else if (receipt.method === "deliveryOrder") {
-        statsData.days[transactionDate].delivery++;
-        statsData.days[transactionDate].deliveryRevenue += parseFloat(
-          receipt.total ?? "0"
-        );
-      } else if (receipt.method === "pickupOrder") {
-        statsData.days[transactionDate].pickup++;
-        statsData.days[transactionDate].pickupRevenue += parseFloat(
-          receipt.total ?? "0"
-        );
-      }
-
-      receipt.cart?.forEach((item) => {
-        const itemName = item.name;
-        statsData.days[transactionDate].productCounts[itemName] =
-          (statsData.days[transactionDate].productCounts[itemName] || 0) + 1;
-      });
-
-      if (receipt.date && receipt.dateCompleted) {
-        const startTime = receipt.date.toDate();
-        const endTime = receipt.dateCompleted.toDate();
-
-        if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime())) {
-          const waitTime = (endTime.getTime() - startTime.getTime()) / 60000; // Convert milliseconds to minutes
-          statsData.days[transactionDate].totalWaitTime += waitTime;
-          statsData.days[transactionDate].waitCount += 1;
-        }
-      }
-
-      // Calculate average wait time per day
-      Object.keys(statsData.days).forEach((date) => {
-        if (statsData.days[date].waitCount > 0) {
-          statsData.days[date].averageWaitTime =
-            statsData.days[date].totalWaitTime / statsData.days[date].waitCount;
-        }
-      });
-
-      transaction.set(statsRef, statsData, { merge: true });
+    // Must have valid Firestore Timestamp
+    if (!(receipt.date instanceof Timestamp)) {
+      console.warn("Skipping stats update: receipt.date is invalid");
+      return;
     }
+
+    const transactionDate = receipt.date.toDate().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    if (!statsData.days[transactionDate]) {
+      statsData.days[transactionDate] = initializeDayStats();
+    }
+
+    const day = statsData.days[transactionDate];
+    const total =
+      Number(receipt.total?.toString().replace(/[^0-9.-]+/g, "")) || 0;
+
+    // --- Update Totals ---
+    day.orders += 1;
+    day.revenue += total;
+    statsData.totalOrders = (statsData.totalOrders || 0) + 1;
+    statsData.totalRevenue = (statsData.totalRevenue || 0) + total;
+
+    // --- Method-specific ---
+    switch (receipt.method) {
+      case "inStoreOrder":
+        day.inStore++;
+        day.inStoreRevenue += total;
+        break;
+      case "deliveryOrder":
+        day.delivery++;
+        day.deliveryRevenue += total;
+        break;
+      case "pickupOrder":
+        day.pickup++;
+        day.pickupRevenue += total;
+        break;
+    }
+
+    // --- Product Counts ---
+    if (Array.isArray(receipt.cart)) {
+      for (const item of receipt.cart) {
+        const itemName = item.name || "Unknown Item";
+        day.productCounts[itemName] = (day.productCounts[itemName] || 0) + 1;
+      }
+    }
+
+    // --- Wait Time ---
+    if (
+      receipt.date instanceof Timestamp &&
+      receipt.dateCompleted instanceof Timestamp
+    ) {
+      const start = receipt.date.toDate();
+      const end = receipt.dateCompleted.toDate();
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const waitTime = (end.getTime() - start.getTime()) / 60000; // minutes
+        day.totalWaitTime += waitTime;
+        day.waitCount += 1;
+        day.averageWaitTime = day.totalWaitTime / day.waitCount;
+      }
+    }
+
+    transaction.set(statsRef, statsData); // Atomic write
   });
 };
 
+// -------------------
+// 💵 TRANSACTIONS
+// -------------------
 export const updateTransList = async (receipt: Partial<TransListStateItem>) => {
   const userId = auth.currentUser?.uid;
-  if (!userId) {
-    throw new Error("User not authenticated");
-  }
+  if (!userId) throw new Error("User not authenticated");
 
   const transListRef = db
     .collection("users")
@@ -182,20 +204,28 @@ export const updateTransList = async (receipt: Partial<TransListStateItem>) => {
   await updateStats(userId, newReceipt);
 };
 
-export const updateStoreDetails = (
+// -------------------
+// 🏪 STORE DETAILS
+// -------------------
+export const updateStoreDetails = async (
   storeDetails: Partial<StoreDetailsProps>
 ) => {
-  db.collection("users").doc(auth.currentUser?.uid).update({
-    storeDetails: storeDetails,
-  });
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+
+  const userRef = db.collection("users").doc(uid);
+  await userRef.update({ storeDetails });
+
+  // If public profile should also be updated
   if (storeDetails.onlineStoreActive) {
-    db.collection("public").doc(auth.currentUser?.uid).update({
-      storeDetails: storeDetails,
-    });
+    await db.collection("public").doc(uid).update({ storeDetails });
   }
 };
 
-export const updateFreeTrial = (endDate: Date | null) => {
+// -------------------
+// 🎁 FREE TRIAL
+// -------------------
+export const updateFreeTrial = async (endDate: Date | null) => {
   const currentUser = auth.currentUser;
   if (!currentUser) {
     console.warn("updateFreeTrial: no authenticated user");
@@ -204,44 +234,42 @@ export const updateFreeTrial = (endDate: Date | null) => {
 
   const userRef = db.collection("users").doc(currentUser.uid);
 
-  // 🛡️ Handle null safely — clears or ends the free trial
   if (!endDate) {
-    console.log("updateFreeTrial called with null — clearing freeTrial field");
-
-    return userRef
-      .update({
-        freeTrial: firebase.firestore.FieldValue.delete(),
-      })
-      .finally(() => {
-        window.location.reload();
-      });
+    console.log("Clearing freeTrial field...");
+    await userRef.update({
+      freeTrial: firebase.firestore.FieldValue.delete(),
+    });
+  } else {
+    const timestamp = firebase.firestore.Timestamp.fromDate(endDate);
+    await userRef.update({ freeTrial: timestamp });
   }
 
-  // ✅ Normal behavior if we have a Date
-  const timestamp = firebase.firestore.Timestamp.fromDate(endDate);
-
-  return userRef
-    .update({
-      freeTrial: timestamp,
-    })
-    .finally(() => {
-      window.location.reload();
-    });
+  window.location.reload();
 };
 
-export const logout = () => {
+// -------------------
+// 🚪 LOGOUT
+// -------------------
+export const logout = async () => {
   localStorage.removeItem("isAuthedBackend");
   localStorage.removeItem("savedUserState");
-  auth.signOut();
+  await auth.signOut();
   window.location.href = "https://divinepos.com";
 };
 
-export const addCustomerDetailsToDb = (customer: CustomerProp) =>
-  db
+// -------------------
+// 👥 CUSTOMERS
+// -------------------
+export const addCustomerDetailsToDb = async (customer: CustomerProp) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error("User not authenticated");
+
+  await db
     .collection("users")
-    .doc(auth.currentUser?.uid)
+    .doc(uid)
     .collection("customers")
     .add({
       ...customer,
       createdAt: firebase.firestore.Timestamp.now(),
     });
+};
