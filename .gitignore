@@ -1,4 +1,6 @@
 node_modules
 web-build
-.expo/web/cache
+dist
+.expo
 .firebase
+.vscode
