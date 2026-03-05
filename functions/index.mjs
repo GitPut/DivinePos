@@ -8,7 +8,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as functions from "firebase-functions/v1";
 
 // Additional constants
-const GOOGLE_API_KEY = "AIzaSyDjx4LBIEDNRYKEt-0_TJ6jUcst4a2YON4";
+const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 
 // Handling the cors initialization separately as it needs specific handling
 const corsHandler = cors({ origin: true });
@@ -91,7 +91,7 @@ export const sendPasswordResetEmail = functions.https.onRequest((req, res) => {
       .then(async (link) => {
         const updatedLink = link.replace(
           "posmate-5fc0a.firebaseapp",
-          "auth.divinepos"
+          "auth.divinepos",
         );
 
         const mailOptions = {
@@ -194,7 +194,7 @@ export const getLatLng = onRequest(async (req, res) => {
       const { placeId } = req.body;
 
       const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=${GOOGLE_API_KEY}`
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=${GOOGLE_API_KEY}`,
       );
 
       const data = response.data;
@@ -1612,7 +1612,7 @@ const OrderConfirmationEmailHtml = (element, storeDetails) => {
 															<td class="pad" style="padding-bottom:10px;padding-right:30px;padding-top:10px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:16px;line-height:120%;text-align:right;mso-line-height-alt:19.2px;">
 																	<p style="margin: 0; word-break: break-word;"><span>$ ${parseFloat(
-                                    cartItem.price
+                                    cartItem.price,
                                   ).toFixed(2)}</span></p>
 																</div>
 															</td>
@@ -1778,7 +1778,7 @@ const OrderConfirmationEmailHtml = (element, storeDetails) => {
 															<td class="pad" style="padding-bottom:10px;padding-right:30px;padding-top:10px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:16px;line-height:120%;text-align:right;mso-line-height-alt:19.2px;">
 																	<p style="margin: 0; word-break: break-word;"><strong><span>$ ${parseFloat(
-                                    element.total
+                                    element.total,
                                   ).toFixed(2)}</span></strong></p>
 																</div>
 															</td>

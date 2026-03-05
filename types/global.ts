@@ -1,4 +1,5 @@
-import { Timestamp } from "@google-cloud/firestore";
+import firebase from "firebase/compat/app";
+type Timestamp = firebase.firestore.Timestamp;
 
 export type AddressType = {
   label?: string;

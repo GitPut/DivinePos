@@ -1,0 +1,111 @@
+/* Global styles for Divine POS */
+
+/* Custom password masking font */
+@font-face {
+  font-family: "Password";
+  src: url("/assets/password.ttf") format("truetype");
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+ * React Native Web's View defaults: display:flex, flex-direction:column,
+ * flex-shrink:0, align-items:stretch, position:relative.
+ * Since every View was replaced with <div>, apply these defaults globally
+ * so layouts match the original RNW behavior. Inline styles override as needed.
+ */
+div {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: stretch;
+  /* RNW defaults: borderStyle "solid" with borderWidth 0 */
+  border: 0 solid black;
+}
+
+/* RNW Text defaults: inline-block so width/height/padding work on spans */
+span {
+  display: inline;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Image loading skeleton */
+.image-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Remove default button styles for Pressable replacements */
+button {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+/* Ensure inputs look consistent */
+input, textarea {
+  outline: none;
+  font-family: inherit;
+}
+
+/*
+ * Third-party component resets.
+ * Our global div { display:flex; flex-direction:column } breaks libraries
+ * that rely on browser-default display:block. Reset them here.
+ */
+
+/* recharts */
+.recharts-wrapper,
+.recharts-wrapper div,
+.recharts-responsive-container {
+  display: block;
+  flex-direction: initial;
+  flex-shrink: initial;
+  align-items: initial;
+}
+
+/* react-alert */
+[data-testid="react-alert"],
+.__react_alert_stack,
+.__react_alert_stack div {
+  display: block;
+  flex-direction: initial;
+  flex-shrink: initial;
+  align-items: initial;
+}
+
+/* react-tooltip */
+[data-tooltip-id],
+.react-tooltip,
+.react-tooltip div {
+  display: block;
+  flex-direction: initial;
+  flex-shrink: initial;
+  align-items: initial;
+}
