@@ -28,6 +28,7 @@ export const addCartState = (
   const existingIndex = currentState.findIndex(
     (item) =>
       item.name === val.name &&
+      item.price === val.price &&
       JSON.stringify(item.options) === JSON.stringify(val.options) &&
       item.extraDetails === val.extraDetails
   );
