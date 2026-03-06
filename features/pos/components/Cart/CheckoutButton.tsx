@@ -83,6 +83,19 @@ const CheckoutButton = () => {
   }
 
   if (!ongoingDelivery) {
+    if (cart.length < 1) {
+      return (
+        <div style={styles.btnRow}>
+          <button
+            className="pos-checkout-btn"
+            style={{ ...styles.checkoutBtn, ...styles.emptyBtn, width: "100%" }}
+            disabled
+          >
+            <span style={styles.emptyLbl}>Add items to order</span>
+          </button>
+        </div>
+      );
+    }
     return (
       <div style={styles.btnRow}>
         <button
@@ -90,12 +103,10 @@ const CheckoutButton = () => {
           style={{
             ...styles.checkoutBtn,
             ...styles.outlinedBtn,
-            ...((cart.length < 1 || ongoingDelivery) ? { opacity: 0.5 } : {}),
           }}
           onClick={() => {
             updatePosState({ cashModal: true });
           }}
-          disabled={cart.length < 1 || ongoingDelivery}
         >
           <span style={styles.outlinedLbl}>Cash</span>
         </button>
@@ -104,7 +115,6 @@ const CheckoutButton = () => {
           style={{
             ...styles.checkoutBtn,
             ...styles.filledBtn,
-            ...((cart.length < 1 || ongoingDelivery) ? { opacity: 0.5 } : {}),
           }}
           onClick={() => {
             Print({
@@ -126,7 +136,6 @@ const CheckoutButton = () => {
               myDeviceDetails,
             });
           }}
-          disabled={cart.length < 1 || ongoingDelivery}
         >
           <span style={styles.filledLbl}>Card</span>
         </button>
@@ -219,6 +228,17 @@ const styles: Record<string, React.CSSProperties> = {
   outlinedLbl: {
     fontWeight: "600",
     color: "#1e293b",
+    fontSize: 15,
+  },
+  emptyBtn: {
+    backgroundColor: "#e2e8f0",
+    border: "none",
+    cursor: "default",
+    opacity: 0.7,
+  },
+  emptyLbl: {
+    fontWeight: "600",
+    color: "#64748b",
     fontSize: 15,
   },
 };

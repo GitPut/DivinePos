@@ -27,10 +27,11 @@ const ProductsSection = ({ catalog, setallLoaded }: ProductsSectionProps) => {
       display: "grid",
       gridTemplateColumns:
         width > 1250
-          ? "repeat(auto-fill, minmax(220px, 1fr))"
-          : "repeat(auto-fill, minmax(140px, 1fr))",
-      gap: "14px",
+          ? "repeat(auto-fill, minmax(190px, 1fr))"
+          : "repeat(auto-fill, minmax(150px, 1fr))",
+      gap: "12px",
       paddingBottom: 20,
+      paddingTop: 4,
     },
   };
 

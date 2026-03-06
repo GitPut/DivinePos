@@ -3,6 +3,7 @@ import noItemsImg from "assets/images/noItemsImg.png";
 import CartItem from "./CartItem";
 import CartAmountRow from "./CartAmountRow";
 import { MdClear } from "react-icons/md";
+import { FiShoppingBag } from "react-icons/fi";
 import CheckoutButton from "./CheckoutButton";
 import {
   orderDetailsState,
@@ -75,41 +76,22 @@ const Cart = () => {
 
   return (
     <div style={styles.cartContainer}>
-      <div
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: "88%",
-          display: "flex",
-          paddingTop: 16,
-          paddingBottom: 8,
-        }}
-      >
-        <span style={styles.myCartTxt}>My Cart</span>
-        {cart.length > 0 ? (
+      <div style={styles.headerRow}>
+        <div style={styles.headerLeft}>
+          <FiShoppingBag size={18} color="#1e293b" />
+          <span style={styles.myCartTxt}>Current Order</span>
+        </div>
+        {cart.length > 0 && (
           <button
             className="pos-clear-btn"
-            style={{
-              borderRadius: 8,
-              height: 30,
-              width: 30,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "#1e293b",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-            }}
+            style={styles.clearBtn}
             onClick={() => {
               setCartState([]);
               updatePosState({ discountAmount: null });
             }}
           >
-            <MdClear size={18} color="white" />
+            <MdClear size={16} color="#64748b" />
           </button>
-        ) : (
-          <div style={{ height: 30, width: 30 }} />
         )}
       </div>
       <div style={styles.cartItems}>
@@ -152,29 +134,12 @@ const Cart = () => {
             ))}
           </div>
         ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              justifyContent: "center",
-              alignItems: "center",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <img
-              src={noItemsImg}
-              alt=""
-              style={{
-                width: 100,
-                height: 100,
-                objectFit: "contain",
-                opacity: 0.6,
-              }}
-              key={"noItemsImg"}
-            />
-            <span style={{ color: "#aaa", fontSize: 13 }}>No items added</span>
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIconCircle}>
+              <FiShoppingBag size={28} color="#cbd5e1" />
+            </div>
+            <span style={styles.emptyTitle}>No items yet</span>
+            <span style={styles.emptySubtitle}>Add items from the menu to get started</span>
           </div>
         )}
       </div>
@@ -372,11 +337,37 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "88%",
+    display: "flex",
+    paddingTop: 16,
+    paddingBottom: 10,
+  },
+  headerLeft: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   myCartTxt: {
     fontWeight: "700",
     color: "#1a1a1a",
-    fontSize: 18,
+    fontSize: 16,
     display: "inline-block",
+  },
+  clearBtn: {
+    borderRadius: 8,
+    height: 28,
+    width: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f1f5f9",
+    border: "1px solid #e2e8f0",
+    cursor: "pointer",
+    display: "flex",
   },
   cartItems: {
     width: "88%",
@@ -386,6 +377,35 @@ const styles: Record<string, React.CSSProperties> = {
   cartItem1: {
     width: "100%",
     marginBottom: 8,
+  },
+  emptyState: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#f1f5f9",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    color: "#64748b",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  emptySubtitle: {
+    color: "#94a3b8",
+    fontSize: 12,
+    textAlign: "center",
   },
   totalsContainer: {
     width: "88%",
@@ -415,7 +435,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   totalRowGroup: {
     width: "100%",
-    borderTop: "1px solid #e0e0e0",
+    borderTop: "1px solid #e2e8f0",
     paddingTop: 8,
     display: "flex",
     flexDirection: "column",

@@ -1,14 +1,17 @@
 import React from "react";
-import { FiMenu } from "react-icons/fi";
-import pendingOrderIcon from "assets/images/pendingOrderIcon.png";
-import clockInIcon from "assets/images/clockInIcon.png";
-import phoneOrderIcon from "assets/images/phoneOrderIcon.png";
-import percentIcon from "assets/images/percentIcon.png";
-import dollarSignIcon from "assets/images/dollarSignIcon.png";
-import settingsIcon from "assets/images/settingsIcon.png";
+import { FiHome, FiClock, FiPhone, FiPercent, FiDollarSign, FiSettings, FiClipboard } from "react-icons/fi";
 import { posState, updatePosState } from "store/posState";
 import { settingsAuthState, storeDetailsState } from "store/appState";
 import { useHistory } from "react-router-dom";
+
+const menuItems = [
+  { key: "home", label: "Home", Icon: FiHome },
+  { key: "orders", label: "Orders", Icon: FiClipboard },
+  { key: "clockin", label: "Clock In", Icon: FiClock },
+  { key: "delivery", label: "Delivery", Icon: FiPhone },
+  { key: "discount", label: "Discount", Icon: FiPercent },
+  { key: "cash", label: "Cash", Icon: FiDollarSign },
+];
 
 const LeftMenuBar = () => {
   const {
@@ -18,179 +21,142 @@ const LeftMenuBar = () => {
     discountModal,
     settingsPasswordModalVis,
     customCashModal,
+    ongoingListState,
   } = posState.use();
+  const pendingCount = ongoingListState?.length || 0;
   const history = useHistory();
   const storeDetails = storeDetailsState.use();
 
+  const isHome =
+    !ongoingOrderListModal &&
+    !clockinModal &&
+    !deliveryModal &&
+    !settingsPasswordModalVis &&
+    !discountModal &&
+    !customCashModal;
+
+  const activeKey = isHome
+    ? "home"
+    : ongoingOrderListModal
+    ? "orders"
+    : clockinModal
+    ? "clockin"
+    : deliveryModal
+    ? "delivery"
+    : discountModal
+    ? "discount"
+    : customCashModal
+    ? "cash"
+    : "home";
+
+  const handleClick = (key: string) => {
+    // Reset all modals first
+    updatePosState({
+      ongoingOrderListModal: false,
+      clockinModal: false,
+      deliveryModal: false,
+      discountModal: false,
+      customCashModal: false,
+    });
+    switch (key) {
+      case "orders":
+        updatePosState({ ongoingOrderListModal: true });
+        break;
+      case "clockin":
+        updatePosState({ clockinModal: true });
+        break;
+      case "delivery":
+        updatePosState({ deliveryModal: true });
+        break;
+      case "discount":
+        updatePosState({ discountModal: true });
+        break;
+      case "cash":
+        updatePosState({ customCashModal: true });
+        break;
+    }
+  };
+
   return (
-    <div style={styles.leftMenuBarContainer}>
-      <div>
-        <button
-          className={`pos-sidebar-btn${!ongoingOrderListModal && !clockinModal && !deliveryModal && !settingsPasswordModalVis ? " pos-sidebar-btn-active" : ""}`}
-          style={
-            !ongoingOrderListModal &&
-            !clockinModal &&
-            !deliveryModal &&
-            !settingsPasswordModalVis
-              ? styles.activeBtn
-              : styles.notActiveBtn
-          }
-        >
-          <FiMenu
-            size={24}
-            color={
-              !ongoingOrderListModal &&
-              !clockinModal &&
-              !deliveryModal &&
-              !settingsPasswordModalVis
-                ? "white"
-                : "black"
-            }
-          />
-        </button>
-        <button
-          className={`pos-sidebar-btn${ongoingOrderListModal ? " pos-sidebar-btn-active" : ""}`}
-          style={
-            ongoingOrderListModal ? styles.activeBtn : styles.notActiveBtn
-          }
-          onClick={() => {
-            updatePosState({ ongoingOrderListModal: true });
-          }}
-        >
-          <img
-            src={pendingOrderIcon}
-            style={
-              ongoingOrderListModal
-                ? {
-                    filter: "invert(100%)",
-                    width: 24,
-                    height: 24,
-                  }
-                : { width: 24, height: 24 }
-            }
-            key={"pendingOrderIcon"}
-            alt=""
-          />
-        </button>
-        <button
-          className={`pos-sidebar-btn${clockinModal ? " pos-sidebar-btn-active" : ""}`}
-          style={clockinModal ? styles.activeBtn : styles.notActiveBtn}
-          onClick={() => {
-            updatePosState({ clockinModal: true });
-          }}
-        >
-          <img
-            src={clockInIcon}
-            style={
-              clockinModal
-                ? {
-                    filter: "invert(100%)",
-                    width: 24,
-                    height: 24,
-                  }
-                : { width: 24, height: 24 }
-            }
-            key={"clockInIcon"}
-            alt=""
-          />
-        </button>
-        <button
-          className={`pos-sidebar-btn${deliveryModal ? " pos-sidebar-btn-active" : ""}`}
-          style={deliveryModal ? styles.activeBtn : styles.notActiveBtn}
-          onClick={() => {
-            updatePosState({ deliveryModal: true });
-          }}
-        >
-          <img
-            src={phoneOrderIcon}
-            style={
-              deliveryModal
-                ? {
-                    filter: "invert(100%)",
-                    width: 24,
-                    height: 24,
-                  }
-                : { width: 24, height: 24 }
-            }
-            key={"phoneOrderIcon"}
-            alt=""
-          />
-        </button>
-        <button
-          className={`pos-sidebar-btn${discountModal ? " pos-sidebar-btn-active" : ""}`}
-          style={discountModal ? styles.activeBtn : styles.notActiveBtn}
-          onClick={() => {
-            updatePosState({ discountModal: true });
-          }}
-        >
-          <img
-            src={percentIcon}
-            style={
-              discountModal
-                ? {
-                    filter: "invert(100%)",
-                    width: 22,
-                    height: 22,
-                  }
-                : { width: 22, height: 22 }
-            }
-            key={"percentIcon"}
-            alt=""
-          />
-        </button>
-        <button
-          className={`pos-sidebar-btn${customCashModal ? " pos-sidebar-btn-active" : ""}`}
-          style={customCashModal ? styles.activeBtn : styles.notActiveBtn}
-          onClick={() => {
-            updatePosState({ customCashModal: true });
-          }}
-        >
-          <img
-            src={dollarSignIcon}
-            style={
-              customCashModal
-                ? {
-                    filter: "invert(100%)",
-                    width: 24,
-                    height: 24,
-                  }
-                : { width: 24, height: 24 }
-            }
-            key={"dollarSignIcon"}
-            alt=""
-          />
-        </button>
+    <div style={styles.container}>
+      <div style={styles.topSection}>
+        <div style={styles.logoCircle}>
+          <span style={styles.logoText}>
+            {storeDetails?.name ? storeDetails.name.charAt(0).toUpperCase() : "D"}
+          </span>
+        </div>
+        {menuItems.map((item) => {
+          const isActive = activeKey === item.key;
+          return (
+            <button
+              key={item.key}
+              className="pos-sidebar-btn"
+              style={styles.menuBtn}
+              onClick={() => handleClick(item.key)}
+            >
+              <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    ...styles.iconCircle,
+                    ...(isActive
+                      ? { backgroundColor: "#1e293b", color: "#fff" }
+                      : { backgroundColor: "transparent", color: "#64748b" }),
+                  }}
+                >
+                  <item.Icon size={18} color={isActive ? "#fff" : "#64748b"} />
+                </div>
+                {item.key === "orders" && pendingCount > 0 && (
+                  <div style={styles.badge}>
+                    <span style={styles.badgeText}>
+                      {pendingCount > 9 ? "9+" : pendingCount}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <span
+                style={{
+                  ...styles.menuLabel,
+                  ...(isActive ? { color: "#1e293b", fontWeight: "600" } : {}),
+                }}
+              >
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
-      <div style={{ marginBottom: 15 }}>
+      <div style={styles.bottomSection}>
         <button
-          className={`pos-sidebar-btn${settingsPasswordModalVis ? " pos-sidebar-btn-active" : ""}`}
-          style={
-            settingsPasswordModalVis ? styles.activeBtn : styles.notActiveBtn
-          }
+          className="pos-sidebar-btn"
+          style={styles.menuBtn}
           onClick={() => {
             if (storeDetails.settingsPassword?.length > 0) {
               updatePosState({ settingsPasswordModalVis: true });
             } else {
               settingsAuthState.set(true);
               history.push("/authed/dashboard");
-              localStorage.setItem("isAuthedBackend", 'true');
+              localStorage.setItem("isAuthedBackend", "true");
             }
           }}
         >
-          <img
-            src={settingsIcon}
-            style={
-              settingsPasswordModalVis
-                ? {
-                    filter: "invert(100%)",
-                    width: 24,
-                    height: 24,
-                  }
-                : { width: 24, height: 24 }
-            }
-            key={"settingsIcon"}
-            alt=""
-          />
+          <div
+            style={{
+              ...styles.iconCircle,
+              ...(settingsPasswordModalVis
+                ? { backgroundColor: "#1e293b", color: "#fff" }
+                : { backgroundColor: "transparent", color: "#64748b" }),
+            }}
+          >
+            <FiSettings size={18} color={settingsPasswordModalVis ? "#fff" : "#64748b"} />
+          </div>
+          <span
+            style={{
+              ...styles.menuLabel,
+              ...(settingsPasswordModalVis ? { color: "#1e293b", fontWeight: "600" } : {}),
+            }}
+          >
+            Settings
+          </span>
         </button>
       </div>
     </div>
@@ -200,50 +166,88 @@ const LeftMenuBar = () => {
 export default LeftMenuBar;
 
 const styles: Record<string, React.CSSProperties> = {
-  leftMenuBarContainer: {
-    width: 64,
+  container: {
+    width: 80,
     flexShrink: 0,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "space-between",
     borderRight: "1px solid #e8eaed",
-    boxShadow: "1px 0 4px rgba(0,0,0,0.04)",
     alignSelf: "stretch",
     display: "flex",
     flexDirection: "column",
+    paddingTop: 16,
+    paddingBottom: 16,
   },
-  activeBtn: {
-    width: 42,
-    height: 42,
-    backgroundColor: "#1e293b",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-    border: "none",
-    cursor: "pointer",
+  topSection: {
     display: "flex",
-  },
-  notActiveBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    justifyContent: "center",
+    flexDirection: "column",
     alignItems: "center",
-    marginTop: 20,
+    gap: 4,
+  },
+  bottomSection: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  logoCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#1e293b",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  logoText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  menuBtn: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 3,
+    padding: "6px 4px",
     background: "none",
     border: "none",
     cursor: "pointer",
+    width: "100%",
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  menuIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 40,
+  menuLabel: {
+    fontSize: 10,
+    color: "#64748b",
+    fontWeight: "500",
+    lineHeight: "1.2",
   },
-  icon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 40,
-    marginTop: 30,
-    marginBottom: 30,
+  badge: {
+    position: "absolute" as const,
+    top: -4,
+    right: -4,
+    backgroundColor: "#ef4444",
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "0 4px",
+    boxSizing: "border-box" as const,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+    lineHeight: "1",
   },
 };

@@ -28,7 +28,7 @@ import CustomCashModal from "shared/components/modals/CustomCashModal";
 import AuthModal from "shared/components/modals/AuthModal";
 import ProductBuilderModal from "./components/ProductBuilder/ProductBuilderModal";
 import CartMobile from "./components/CartMobile";
-import { FiLogOut, FiShoppingCart, FiMenu, FiX } from "react-icons/fi";
+import { FiLogOut, FiShoppingCart, FiMenu, FiX, FiSearch } from "react-icons/fi";
 import useWindowSize from "shared/hooks/useWindowSize";
 const CategorySection = React.lazy(
   () => import("./components/Products/CategorySection")
@@ -44,6 +44,8 @@ function PosScreen() {
   const storeDetails = storeDetailsState.use();
   const [cartOpen, setcartOpen] = useState(false);
   const [mobileMenuOpen, setmobileMenuOpen] = useState(false);
+  const [searchQuery, setsearchQuery] = useState("");
+  const [currentTime, setcurrentTime] = useState(new Date());
   const history = useHistory();
 
   const {
@@ -57,9 +59,9 @@ function PosScreen() {
   if (!storeDetails) return null;
 
   useEffect(() => {
-    if (catalog.categories.length > 0) {
-      updatePosState({ section: catalog.categories[0] });
-    }
+    updatePosState({ section: "__all__" });
+    const timer = setInterval(() => setcurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -98,10 +100,13 @@ function PosScreen() {
   }, [cart, deliveryChecked, discountAmount]);
 
   useEffect(() => {
+    const query = searchQuery.toLowerCase().trim();
     catalog.products.map((product) => {
       const element = document.getElementById(product.id);
       if (!element) return;
-      if (product.category === section) {
+      const matchesCategory = section === "__all__" || product.category === section;
+      const matchesSearch = !query || product.name.toLowerCase().includes(query);
+      if (matchesCategory && matchesSearch) {
         element.style.visibility = "visible";
         element.style.position = "relative";
         element.style.height = "auto";
@@ -116,7 +121,7 @@ function PosScreen() {
         element.style.pointerEvents = "none";
       }
     });
-  }, [section, catalog]);
+  }, [section, catalog, searchQuery]);
 
   return (
     <div style={styles.container}>
@@ -127,59 +132,49 @@ function PosScreen() {
           ...(width < 1000 ? { width: "100%" } : { flex: 1 }),
         }}
       >
-        {width < 1250 && (
-          <div
-            style={{
-              flexDirection: "row",
-              width: "88%",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-              marginTop: 10,
-              display: "flex",
-            }}
-          >
+        {/* Top header bar */}
+        <div style={styles.topBar}>
+          {width < 1250 && (
             <button
               onClick={() => setmobileMenuOpen(true)}
-              style={{
-                backgroundColor: "#1D294E",
-                borderRadius: 10,
-                justifyContent: "center",
-                alignItems: "center",
-                width: 34,
-                height: 34,
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-              }}
+              style={styles.mobileMenuBtn}
             >
-              <FiMenu size={20} color="white" />
+              <FiMenu size={18} color="white" />
             </button>
-            {width < 1000 && (
-              <button
-                onClick={() => setcartOpen(true)}
-                style={{
-                  backgroundColor: "#1D294E",
-                  borderRadius: 10,
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  width: 58,
-                  height: 34,
-                  flexDirection: "row",
-                  padding: 5,
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                }}
-              >
-                <FiShoppingCart size={20} color="white" />
-                <span style={{ color: "white", fontSize: 20 }}>
-                  {cart.length}
-                </span>
-              </button>
-            )}
+          )}
+          <div style={styles.searchContainer}>
+            <FiSearch size={16} color="#94a3b8" />
+            <input
+              type="text"
+              placeholder="Search menu..."
+              value={searchQuery}
+              onChange={(e) => setsearchQuery(e.target.value)}
+              style={styles.searchInput}
+            />
           </div>
-        )}
+          {width > 600 && (
+            <div style={styles.storeInfoBadge}>
+              <span style={styles.storeNameTxt}>{storeDetails.name || "Store"}</span>
+              <span style={styles.storeTimeTxt}>
+                {currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+              </span>
+              <span style={styles.storeDateTxt}>
+                {currentTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+              </span>
+            </div>
+          )}
+          {width < 1000 && (
+            <button
+              onClick={() => setcartOpen(true)}
+              style={styles.mobileCartBtn}
+            >
+              <FiShoppingCart size={16} color="white" />
+              <span style={{ color: "white", fontSize: 13, fontWeight: "600" }}>
+                {cart.length}
+              </span>
+            </button>
+          )}
+        </div>
         {catalog.products.length > 0 && (
           <>
             <CategorySection catalog={catalog} section={section} />
@@ -321,7 +316,7 @@ function PosScreen() {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     flex: 1,
-    backgroundColor: "rgba(238,242,255,1)",
+    backgroundColor: "#f8f9fc",
     flexDirection: "row",
     alignItems: "center",
     height: "100%",
@@ -330,24 +325,89 @@ const styles: Record<string, React.CSSProperties> = {
   },
   menuContainer: {
     alignSelf: "stretch",
-    justifyContent: "space-around",
+    justifyContent: "flex-start",
     alignItems: "center",
     display: "flex",
     flexDirection: "column",
   },
-  bannerContainer: {
-    width: "93%",
-    height: 150,
-    backgroundColor: "rgba(29,41,78,1)",
-    borderRadius: 10,
-    flexDirection: "row",
-    justifyContent: "flex-start",
+  topBar: {
+    width: "95%",
     display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingTop: 14,
+    paddingBottom: 4,
   },
-  logo: {
-    height: 75,
-    width: 250,
-    margin: 10,
+  searchContainer: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: "10px 14px",
+    border: "1px solid #e2e8f0",
+  },
+  searchInput: {
+    border: "none",
+    outline: "none",
+    flex: 1,
+    fontSize: 14,
+    color: "#1a1a1a",
+    backgroundColor: "transparent",
+    fontFamily: "inherit",
+  },
+  mobileMenuBtn: {
+    backgroundColor: "#1e293b",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 38,
+    height: 38,
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    flexShrink: 0,
+  },
+  mobileCartBtn: {
+    backgroundColor: "#1e293b",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
+    width: 50,
+    height: 38,
+    flexDirection: "row",
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    flexShrink: 0,
+  },
+  storeInfoBadge: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    flexShrink: 0,
+    backgroundColor: "#1e293b",
+    borderRadius: 10,
+    padding: "8px 16px",
+    minWidth: 100,
+  },
+  storeNameTxt: {
+    fontWeight: "700",
+    color: "#fff",
+    fontSize: 13,
+  },
+  storeTimeTxt: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  storeDateTxt: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 10,
   },
 };
 

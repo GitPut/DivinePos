@@ -1,5 +1,4 @@
 import React from "react";
-import CategoryButton from "../Cart/CategoryButton";
 import { updatePosState } from "store/posState";
 import { UserStoreStateProps } from "types";
 
@@ -10,33 +9,31 @@ interface CategorySectionProps {
 
 const CategorySection = ({ catalog, section }: CategorySectionProps) => {
   return (
-    <div style={styles.categoryContainer}>
-      <span style={styles.lblTxt}>Menu Category</span>
-      <div style={styles.scrollArea}>
-        <div
-          style={{ overflow: "auto", ...styles.scrollArea_contentContainerStyle }}
+    <div style={styles.container}>
+      <div style={styles.tabsRow}>
+        <button
+          className="pos-category-pill"
+          style={{
+            ...styles.tab,
+            ...(section === "__all__" ? styles.tabActive : styles.tabInactive),
+          }}
+          onClick={() => updatePosState({ section: "__all__" })}
         >
-          {catalog.categories?.map((category) => {
-            return (
-              <CategoryButton
-                key={category}
-                category={category}
-                onPress={() => {
-                  updatePosState({ section: category });
-                }}
-                isSelected={section === category}
-                style={styles.activeCategoryBtn}
-                imageUrl={
-                  catalog.products[
-                    catalog.products.findIndex(
-                      (x) => x.category === category && x.hasImage
-                    )
-                  ]?.imageUrl ?? null
-                }
-              />
-            );
-          })}
-        </div>
+          All
+        </button>
+        {catalog.categories?.map((category) => (
+          <button
+            key={category}
+            className="pos-category-pill"
+            style={{
+              ...styles.tab,
+              ...(section === category ? styles.tabActive : styles.tabInactive),
+            }}
+            onClick={() => updatePosState({ section: category })}
+          >
+            {category}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -45,41 +42,36 @@ const CategorySection = ({ catalog, section }: CategorySectionProps) => {
 export default CategorySection;
 
 const styles: Record<string, React.CSSProperties> = {
-  categoryContainer: {
-    width: "93%",
-    justifyContent: "flex-start",
-    display: "flex",
-    flexDirection: "column",
-    paddingTop: 16,
+  container: {
+    width: "95%",
+    paddingTop: 8,
     paddingBottom: 8,
   },
-  lblTxt: {
-    fontWeight: "600",
-    color: "#888",
-    fontSize: 12,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.8,
-    marginBottom: 10,
-    display: "inline-block",
-  },
-  scrollArea: {
-    alignSelf: "stretch",
-  },
-  scrollArea_contentContainerStyle: {
-    width: "100%",
-    paddingBottom: 5,
+  tabsRow: {
     display: "flex",
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
+    overflow: "auto",
+    paddingBottom: 4,
   },
-  activeCategoryBtn: {
-    width: 90,
-    height: 80,
+  tab: {
+    padding: "8px 18px",
+    borderRadius: 20,
+    fontSize: 13,
+    fontWeight: "600",
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
     flexShrink: 0,
+    transition: "all 0.15s ease",
   },
-  categoryBtn: {
-    width: 90,
-    height: 80,
-    flexShrink: 0,
+  tabActive: {
+    backgroundColor: "#1e293b",
+    color: "#fff",
+    border: "1px solid #1e293b",
+  },
+  tabInactive: {
+    backgroundColor: "#fff",
+    color: "#475569",
+    border: "1px solid #e2e8f0",
   },
 };
