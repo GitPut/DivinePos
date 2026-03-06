@@ -18,12 +18,22 @@ const Header = ({ onPressLogo, isPosHeader }: HeaderProps) => {
       </button>
       <div style={styles.rightSideRow}>
         {isPosHeader && (
-          <button
-            onClick={() => history.push("/pos")}
-            style={styles.backToPOSBtn}
-          >
-            <span style={styles.pos}>POS</span>
-          </button>
+          <>
+            <button
+              onClick={() =>
+                window.open("/customer-display", "customerDisplay")
+              }
+              style={styles.customerDisplayBtn}
+            >
+              <span style={styles.customerDisplayTxt}>Customer Display</span>
+            </button>
+            <button
+              onClick={() => history.push("/pos")}
+              style={styles.backToPOSBtn}
+            >
+              <span style={styles.pos}>POS</span>
+            </button>
+          </>
         )}
         <LogoutDropdown isPosHeader={isPosHeader ? isPosHeader : false} />
       </div>
@@ -67,6 +77,24 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "space-between",
     marginRight: 50,
+  },
+  customerDisplayBtn: {
+    height: 32,
+    backgroundColor: "#475569",
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    display: "flex",
+    marginRight: 10,
+    border: "none",
+    cursor: "pointer",
+    paddingLeft: 16,
+    paddingRight: 16,
+  },
+  customerDisplayTxt: {
+    fontWeight: "600",
+    color: "rgba(255,255,255,1)",
+    fontSize: 13,
   },
   backToPOSBtn: {
     width: 140,

@@ -5,6 +5,7 @@ import {
   CustomerProp,
   Device,
   Employee,
+  Ingredient,
   MyDeviceDetailsProps,
   ProductProp,
   StoreDetailsProps,
@@ -308,4 +309,36 @@ export const setOrderDetailsState = (
     ...val,
     customer: { ...orderDetailsState.get().customer, ...val.customer },
   });
+};
+
+// ─── Ingredients ─────────────────────────────────────────────────────────────
+
+export const ingredientsState = entity<Ingredient[]>([]);
+
+export const setIngredientsState = (val: Ingredient[]): void => {
+  ingredientsState.set(val);
+};
+
+export const updateIngredientStock = (
+  ingredientId: string,
+  newQuantity: number
+): void => {
+  const current = ingredientsState.get();
+  ingredientsState.set(
+    current.map((ing) =>
+      ing.id === ingredientId ? { ...ing, stockQuantity: newQuantity } : ing
+    )
+  );
+};
+
+export const updateIngredientsBatch = (
+  updates: { ingredientId: string; newStock: number }[]
+): void => {
+  const current = ingredientsState.get();
+  ingredientsState.set(
+    current.map((ing) => {
+      const update = updates.find((u) => u.ingredientId === ing.id);
+      return update ? { ...ing, stockQuantity: update.newStock } : ing;
+    })
+  );
 };

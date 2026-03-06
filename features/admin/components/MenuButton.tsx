@@ -2,12 +2,13 @@ import React from "react";
 
 interface MenuButtonProps {
   active: boolean;
-  labelImg: string;
+  labelImg?: string;
+  labelText?: string;
   labelImgStyle?: React.CSSProperties;
   onPress: () => void;
 }
 
-function MenuButton({ active, labelImg, labelImgStyle, onPress }: MenuButtonProps) {
+function MenuButton({ active, labelImg, labelText, labelImgStyle, onPress }: MenuButtonProps) {
   return (
     <button
       style={{
@@ -20,11 +21,15 @@ function MenuButton({ active, labelImg, labelImgStyle, onPress }: MenuButtonProp
       }}
       onClick={onPress}
     >
-      <img
-        src={labelImg}
-        alt=""
-        style={{ ...styles.btnLblImg, ...labelImgStyle }}
-      />
+      {labelImg ? (
+        <img
+          src={labelImg}
+          alt=""
+          style={{ ...styles.btnLblImg, ...labelImgStyle }}
+        />
+      ) : (
+        <span style={styles.btnLblText}>{labelText}</span>
+      )}
     </button>
   );
 }
@@ -47,6 +52,12 @@ const styles: Record<string, React.CSSProperties> = {
     marginRight: 10,
     marginLeft: 10,
     objectFit: "contain",
+  },
+  btnLblText: {
+    marginLeft: 10,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#121212",
   },
   dropDownBtnChevronDown: {
     color: "rgba(128,128,128,1)",

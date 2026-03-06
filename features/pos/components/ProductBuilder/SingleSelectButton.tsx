@@ -19,15 +19,15 @@ function SingleSelectButton({
         ...styles.container,
         ...style,
         ...(isSelected
-          ? { backgroundColor: "#1a2a51" }
-          : { backgroundColor: "#EEF2FF" }),
+          ? { backgroundColor: "#1e293b", border: "1.5px solid #1e293b" }
+          : { backgroundColor: "#ffffff", border: "1.5px solid #e2e8f0" }),
       }}
       onClick={onPress}
     >
       <span
         style={{
           ...styles.lbl,
-          ...(isSelected ? { color: "white" } : { color: "#28292c" }),
+          ...(isSelected ? { color: "#ffffff" } : { color: "#1a1a1a" }),
         }}
       >
         {label}
@@ -38,15 +38,17 @@ function SingleSelectButton({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    border: "none",
     cursor: "pointer",
     display: "flex",
+    padding: "8px 16px",
+    whiteSpace: "nowrap",
   },
   lbl: {
     fontSize: 13,
+    fontWeight: "500",
   },
 };
 

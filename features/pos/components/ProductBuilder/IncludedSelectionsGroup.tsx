@@ -1,8 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import ReactDOM from "react-dom";
-import { FiChevronUp, FiChevronDown, FiMinusSquare, FiPlusSquare } from "react-icons/fi";
+import React from "react";
+import { FiMinus, FiPlus } from "react-icons/fi";
 import { MdClear } from "react-icons/md";
-import useWindowSize from "shared/hooks/useWindowSize";
 import { Option, OptionsList, ProductProp } from "types";
 
 interface IncludedSelectionsGroupProps {
@@ -20,378 +18,225 @@ interface IncludedSelectionsGroupProps {
 }
 
 function IncludedSelectionsGroup({
-  setopenDropdown,
-  openDropdown,
-  id,
   label,
   isRequired,
   myObjProfile,
   setmyObjProfile,
   index,
   e,
-  optionsSelectedLabel,
-  scrollY,
 }: IncludedSelectionsGroupProps) {
   const options = e.optionsList;
 
-  const [localMyObjProfile, setlocalMyObjProfile] =
-    useState<ProductProp>(myObjProfile);
-  const [localOptionsSelectedLabel, setlocalOptionsSelectedLabel] = useState<
-    string[] | ""
-  >("");
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownLayout, setDropdownLayout] = useState<
-    | {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-      }
-    | undefined
-  >();
-  const { width } = useWindowSize();
-
-  const getTotalSelected = (profile: ProductProp) => {
+  const getTotalSelected = () => {
     let total = 0;
-    profile.options[index].optionsList.forEach((item) => {
+    myObjProfile.options[index].optionsList.forEach((item) => {
       total += parseFloat(item.selectedTimes ?? "0");
     });
     return total;
   };
 
-  const onMinusPress = ({
-    option,
-    listIndex,
-  }: {
-    option: OptionsList;
-    listIndex: number;
-  }) => {
-    const newMyObjProfile = structuredClone(localMyObjProfile);
-    const selectedTimes = parseFloat(
-      newMyObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
+  const onMinusPress = (listIndex: number) => {
+    const currentTimes = parseFloat(
+      myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
     );
-
-    if (selectedTimes > 0) {
-      newMyObjProfile.options[index].optionsList[listIndex].selectedTimes = (
-        selectedTimes - 1
+    if (currentTimes > 0) {
+      const newProfile = structuredClone(myObjProfile);
+      newProfile.options[index].optionsList[listIndex].selectedTimes = (
+        currentTimes - 1
       ).toString();
+      setmyObjProfile(newProfile);
     }
-
-    setlocalMyObjProfile(newMyObjProfile);
   };
 
-  const onPlusPress = ({
-    option,
-    listIndex,
-  }: {
-    option: OptionsList;
-    listIndex: number;
-  }) => {
-    const newMyObjProfile = structuredClone(localMyObjProfile);
-
-    const totalSelected = getTotalSelected(newMyObjProfile);
+  const onPlusPress = (listIndex: number) => {
+    const totalSelected = getTotalSelected();
     const numOfSelectable = parseFloat(e.numOfSelectable ?? "0");
 
-    if (
-      numOfSelectable > 0 && totalSelected + 1 > numOfSelectable
-    ) {
+    if (numOfSelectable > 0 && totalSelected + 1 > numOfSelectable) {
       return;
     }
 
-    const selectedTimes = parseFloat(
-      newMyObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
+    const currentTimes = parseFloat(
+      myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
     );
-
-    newMyObjProfile.options[index].optionsList[listIndex].selectedTimes = (
-      selectedTimes + 1
+    const newProfile = structuredClone(myObjProfile);
+    newProfile.options[index].optionsList[listIndex].selectedTimes = (
+      currentTimes + 1
     ).toString();
-
-    setlocalMyObjProfile(newMyObjProfile);
+    setmyObjProfile(newProfile);
   };
 
-  const measureLayout = () => {
-    if (dropdownRef.current && typeof window !== "undefined") {
-      const boundingRect = dropdownRef.current.getBoundingClientRect();
-      setDropdownLayout({
-        x: boundingRect.left,
-        y: boundingRect.top,
-        width: boundingRect.width,
-        height: boundingRect.height,
-      });
-    }
-  };
-
-  useEffect(() => {
-    measureLayout();
-  }, [scrollY]);
-
-  useEffect(() => {
-    setlocalMyObjProfile(myObjProfile);
-  }, [myObjProfile]);
-
-  useEffect(() => {
-    const optionsSelected = localMyObjProfile.options[index].optionsList.filter(
-      (op) => parseFloat(op.selectedTimes ?? "0") > 0
-    );
-    setlocalOptionsSelectedLabel(
-      optionsSelected.length > 0
-        ? optionsSelected.map((op, idx) => {
-            if (idx > 0) return `, ${op.label} (${op.selectedTimes})`;
-            return `${op.label} (${op.selectedTimes})`;
-          })
-        : ""
-    );
-  }, [localMyObjProfile]);
-
-  const clearOptions = () => {
-    const newMyObjProfile = structuredClone(localMyObjProfile);
-    newMyObjProfile.options[index].optionsList.forEach((op) => {
+  const clearAll = () => {
+    const newProfile = structuredClone(myObjProfile);
+    newProfile.options[index].optionsList.forEach((op) => {
       op.selectedTimes = "0";
     });
-    setlocalMyObjProfile(newMyObjProfile);
+    setmyObjProfile(newProfile);
   };
 
-  const clearOptionsMain = () => {
-    const newMyObjProfile = structuredClone(localMyObjProfile);
-    newMyObjProfile.options[index].optionsList.forEach((op) => {
-      op.selectedTimes = "0";
-    });
-    setmyObjProfile(newMyObjProfile);
-  };
-
-  const portalContent = openDropdown === id ? ReactDOM.createPortal(
-    <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 9999 }}>
-      <button
-        style={{
-          width: "100%",
-          height: "100%",
-          background: "transparent",
-          border: "none",
-          cursor: "default",
-          position: "absolute",
-          top: 0,
-          left: 0,
-        }}
-        onClick={() => {
-          setopenDropdown(null);
-          setmyObjProfile(localMyObjProfile);
-        }}
-      />
-      {dropdownLayout && (
-        <div
-          style={{
-            position: "absolute",
-            top: dropdownLayout.y,
-            left: dropdownLayout.x,
-            width: dropdownLayout.width,
-          }}
-        >
-          <button
-            style={styles.dropdown}
-            onClick={() => {
-              if (openDropdown === id) {
-                setopenDropdown(null);
-                setmyObjProfile(localMyObjProfile);
-              } else {
-                setopenDropdown(id);
-              }
-            }}
-          >
-            {localOptionsSelectedLabel !== "" ? (
-              <span style={styles.placeholder}>{localOptionsSelectedLabel}</span>
-            ) : (
-              <span style={styles.placeholder}>Select {label}</span>
-            )}
-            {localOptionsSelectedLabel.length > 0 ? (
-              <button
-                style={{ marginTop: 5, marginRight: 5, background: "none", border: "none", cursor: "pointer" }}
-                onClick={(ev) => { ev.stopPropagation(); clearOptions(); }}
-              >
-                <MdClear size={24} color="red" />
-              </button>
-            ) : openDropdown === id ? (
-              <FiChevronUp size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
-            ) : (
-              <FiChevronDown size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
-            )}
-          </button>
-          {openDropdown === id && (
-            <div
-              style={{
-                width: "100%",
-                position: "absolute",
-                backgroundColor: "white",
-                bottom: options.length > 3 ? -44 * 3 : -44 * options.length,
-                height: options.length > 3 ? 44 * 3 : 44 * options.length,
-                borderRadius: 10,
-                border: "1px solid #ccc",
-                overflow: "auto",
-              }}
-            >
-              {options.map((option, listIndex) => (
-                <button
-                  key={listIndex}
-                  id={option.id}
-                  style={{
-                    width: "100%",
-                    height: 44,
-                    backgroundColor: "white",
-                    padding: 10,
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexDirection: "row",
-                    display: "flex",
-                    border: "none",
-                    borderBottomStyle: "solid" as const,
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#ccc",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => onPlusPress({ option, listIndex })}
-                >
-                  <button
-                    onClick={(ev) => { ev.stopPropagation(); onMinusPress({ option, listIndex }); }}
-                    style={{ background: "none", border: "none", cursor: "pointer" }}
-                  >
-                    <FiMinusSquare size={24} color="black" />
-                  </button>
-                  <div
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      width: "80%",
-                      display: "flex",
-                    }}
-                  >
-                    <span>{option.label}</span>
-                    <span
-                      style={{
-                        textAlign: "center",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        width: 40,
-                        border: "1px solid black",
-                        display: "inline-block",
-                      }}
-                    >
-                      {localMyObjProfile.options[index].optionsList[listIndex]
-                        .selectedTimes ?? 0 > 0
-                        ? localMyObjProfile.options[index].optionsList[listIndex]
-                            .selectedTimes
-                        : 0}
-                    </span>
-                  </div>
-                  <button
-                    onClick={(ev) => { ev.stopPropagation(); onPlusPress({ option, listIndex }); }}
-                    style={{ background: "none", border: "none", cursor: "pointer" }}
-                  >
-                    <FiPlusSquare size={24} color="black" />
-                  </button>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>,
-    document.body
-  ) : null;
+  const hasAnySelected = options.some(
+    (op) => parseFloat(op.selectedTimes ?? "0") > 0
+  );
 
   return (
-    <div
-      style={{
-        ...(width > 800 ? styles.container : styles.containerMobile),
-        ...(openDropdown === id && { zIndex: 1000 }),
-      }}
-    >
-      <span style={width > 800 ? styles.lbl : styles.lblMobile}>
-        {label} {isRequired ? "*" : ""}
-      </span>
-      <div
-        ref={dropdownRef}
-        style={width < 800 ? { width: "100%" } : { width: "70%" }}
-      >
-        <button
-          style={styles.dropdown}
-          onClick={() => {
-            if (openDropdown === id) {
-              setopenDropdown(null);
-              setmyObjProfile(localMyObjProfile);
-            } else {
-              measureLayout();
-              setopenDropdown(id);
-            }
-          }}
-        >
-          {optionsSelectedLabel !== "" ? (
-            <span style={styles.placeholder}>{optionsSelectedLabel}</span>
-          ) : (
-            <span style={styles.placeholder}>Select {label}</span>
-          )}
-          {optionsSelectedLabel.length > 0 ? (
-            <button
-              style={{ marginTop: 5, marginRight: 5, background: "none", border: "none", cursor: "pointer" }}
-              onClick={(ev) => { ev.stopPropagation(); clearOptionsMain(); }}
-            >
-              <MdClear size={24} color="red" />
-            </button>
-          ) : openDropdown === id ? (
-            <FiChevronUp size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
-          ) : (
-            <FiChevronDown size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
-          )}
-        </button>
+    <div style={styles.container}>
+      <div style={styles.headerRow}>
+        <span style={styles.lbl}>
+          {label} {isRequired ? "*" : ""}
+        </span>
+        {hasAnySelected && (
+          <button style={styles.clearBtn} onClick={clearAll}>
+            <MdClear size={16} color="#94a3b8" />
+            <span style={styles.clearText}>Clear</span>
+          </button>
+        )}
       </div>
-      {portalContent}
+      <div style={styles.grid}>
+        {options.map((option, listIndex) => {
+          const selectedTimes = parseFloat(
+            myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
+          );
+          const isSelected = selectedTimes > 0;
+
+          return (
+            <div
+              key={option.id ?? listIndex}
+              style={{
+                ...styles.gridItem,
+                ...(isSelected
+                  ? {
+                      backgroundColor: "#eef2ff",
+                      borderColor: "#1e293b",
+                    }
+                  : {}),
+              }}
+            >
+              <div style={styles.gridItemLeft}>
+                <span
+                  style={{
+                    ...styles.gridItemLabel,
+                    ...(isSelected ? { fontWeight: "600" } : {}),
+                  }}
+                >
+                  {option.label}
+                </span>
+              </div>
+              <div style={styles.qtyControls}>
+                <button
+                  style={styles.qtyBtn}
+                  onClick={() => onMinusPress(listIndex)}
+                >
+                  <FiMinus size={14} color={isSelected ? "#1e293b" : "#cbd5e1"} />
+                </button>
+                <span
+                  style={{
+                    ...styles.qtyText,
+                    ...(isSelected ? { color: "#1e293b", fontWeight: "600" } : {}),
+                  }}
+                >
+                  {selectedTimes}
+                </span>
+                <button
+                  style={styles.qtyBtn}
+                  onClick={() => onPlusPress(listIndex)}
+                >
+                  <FiPlus size={14} color="#1e293b" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
+    marginBottom: 20,
+    alignSelf: "stretch",
+  },
+  headerRow: {
+    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 20,
-    alignSelf: "stretch",
-    display: "flex",
-  },
-  containerMobile: {
-    marginBottom: 20,
-    alignSelf: "stretch",
-  },
-  lbl: {
-    display: "inline-block",
-    fontWeight: "700",
-    color: "#3e3f41",
-    width: "25%",
-  },
-  lblMobile: {
-    display: "inline-block",
-    fontWeight: "700",
-    color: "#3e3f41",
-    width: "100%",
+    alignItems: "center",
     marginBottom: 10,
   },
-  dropdown: {
-    width: "100%",
-    height: 44,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    border: "2px solid #6987d3",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  lbl: {
+    fontWeight: "700",
+    color: "#1a1a1a",
+    fontSize: 14,
+  },
+  clearBtn: {
     display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    background: "none",
+    border: "none",
     cursor: "pointer",
     padding: 0,
   },
-  placeholder: {
-    fontWeight: "500",
-    color: "#7f838c",
+  clearText: {
     fontSize: 12,
-    margin: 10,
+    color: "#94a3b8",
+    fontWeight: "500",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+  },
+  gridItem: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#ffffff",
+    minHeight: 40,
+  },
+  gridItemLeft: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  gridItemLabel: {
+    fontSize: 13,
+    color: "#1a1a1a",
+    fontWeight: "400",
+  },
+  qtyControls: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 8,
+  },
+  qtyBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#ffffff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  },
+  qtyText: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    minWidth: 16,
+    textAlign: "center",
   },
 };
 

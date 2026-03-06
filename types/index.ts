@@ -44,6 +44,11 @@ export type ProductProp = {
   dontDisplayOnOnlineStore?: boolean;
   isTemplate?: boolean;
   index?: number;
+  trackStock?: boolean;
+  stockQuantity?: number;
+  lowStockThreshold?: number;
+  costPrice?: string;
+  recipe?: RecipeItem[];
 };
 
 export type Option = {
@@ -290,4 +295,61 @@ export type StatsDataProps = {
       averageWaitTime?: number;
     };
   };
+};
+
+export type StockHistoryEntry = {
+  id: string;
+  type: "sale" | "restock" | "adjustment" | "correction";
+  quantityChange: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  note?: string;
+  transactionId?: string;
+  createdAt: Timestamp;
+  createdBy?: string;
+};
+
+// ─── Ingredients ──────────────────────────────────────────────────────────────
+
+export type IngredientUnit =
+  | "lbs"
+  | "oz"
+  | "kg"
+  | "g"
+  | "liters"
+  | "ml"
+  | "gallons"
+  | "count"
+  | "dozen"
+  | "cups"
+  | "tbsp"
+  | "tsp";
+
+export type Ingredient = {
+  id: string;
+  name: string;
+  unit: IngredientUnit;
+  stockQuantity: number;
+  lowStockThreshold: number;
+  costPerUnit: string;
+  category?: string | null;
+};
+
+export type RecipeItem = {
+  ingredientId: string;
+  ingredientName: string;
+  quantity: number;
+  unit: IngredientUnit;
+};
+
+export type IngredientStockHistoryEntry = {
+  id: string;
+  type: "sale" | "restock" | "adjustment" | "correction";
+  quantityChange: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  note?: string;
+  transactionId?: string;
+  createdAt: Timestamp;
+  createdBy?: string;
 };

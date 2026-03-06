@@ -185,189 +185,142 @@ function ProductBuilderModal() {
     }
   };
 
+  // Extra pricing summary for included selections
+  const getIncludedExtrasSummary = () => {
+    const extras: string[] = [];
+    myObjProfile.options.forEach((op) => {
+      if (op.optionType === "Included Selections") {
+        const includedCount = parseFloat(op.includedSelections ?? "0");
+        const extraPrice = parseFloat(op.extraSelectionPrice ?? "0");
+        let totalSelected = 0;
+        op.optionsList.forEach((item) => {
+          totalSelected += parseFloat(item.selectedTimes ?? "0");
+        });
+        const extraSelections = Math.max(0, totalSelected - includedCount);
+        if (extraSelections > 0) {
+          extras.push(
+            `Includes ${extraSelections} extra ${op.label?.toLowerCase() ?? "selections"} (+$${(extraSelections * extraPrice).toFixed(2)})`
+          );
+        }
+      }
+    });
+    return extras;
+  };
+
+  const isMobile = width < 800;
+  const extrasSummary = getIncludedExtrasSummary();
+
   return (
     <div style={styles.container}>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          width: "100%",
-          height: "100%",
-          overflowY: "auto",
-          overflowX: "hidden",
-        }}
-      >
-        <div
-          style={{
-            width: width > 800 ? "95%" : "100%",
-            justifyContent: width > 800 ? "center" : "space-between",
-            display: "flex",
-            flexDirection: width > 800 ? "row" : "column",
-            alignItems: "center",
-            margin: "auto",
-            height: "96%",
-          }}
-        >
-          <div
-            style={
-              width > 800
-                ? styles.productBuilderGroup
-                : styles.productBuilderGroupMobile
-            }
-          >
-            <div
-              style={{
-                ...styles.goBackRow,
-                ...(myObj.description && width > 800
-                  ? { marginBottom: 35 }
-                  : !myObj.description && width > 800 ? { marginBottom: 50 } : {}),
-              }}
-            >
-              <GoBackButton onPress={goBack} />
-            </div>
-            <div
-              style={{
-                ...(width > 800 ? styles.groupsContainer : {}),
-                ...(myObj.description?.length > 0 ? { marginTop: 50 } : {}),
-              }}
-            >
-              <div style={width > 800 ? styles.leftSideGroup : {}}>
-                <div
-                  style={{
-                    ...styles.itemInfoContainer,
-                    ...(width > 800 ? { height: "60%" } : {}),
-                  }}
-                >
-                  {imageUrl && (
-                    <ProductImage
-                      source={imageUrl}
-                      style={{
-                        ...styles.itemImg,
-                        ...(myObj.description?.length > 0 && {
-                          width: 300,
-                          height: 150,
-                        }),
-                        ...(width < 800 && { width: 300, height: 200 }),
-                      }}
-                      alt={myObj.name}
-                    />
-                  )}
-                  <div style={styles.itemInfoTxtGroup}>
-                    <div style={styles.topTxtGroup}>
-                      <span style={styles.productName}>{myObj.name}</span>
-                      <>
-                        {myObj.calorieDetails && (
-                          <span style={styles.calorieDetails}>
-                            {myObj.calorieDetails}
-                          </span>
-                        )}
-                      </>
-                    </div>
-                    <>
-                      {myObj.description && (
-                        <span style={styles.description}>
-                          Description: {myObj.description}
-                        </span>
-                      )}
-                    </>
-                  </div>
-                </div>
-                {width > 800 && (
-                  <div
-                    style={{
-                      ...styles.writeNoteContainer,
-                      ...(width < 800 ? { marginTop: 15, height: "25%" } : {}),
-                    }}
-                  >
-                    <span style={styles.notesLbl}>Notes:</span>
-                    <textarea
-                      style={{
-                        ...styles.noteInput,
-                        border: "none",
-                        resize: "none",
-                        fontFamily: "inherit",
-                      }}
-                      placeholder="Write any extra info here..."
-                      rows={4}
-                      onChange={(e) => setextraInput(e.target.value)}
-                      value={extraInput}
-                    />
-                  </div>
-                )}
-              </div>
-              <div
-                style={
-                  width > 800
-                    ? styles.rightSideGroup
-                    : styles.rightSideGroupMobile
-                }
-              >
-                <div
-                  style={{
-                    overflow: "auto",
-                    height: "90%",
-                    width: "100%",
-                    padding: 20,
-                    paddingLeft: 30,
-                    paddingRight: 30,
-                    boxSizing: "border-box",
-                  }}
-                  onScroll={(e) => setscrollY((e.target as HTMLDivElement).scrollTop)}
-                >
-                  {myObjProfile.options.map((option, index) => (
-                    <OptionDisplay
-                      key={index}
-                      e={option}
-                      index={index}
-                      myObjProfile={myObjProfile}
-                      setMyObjProfile={setmyObjProfile}
-                      setopenOptions={setopenOptions}
-                      openOptions={openOptions}
-                      isOnlineOrder={isOnlineOrder}
-                      scrollY={scrollY}
-                    />
-                  ))}
-                </div>
-                <div style={styles.totalLblRow}>
-                  <span style={styles.totalLbl}>
-                    Total: ${total.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {width < 800 && (
-              <div
-                style={{
-                  ...styles.writeNoteContainer,
-                  ...(width < 800 ? { marginTop: 15, height: 120 } : {}),
-                }}
-              >
-                <span style={styles.notesLbl}>Notes:</span>
-                <textarea
-                  style={{
-                    ...styles.noteInput,
-                    border: "none",
-                    resize: "none",
-                    fontFamily: "inherit",
-                  }}
-                  placeholder="Write any extra info here..."
-                  rows={4}
-                  onChange={(e) => setextraInput(e.target.value)}
-                  value={extraInput}
-                />
-              </div>
-            )}
-            <div style={styles.addToCartRow}>
-              <AddToCartButton
-                style={styles.addToCartBtn}
-                title={isEditing ? "Save" : "Add To Cart"}
-                onPress={AddToCart}
+      {/* Top bar */}
+      <div style={styles.topBar}>
+        <GoBackButton onPress={goBack} />
+      </div>
+
+      {/* Content */}
+      <div style={{
+        ...styles.contentRow,
+        flexDirection: isMobile ? "column" : "row",
+      }}>
+        {/* Left column - product info */}
+        <div style={{
+          ...styles.leftColumn,
+          ...(isMobile ? { width: "100%", marginBottom: 20 } : {}),
+        }}>
+          {imageUrl && (
+            <ProductImage
+              source={imageUrl}
+              style={styles.productImg}
+              alt={myObj.name}
+            />
+          )}
+          <span style={styles.productName}>{myObj.name}</span>
+          {myObj.calorieDetails && (
+            <span style={styles.calorieDetails}>{myObj.calorieDetails}</span>
+          )}
+          {myObj.description && (
+            <span style={styles.description}>{myObj.description}</span>
+          )}
+          <span style={styles.price}>${parseFloat(myObj.price).toFixed(2)}</span>
+
+          {!isMobile && (
+            <>
+              <div style={styles.spacer} />
+              <span style={styles.sectionLabel}>Special Instructions</span>
+              <textarea
+                style={styles.notesInput}
+                placeholder="Add any special requests..."
+                rows={3}
+                onChange={(e) => setextraInput(e.target.value)}
+                value={extraInput}
               />
-            </div>
+
+              <div style={styles.spacer} />
+              <div style={styles.itemTotalCard}>
+                <span style={styles.itemTotalLabel}>Item Total</span>
+                <span style={styles.itemTotalPrice}>${total.toFixed(2)}</span>
+                {extrasSummary.map((line, i) => (
+                  <span key={i} style={styles.itemTotalExtras}>{line}</span>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right column - options */}
+        <div style={{
+          ...styles.rightColumn,
+          ...(isMobile ? { width: "100%" } : {}),
+        }}>
+          <div
+            style={styles.optionsScrollArea}
+            onScroll={(e) => setscrollY((e.target as HTMLDivElement).scrollTop)}
+          >
+            {myObjProfile.options.map((option, index) => (
+              <OptionDisplay
+                key={index}
+                e={option}
+                index={index}
+                myObjProfile={myObjProfile}
+                setMyObjProfile={setmyObjProfile}
+                setopenOptions={setopenOptions}
+                openOptions={openOptions}
+                isOnlineOrder={isOnlineOrder}
+                scrollY={scrollY}
+              />
+            ))}
           </div>
         </div>
+      </div>
+
+      {/* Mobile notes + total */}
+      {isMobile && (
+        <div style={{ padding: "0 20px", width: "100%", boxSizing: "border-box" }}>
+          <span style={styles.sectionLabel}>Special Instructions</span>
+          <textarea
+            style={styles.notesInput}
+            placeholder="Add any special requests..."
+            rows={3}
+            onChange={(e) => setextraInput(e.target.value)}
+            value={extraInput}
+          />
+          <div style={{ ...styles.itemTotalCard, marginTop: 16 }}>
+            <span style={styles.itemTotalLabel}>Item Total</span>
+            <span style={styles.itemTotalPrice}>${total.toFixed(2)}</span>
+            {extrasSummary.map((line, i) => (
+              <span key={i} style={styles.itemTotalExtras}>{line}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom button */}
+      <div style={styles.bottomBar}>
+        <AddToCartButton
+          title={isEditing ? "Save" : "Add to Cart"}
+          total={total}
+          onPress={AddToCart}
+        />
       </div>
     </div>
   );
@@ -375,176 +328,130 @@ function ProductBuilderModal() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#edf2ff",
     width: "100%",
     height: "100%",
-    display: "flex",
-  },
-  productBuilderGroup: {
-    width: "90%",
-    height: "85%",
-    justifyContent: "space-between",
+    backgroundColor: "#f8f9fc",
     display: "flex",
     flexDirection: "column",
+    overflow: "hidden",
   },
-  productBuilderGroupMobile: {
-    width: "90%",
-    justifyContent: "space-between",
-    paddingTop: 10,
-    paddingBottom: 40,
+  topBar: {
+    padding: "16px 24px",
+    flexShrink: 0,
+  },
+  contentRow: {
+    flex: 1,
+    display: "flex",
+    overflow: "hidden",
+    padding: "0 24px",
+    gap: 24,
+  },
+  leftColumn: {
+    width: 240,
+    flexShrink: 0,
     display: "flex",
     flexDirection: "column",
+    alignItems: "flex-start",
+    overflowY: "auto",
+    paddingBottom: 20,
   },
-  goBackRow: {
-    alignSelf: "stretch",
-  },
-  goBackBtn: {
-    height: 32,
-    width: 126,
-  },
-  groupsContainer: {
-    height: "70%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignSelf: "stretch",
-    display: "flex",
-  },
-  leftSideGroup: {
-    width: "35%",
-    height: "100%",
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  itemInfoContainer: {
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,1)",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-    display: "flex",
-    flexDirection: "column",
-  },
-  itemImg: {
-    height: 180,
-    width: 200,
+  productImg: {
+    width: 140,
+    height: 140,
     objectFit: "contain",
-  },
-  itemInfoTxtGroup: {
-    justifyContent: "space-between",
-    alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
-  },
-  topTxtGroup: {
-    marginTop: 7,
-    marginBottom: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    display: "flex",
-    flexDirection: "column",
+    borderRadius: 12,
+    alignSelf: "center",
+    marginBottom: 16,
   },
   productName: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 30,
-    paddingLeft: "3%",
-    paddingRight: "3%",
-    textAlign: "center",
-    display: "inline-block",
+    color: "#1a1a1a",
+    fontSize: 22,
+    marginBottom: 4,
   },
   calorieDetails: {
-    color: "rgba(131,126,126,1)",
-    marginBottom: 25,
-    display: "inline-block",
+    color: "#94a3b8",
+    fontSize: 13,
+    marginBottom: 4,
   },
   description: {
-    color: "rgba(131,126,126,1)",
-    width: "90%",
-    textAlign: "left",
-    paddingBottom: 50,
-    display: "inline-block",
+    color: "#64748b",
+    fontSize: 13,
+    lineHeight: "1.4",
+    marginBottom: 8,
   },
-  writeNoteContainer: {
-    height: "35%",
-    justifyContent: "space-between",
-    alignSelf: "stretch",
-    display: "flex",
-    flexDirection: "column",
-  },
-  notesLbl: {
+  price: {
     fontWeight: "700",
-    color: "#121212",
-    marginBottom: 10,
-    display: "inline-block",
+    color: "#1e293b",
+    fontSize: 18,
+    marginBottom: 8,
   },
-  noteInput: {
+  spacer: {
+    height: 16,
     width: "100%",
-    height: "90%",
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 20,
-    padding: 10,
+  },
+  sectionLabel: {
+    fontWeight: "600",
+    color: "#1a1a1a",
+    fontSize: 14,
+    marginBottom: 8,
+    display: "inline-block",
+  },
+  notesInput: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    border: "1px solid #e2e8f0",
+    padding: 12,
     boxSizing: "border-box",
+    resize: "none",
+    fontFamily: "inherit",
+    fontSize: 13,
+    color: "#1a1a1a",
+    outline: "none",
   },
-  noteInputTxt: {
-    color: "#90949a",
-  },
-  rightSideGroup: {
-    width: "60%",
-    height: "100%",
-    justifyContent: "space-between",
-    backgroundColor: "white",
-    borderRadius: 10,
-    zIndex: 999,
+  itemTotalCard: {
+    width: "100%",
+    backgroundColor: "#1e293b",
+    borderRadius: 14,
+    padding: 16,
+    boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
   },
-  rightSideGroupMobile: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    zIndex: 999,
-    marginTop: 20,
-    display: "flex",
-    flexDirection: "column",
+  itemTotalLabel: {
+    color: "#94a3b8",
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 4,
   },
-  oneTimeSelectableOptionGroup: {
-    marginBottom: 20,
-    alignSelf: "stretch",
-  },
-  dropdownSelectableOption: {
-    height: 44,
-    marginBottom: 20,
-    alignSelf: "stretch",
-  },
-  totalLblRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-    paddingLeft: 30,
-    paddingRight: 30,
-    paddingBottom: 20,
-    paddingTop: 20,
-    display: "flex",
-  },
-  totalLbl: {
+  itemTotalPrice: {
+    color: "#ffffff",
+    fontSize: 28,
     fontWeight: "700",
-    color: "#00c937",
-    fontSize: 22,
-    marginTop: 0,
   },
-  addToCartRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-    marginTop: 25,
-    height: 41,
+  itemTotalExtras: {
+    color: "#94a3b8",
+    fontSize: 11,
+    marginTop: 6,
+  },
+  rightColumn: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
     display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    minHeight: 0,
   },
-  addToCartBtn: {
-    height: 41,
-    width: 147,
+  optionsScrollArea: {
+    flex: 1,
+    overflow: "auto",
+    padding: 24,
+  },
+  bottomBar: {
+    padding: "16px 24px",
+    flexShrink: 0,
   },
 };
 

@@ -4,20 +4,25 @@ interface AddToCartButtonProps {
   style?: React.CSSProperties;
   onPress: () => void;
   title: string;
+  total?: number;
 }
 
-function AddToCartButton({ style, onPress, title }: AddToCartButtonProps) {
+function AddToCartButton({ style, onPress, title, total }: AddToCartButtonProps) {
   return (
     <button style={{ ...styles.container, ...style }} onClick={onPress}>
-      <span style={styles.lbl}>{title}</span>
+      <span style={styles.lbl}>
+        {total !== undefined ? `${title} — $${total.toFixed(2)}` : title}
+      </span>
     </button>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: "#1a2a51",
-    borderRadius: 20,
+    width: "100%",
+    height: 50,
+    backgroundColor: "#1e293b",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     border: "none",
@@ -26,8 +31,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   lbl: {
     fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 17,
+    color: "#ffffff",
+    fontSize: 16,
+    letterSpacing: 0.3,
   },
 };
 

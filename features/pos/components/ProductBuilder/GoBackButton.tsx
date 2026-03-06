@@ -1,5 +1,5 @@
 import React from "react";
-import { FiChevronLeft } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 
 interface GoBackButtonProps {
   onPress: () => void;
@@ -8,8 +8,8 @@ interface GoBackButtonProps {
 function GoBackButton({ onPress }: GoBackButtonProps) {
   return (
     <button style={styles.container} onClick={onPress}>
-      <FiChevronLeft size={40} color="#070707" />
-      <span style={styles.lbl}>Go Back</span>
+      <FiArrowLeft size={18} color="#1e293b" />
+      <span style={styles.lbl}>Back to Menu</span>
     </button>
   );
 }
@@ -18,9 +18,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    height: 32,
-    width: 120,
+    gap: 6,
     display: "flex",
     background: "none",
     border: "none",
@@ -28,9 +26,9 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 0,
   },
   lbl: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 18,
+    fontWeight: "600",
+    color: "#1e293b",
+    fontSize: 15,
   },
 };
 

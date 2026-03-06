@@ -6,6 +6,7 @@ import {
   setDeviceTreeState,
   setDeviceState,
   setEmployeesState,
+  setIngredientsState,
   setOnlineStoreState,
   setStoreDetailsState,
   setTrialDetailsState,
@@ -24,7 +25,7 @@ import tz from "moment-timezone";
 import qz from "qz-tray";
 import { BrowserRouter as Router, Route } from "react-router-dom";
 import { useAlert } from "react-alert";
-import { CustomerProp, Device, Employee, ProductProp, TransListStateItem } from "types";
+import { CustomerProp, Device, Employee, Ingredient, ProductProp, TransListStateItem } from "types";
 import useInterval from "shared/hooks/useInterval";
 import { prefetchImage } from "shared/components/ui/ProductImage";
 import { parseDate } from "utils/dateFormatting";
@@ -226,7 +227,7 @@ const AppRouter = () => {
         import("features/pos/PosScreen");
 
         // Fetch user doc AND all subcollections in parallel (1 round-trip)
-        const [doc, productDocs, employeeDocs, subDocs, customerDocs, deviceDocs, wooDocs] = await Promise.all([
+        const [doc, productDocs, employeeDocs, subDocs, customerDocs, deviceDocs, wooDocs, ingredientDocs] = await Promise.all([
           userRef.get(),
           userRef.collection("products").get().catch(() => null),
           userRef.collection("employees").get().catch(() => null),
@@ -234,6 +235,7 @@ const AppRouter = () => {
           userRef.collection("customers").get().catch(() => null),
           userRef.collection("devices").get().catch(() => null),
           userRef.collection("wooOrders").get().catch(() => null),
+          userRef.collection("ingredients").get().catch(() => null),
         ]);
 
         // ── Process products ──────────────────────────────────────────────
@@ -413,6 +415,24 @@ const AppRouter = () => {
             });
           });
           setCustomersState(customers);
+        }
+
+        // ── Process ingredients ─────────────────────────────────────────
+        if (ingredientDocs && !ingredientDocs.empty) {
+          const ingredientsList: Ingredient[] = [];
+          ingredientDocs.forEach((element) => {
+            const d = element.data();
+            ingredientsList.push({
+              id: element.id,
+              name: d.name ?? "",
+              unit: d.unit ?? "count",
+              stockQuantity: d.stockQuantity ?? 0,
+              lowStockThreshold: d.lowStockThreshold ?? 0,
+              costPerUnit: d.costPerUnit ?? "0",
+              category: d.category ?? null,
+            });
+          });
+          setIngredientsState(ingredientsList);
         }
 
         // ── Handle free trial status ──────────────────────────────────────

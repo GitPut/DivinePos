@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import BackendPosContainer from "features/admin/AdminContainer";
 import HomeScreen from "features/pos/PosScreen";
+import CustomerDisplay from "features/customer-display/CustomerDisplay";
 import {
   RouteComponentProps,
   Switch,
@@ -20,7 +21,7 @@ const AuthRoute: React.FC<AuthRouteProps> = (props) => {
       if (isLoginSettings === "false") {
         history.push("/pos");
       }
-    } else {
+    } else if (!location.pathname?.includes("customer-display")) {
       history.push("/pos");
     }
   }, [location.pathname]);
@@ -29,6 +30,7 @@ const AuthRoute: React.FC<AuthRouteProps> = (props) => {
     <Switch>
       <Route path="/pos" component={HomeScreen} />
       <Route path="/authed" component={BackendPosContainer} />
+      <Route path="/customer-display" component={CustomerDisplay} />
     </Switch>
   );
 };

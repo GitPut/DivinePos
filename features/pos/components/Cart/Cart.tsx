@@ -16,6 +16,7 @@ import {
 import { posState, updatePosState } from "store/posState";
 import firebase from "firebase/compat/app";
 import { calculateCartTotals } from "utils/cartCalculations";
+import { broadcastCartUpdate } from "utils/customerDisplayBroadcast";
 import useWindowSize from "shared/hooks/useWindowSize";
 
 const Cart = () => {
@@ -73,6 +74,10 @@ const Cart = () => {
       settotal(0);
     }
   }, [cart, discountAmount, deliveryChecked, cartSub, cartNote, storeDetails]);
+
+  useEffect(() => {
+    broadcastCartUpdate({ cart, discountAmount, deliveryChecked, cartSub });
+  }, [cart, discountAmount, deliveryChecked, cartSub]);
 
   return (
     <div style={styles.cartContainer}>

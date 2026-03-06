@@ -43,8 +43,20 @@ match /public/{uid} {
 
       match /products/{id} {
         allow read, write: if request.auth.uid == uid;
+
+        match /stockHistory/{entryId} {
+          allow read, write: if request.auth.uid == uid;
+        }
       }
-      
+
+      match /ingredients/{id} {
+        allow read, write: if request.auth.uid == uid;
+
+        match /stockHistory/{entryId} {
+          allow read, write: if request.auth.uid == uid;
+        }
+      }
+
       match /transList/{id} {
         allow read, write: if request.auth.uid == uid;
       }

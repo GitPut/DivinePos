@@ -4,7 +4,8 @@ import DropdownOption from "./DropdownOption";
 
 interface DropdownMenuButtonProps {
   active: boolean;
-  labelImg: string;
+  labelImg?: string;
+  labelText?: string;
   options: {
     label: string;
     link: string | (() => void);
@@ -18,6 +19,7 @@ interface DropdownMenuButtonProps {
 function DropdownMenuButton({
   active,
   labelImg,
+  labelText,
   options,
   labelImgStyle,
   dropDownOpen,
@@ -36,11 +38,15 @@ function DropdownMenuButton({
         }}
         onClick={toggleDropdown}
       >
-        <img
-          src={labelImg}
-          alt=""
-          style={{ ...styles.btnLblImg, ...labelImgStyle }}
-        />
+        {labelImg ? (
+          <img
+            src={labelImg}
+            alt=""
+            style={{ ...styles.btnLblImg, ...labelImgStyle }}
+          />
+        ) : (
+          <span style={styles.btnLblText}>{labelText}</span>
+        )}
         {!active && !dropDownOpen ? (
           <FiChevronRight style={styles.dropDownBtnChevronDown} />
         ) : dropDownOpen ? (
@@ -78,6 +84,12 @@ const styles: Record<string, React.CSSProperties> = {
     marginRight: 10,
     marginLeft: 10,
     objectFit: "contain",
+  },
+  btnLblText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#435869",
+    marginLeft: 10,
   },
   dropDownBtnChevronDown: {
     color: "rgba(128,128,128,1)",

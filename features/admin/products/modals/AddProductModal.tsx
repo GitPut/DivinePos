@@ -17,9 +17,10 @@ import Switch from "shared/components/ui/Switch";
 import ProductBuilderView from "../components/ProductBuilderView";
 import { useAlert } from "react-alert";
 import Swal from "sweetalert2";
-import { ProductProp } from "types";
+import { ProductProp, RecipeItem } from "types";
 import DropdownStringOptions from "shared/components/ui/DropdownStringOptions";
 import useWindowSize from "shared/hooks/useWindowSize";
+import RecipeEditor from "features/admin/inventory/RecipeEditor";
 
 interface AddProductModalProps {
   addProductModal: boolean;
@@ -215,6 +216,7 @@ function AddProductModal({
         }
       }
     } else {
+      newProduct.isTemplate = false;
       if (selectedFile) {
         storage
           .ref(auth.currentUser?.uid + "/images/" + newProduct.id)
@@ -570,6 +572,128 @@ function AddProductModal({
                       }}
                     />
                   </div>
+                  <div style={{ width: "100%", height: 20 }}></div>
+                  <div style={styles.displayOnlineSwitchRow}>
+                    <span style={styles.displayOnlineStoreTxt}>
+                      Track Inventory?:
+                    </span>
+                    <Switch
+                      isActive={newProduct?.trackStock ?? false}
+                      toggleSwitch={() => {
+                        setnewProduct((prevState) => ({
+                          ...prevState,
+                          trackStock: !prevState.trackStock,
+                        }));
+                      }}
+                    />
+                  </div>
+                  {newProduct?.trackStock && (
+                    <div style={{ width: "100%", marginTop: 16 }}>
+                      {/* Tracking mode toggle */}
+                      <div style={{ display: "flex", flexDirection: "row", gap: 8, marginBottom: 16 }}>
+                        <button
+                          style={{
+                            flex: 1,
+                            height: 34,
+                            borderRadius: 8,
+                            border: "1px solid #e2e8f0",
+                            backgroundColor: (!newProduct.recipe || newProduct.recipe.length === 0) ? "#1e293b" : "#fff",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          onClick={() => setnewProduct((prev) => ({ ...prev, recipe: undefined }))}
+                        >
+                          <span style={{ fontSize: 13, fontWeight: "500", color: (!newProduct.recipe || newProduct.recipe.length === 0) ? "#fff" : "#64748b" }}>
+                            Track by Count
+                          </span>
+                        </button>
+                        <button
+                          style={{
+                            flex: 1,
+                            height: 34,
+                            borderRadius: 8,
+                            border: "1px solid #e2e8f0",
+                            backgroundColor: (newProduct.recipe && newProduct.recipe.length > 0) ? "#1e293b" : "#fff",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          onClick={() => setnewProduct((prev) => ({ ...prev, recipe: prev.recipe && prev.recipe.length > 0 ? prev.recipe : [] }))}
+                        >
+                          <span style={{ fontSize: 13, fontWeight: "500", color: (newProduct.recipe && newProduct.recipe.length > 0) ? "#fff" : "#64748b" }}>
+                            Track by Recipe
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Simple count-based tracking */}
+                      {(!newProduct.recipe || newProduct.recipe.length === 0) && !Array.isArray(newProduct.recipe) && (
+                        <div style={{ display: "flex", flexDirection: "row", gap: 16 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span style={{ color: "#121212", fontSize: 14 }}>Stock Quantity</span>
+                            <input
+                              type="number"
+                              min="0"
+                              style={styles.rankBox}
+                              placeholder="0"
+                              value={newProduct.stockQuantity ?? ""}
+                              onChange={(ev) => {
+                                const val = parseInt(ev.target.value, 10);
+                                setnewProduct((prevState) => ({
+                                  ...prevState,
+                                  stockQuantity: isNaN(val) ? 0 : val,
+                                }));
+                              }}
+                            />
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span style={{ color: "#121212", fontSize: 14 }}>Low Stock Alert</span>
+                            <input
+                              type="number"
+                              min="0"
+                              style={styles.rankBox}
+                              placeholder="5"
+                              value={newProduct.lowStockThreshold ?? ""}
+                              onChange={(ev) => {
+                                const val = parseInt(ev.target.value, 10);
+                                setnewProduct((prevState) => ({
+                                  ...prevState,
+                                  lowStockThreshold: isNaN(val) ? 5 : val,
+                                }));
+                              }}
+                            />
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span style={{ color: "#121212", fontSize: 14 }}>Cost Price</span>
+                            <input
+                              style={styles.rankBox}
+                              placeholder="0.00"
+                              value={newProduct.costPrice ?? ""}
+                              onChange={(ev) => {
+                                setnewProduct((prevState) => ({
+                                  ...prevState,
+                                  costPrice: ev.target.value,
+                                }));
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Recipe-based ingredient tracking */}
+                      {Array.isArray(newProduct.recipe) && (
+                        <RecipeEditor
+                          recipe={newProduct.recipe}
+                          onRecipeChange={(recipe: RecipeItem[]) =>
+                            setnewProduct((prev) => ({ ...prev, recipe }))
+                          }
+                        />
+                      )}
+                    </div>
+                  )}
                   <div style={styles.spacer3}></div>
                   <div style={styles.productDescriptionInputGroup}>
                     <span style={styles.productDescriptionTxt}>
@@ -664,19 +788,9 @@ function AddProductModal({
                 <button
                   style={styles.cancelBtn}
                   onClick={() => {
-                    if (
-                      existingProduct &&
-                      JSON.stringify(existingProduct) !==
-                        JSON.stringify(newProduct)
-                    ) {
-                      confirmText();
-                    } else if (!existingProduct && newProduct.name.length > 0) {
-                      confirmText();
-                    } else {
-                      setaddProductModal(false);
-                      setexistingProduct(null);
-                      setisProductTemplate(false);
-                    }
+                    setaddProductModal(false);
+                    setexistingProduct(null);
+                    setisProductTemplate(false);
                   }}
                 >
                   <span style={styles.cancelTxt}>Cancel</span>

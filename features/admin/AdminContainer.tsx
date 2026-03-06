@@ -95,6 +95,26 @@ function AdminContainer(props: { match: { url: string } }) {
               ]}
             />
             <DropdownMenuButton
+              active={pathname.includes("/authed/inventory")}
+              dropDownOpen={isSideMenu === "inventory"}
+              toggleDropdown={() =>
+                setSideMenu((prev) => (prev === "inventory" ? "" : "inventory"))
+              }
+              labelText="Inventory"
+              options={[
+                {
+                  label: "Ingredients",
+                  link: "/authed/inventory/ingredients",
+                  active: pathname.includes("/inventory/ingredients"),
+                },
+                {
+                  label: "Product Stock",
+                  link: "/authed/inventory/stocklevels",
+                  active: pathname.includes("/inventory/stocklevels"),
+                },
+              ]}
+            />
+            <DropdownMenuButton
               active={pathname.includes("/authed/report")}
               dropDownOpen={isSideMenu === "report"}
               toggleDropdown={() =>

@@ -1,6 +1,10 @@
 import {
+  CartItemProp,
   CustomerProp,
+  Ingredient,
+  IngredientStockHistoryEntry,
   StatsDataProps,
+  StockHistoryEntry,
   StoreDetailsProps,
   TransListStateItem,
 } from "types";
@@ -8,6 +12,15 @@ import { auth, db, STRIPE_PUBLIC_KEY } from "./config";
 import { loadStripe } from "@stripe/stripe-js";
 import firebase from "firebase/compat/app";
 import { Timestamp } from "firebase/firestore";
+import {
+  ingredientsState,
+  onlineStoreState,
+  setIngredientsState,
+  storeProductsState,
+  updateIngredientsBatch,
+  updateIngredientStock,
+  updateStoreProductsState,
+} from "store/appState";
 
 // -------------------
 // 🔐 AUTH FUNCTIONS
@@ -196,8 +209,353 @@ export const updateTransList = async (receipt: Partial<TransListStateItem>) => {
     dateCompleted: firebase.firestore.Timestamp.now(),
   };
 
-  await transListRef.add(newReceipt);
+  const docRef = await transListRef.add(newReceipt);
   await updateStats(userId, newReceipt);
+
+  if (receipt.cart && receipt.cart.length > 0) {
+    await deductStockForCart(userId, receipt.cart, docRef.id).catch(() => {
+      console.warn("Stock deduction failed for transaction", docRef.id);
+    });
+  }
+};
+
+// -------------------
+// 📦 INVENTORY
+// -------------------
+const deductStockForCart = async (
+  userId: string,
+  cart: CartItemProp[],
+  transactionId: string
+): Promise<void> => {
+  const products = storeProductsState.get().products;
+  const ingredients = ingredientsState.get();
+  const isOnlineStore = onlineStoreState.get().onlineStoreSetUp;
+  const batch = db.batch();
+  const historyWrites: { ref: firebase.firestore.DocumentReference; data: any }[] = [];
+  const productStockUpdates: { productId: string; newStock: number }[] = [];
+  const ingredientDeductions: Map<string, { currentStock: number; totalDeducted: number }> = new Map();
+
+  for (const item of cart) {
+    const productId = item.editableObj?.id;
+    if (!productId) continue;
+
+    const product = products.find((p) => p.id === productId);
+    if (!product || product.trackStock !== true) continue;
+
+    const qty = parseFloat(item.quantity ?? "1") || 1;
+
+    // ── Path A: Product has a recipe → deduct ingredients ──
+    if (product.recipe && product.recipe.length > 0) {
+      for (const recipeItem of product.recipe) {
+        const totalNeeded = recipeItem.quantity * qty;
+        if (!ingredientDeductions.has(recipeItem.ingredientId)) {
+          const ing = ingredients.find((i) => i.id === recipeItem.ingredientId);
+          ingredientDeductions.set(recipeItem.ingredientId, {
+            currentStock: ing?.stockQuantity ?? 0,
+            totalDeducted: 0,
+          });
+        }
+        const entry = ingredientDeductions.get(recipeItem.ingredientId)!;
+        entry.totalDeducted += totalNeeded;
+      }
+    }
+    // ── Path B: Simple product-level tracking (no recipe) ──
+    else {
+      const currentStock = product.stockQuantity ?? 0;
+      const newStock = Math.max(0, currentStock - qty);
+
+      const productRef = db
+        .collection("users")
+        .doc(userId)
+        .collection("products")
+        .doc(productId);
+
+      batch.update(productRef, { stockQuantity: newStock });
+
+      if (isOnlineStore) {
+        const publicRef = db
+          .collection("public")
+          .doc(userId)
+          .collection("products")
+          .doc(productId);
+        batch.set(publicRef, { stockQuantity: newStock }, { merge: true });
+      }
+
+      historyWrites.push({
+        ref: productRef.collection("stockHistory").doc(),
+        data: {
+          type: "sale",
+          quantityChange: -qty,
+          quantityBefore: currentStock,
+          quantityAfter: newStock,
+          transactionId,
+          createdAt: firebase.firestore.Timestamp.now(),
+          createdBy: "system",
+        },
+      });
+
+      productStockUpdates.push({ productId, newStock });
+    }
+  }
+
+  // ── Write ingredient deductions ──
+  for (const [ingredientId, data] of ingredientDeductions) {
+    const newStock = Math.max(0, data.currentStock - data.totalDeducted);
+    const ingredientRef = db
+      .collection("users")
+      .doc(userId)
+      .collection("ingredients")
+      .doc(ingredientId);
+
+    batch.update(ingredientRef, { stockQuantity: newStock });
+
+    historyWrites.push({
+      ref: ingredientRef.collection("stockHistory").doc(),
+      data: {
+        type: "sale",
+        quantityChange: -data.totalDeducted,
+        quantityBefore: data.currentStock,
+        quantityAfter: newStock,
+        transactionId,
+        createdAt: firebase.firestore.Timestamp.now(),
+        createdBy: "system",
+      },
+    });
+  }
+
+  if (productStockUpdates.length === 0 && ingredientDeductions.size === 0) return;
+
+  await batch.commit();
+
+  // Write history entries (non-fatal)
+  if (historyWrites.length > 0) {
+    const histBatch = db.batch();
+    for (const hw of historyWrites) {
+      histBatch.set(hw.ref, hw.data);
+    }
+    await histBatch.commit().catch(() => {});
+  }
+
+  // Update local state for products
+  if (productStockUpdates.length > 0) {
+    const updatedProducts = products.map((p) => {
+      const update = productStockUpdates.find((u) => u.productId === p.id);
+      return update ? { ...p, stockQuantity: update.newStock } : p;
+    });
+    updateStoreProductsState({ products: updatedProducts });
+  }
+
+  // Update local state for ingredients
+  if (ingredientDeductions.size > 0) {
+    const batchUpdates = Array.from(ingredientDeductions).map(
+      ([ingredientId, data]) => ({
+        ingredientId,
+        newStock: Math.max(0, data.currentStock - data.totalDeducted),
+      })
+    );
+    updateIngredientsBatch(batchUpdates);
+  }
+};
+
+export const adjustStockManually = async (
+  productId: string,
+  newQuantity: number,
+  type: "restock" | "adjustment" | "correction",
+  note?: string
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const products = storeProductsState.get().products;
+  const product = products.find((p) => p.id === productId);
+  if (!product) throw new Error("Product not found");
+
+  const currentStock = product.stockQuantity ?? 0;
+  const isOnlineStore = onlineStoreState.get().onlineStoreSetUp;
+
+  const productRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("products")
+    .doc(productId);
+
+  await productRef.update({ stockQuantity: newQuantity });
+
+  if (isOnlineStore) {
+    try {
+      await db
+        .collection("public")
+        .doc(userId)
+        .collection("products")
+        .doc(productId)
+        .set({ stockQuantity: newQuantity }, { merge: true });
+    } catch {
+      // Public doc may not exist — non-fatal
+    }
+  }
+
+  // Write history entry
+  await productRef.collection("stockHistory").add({
+    type,
+    quantityChange: newQuantity - currentStock,
+    quantityBefore: currentStock,
+    quantityAfter: newQuantity,
+    note: note ?? "",
+    createdAt: firebase.firestore.Timestamp.now(),
+    createdBy: userId,
+  });
+
+  // Update local state
+  const updatedProducts = products.map((p) =>
+    p.id === productId ? { ...p, stockQuantity: newQuantity } : p
+  );
+  updateStoreProductsState({ products: updatedProducts });
+};
+
+export const fetchStockHistory = async (
+  productId: string,
+  limit = 50
+): Promise<StockHistoryEntry[]> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const snap = await db
+    .collection("users")
+    .doc(userId)
+    .collection("products")
+    .doc(productId)
+    .collection("stockHistory")
+    .orderBy("createdAt", "desc")
+    .limit(limit)
+    .get();
+
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as Omit<StockHistoryEntry, "id">),
+  }));
+};
+
+// -------------------
+// 🥫 INGREDIENTS
+// -------------------
+export const addIngredient = async (
+  ingredient: Omit<Ingredient, "id">
+): Promise<string> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const id = Math.random().toString(36).substr(2, 9);
+  const fullIngredient: Ingredient = { ...ingredient, id };
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(id)
+    .set(fullIngredient);
+
+  const current = ingredientsState.get();
+  setIngredientsState([...current, fullIngredient]);
+
+  return id;
+};
+
+export const updateIngredient = async (
+  ingredientId: string,
+  updates: Partial<Ingredient>
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(ingredientId)
+    .update(updates);
+
+  const current = ingredientsState.get();
+  setIngredientsState(
+    current.map((ing) =>
+      ing.id === ingredientId ? { ...ing, ...updates } : ing
+    )
+  );
+};
+
+export const deleteIngredient = async (
+  ingredientId: string
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(ingredientId)
+    .delete();
+
+  const current = ingredientsState.get();
+  setIngredientsState(current.filter((ing) => ing.id !== ingredientId));
+};
+
+export const adjustIngredientStockManually = async (
+  ingredientId: string,
+  newQuantity: number,
+  type: "restock" | "adjustment" | "correction",
+  note?: string
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const ingredients = ingredientsState.get();
+  const ingredient = ingredients.find((i) => i.id === ingredientId);
+  if (!ingredient) throw new Error("Ingredient not found");
+
+  const currentStock = ingredient.stockQuantity ?? 0;
+
+  const ingredientRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(ingredientId);
+
+  await ingredientRef.update({ stockQuantity: newQuantity });
+
+  await ingredientRef.collection("stockHistory").add({
+    type,
+    quantityChange: newQuantity - currentStock,
+    quantityBefore: currentStock,
+    quantityAfter: newQuantity,
+    note: note ?? "",
+    createdAt: firebase.firestore.Timestamp.now(),
+    createdBy: userId,
+  });
+
+  updateIngredientStock(ingredientId, newQuantity);
+};
+
+export const fetchIngredientStockHistory = async (
+  ingredientId: string,
+  limit = 50
+): Promise<IngredientStockHistoryEntry[]> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const snap = await db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(ingredientId)
+    .collection("stockHistory")
+    .orderBy("createdAt", "desc")
+    .limit(limit)
+    .get();
+
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as Omit<IngredientStockHistoryEntry, "id">),
+  }));
 };
 
 // -------------------

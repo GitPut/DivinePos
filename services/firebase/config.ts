@@ -18,7 +18,7 @@ firebase
   .firestore()
   .enablePersistence()
   .catch(function (err) {
-    if (err.code === "failed-precondition") {
+    if (err.code === "failed-precondition" && !window.location.pathname.includes("customer-display")) {
       alert("Please only keep one tab of Divine POS open at a time.");
     }
     // err.code === "unimplemented" means the browser doesn't support persistence — silently ignore

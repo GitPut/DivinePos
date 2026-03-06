@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { MdClear } from "react-icons/md";
 import ReactDOM from "react-dom";
-import useWindowSize from "shared/hooks/useWindowSize";
 import { OptionsList } from "types";
 
 interface DropdownOptionProps {
@@ -41,12 +40,10 @@ function DropdownOption({
     width: number;
     height: number;
   } | null>();
-  const { width } = useWindowSize();
 
   const measureLayout = () => {
     if (dropdownRef.current && typeof window !== "undefined") {
       const boundingRect = dropdownRef.current.getBoundingClientRect();
-
       setDropdownLayout({
         x: boundingRect.left,
         y: boundingRect.top,
@@ -96,32 +93,19 @@ function DropdownOption({
               }
             }}
           >
-            <span style={styles.placeholder}>
+            <span style={styles.dropdownText}>
               {value
-                ? `${value.label} (+$${
-                    value.priceIncrease !== null ? value.priceIncrease : 0
-                  })`
-                : label}
+                ? `${value.label}${parseFloat(value.priceIncrease ?? "0") > 0 ? ` (+$${value.priceIncrease})` : ""}`
+                : `Select ${label}`}
             </span>
             {openDropdown === id ? (
-              <FiChevronUp size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
+              <FiChevronUp size={20} color="#94a3b8" style={{ marginRight: 10 }} />
             ) : (
-              <FiChevronDown size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
+              <FiChevronDown size={20} color="#94a3b8" style={{ marginRight: 10 }} />
             )}
           </button>
           {openDropdown === id && (
-            <div
-              style={{
-                width: "100%",
-                position: "absolute",
-                backgroundColor: "white",
-                bottom: options.length > 3 ? -44 * 3 : -44 * options.length,
-                height: options.length > 3 ? 44 * 3 : 44 * options.length,
-                borderRadius: 10,
-                border: "1px solid #ccc",
-                overflow: "auto",
-              }}
-            >
+            <div style={styles.optionsList}>
               {options.map((optionI, listIndex) => (
                 <button
                   key={listIndex}
@@ -140,24 +124,14 @@ function DropdownOption({
                     });
                     setopenDropdown(null);
                   }}
-                  style={{
-                    width: "100%",
-                    height: 44,
-                    backgroundColor: "white",
-                    padding: 10,
-                    borderBottom: "1px solid #ccc",
-                    border: "none",
-                    borderBottomStyle: "solid",
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#ccc",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    display: "block",
-                  }}
+                  style={styles.optionItem}
                 >
-                  <span>{`${optionI.label}  (+$${
-                    optionI.priceIncrease !== null ? optionI.priceIncrease : 0
-                  })`}</span>
+                  <span style={styles.optionItemText}>
+                    {optionI.label}
+                    {parseFloat(optionI.priceIncrease ?? "0") > 0
+                      ? ` (+$${optionI.priceIncrease})`
+                      : ""}
+                  </span>
                 </button>
               ))}
             </div>
@@ -171,17 +145,14 @@ function DropdownOption({
   return (
     <div
       style={{
-        ...(width > 800 ? styles.container : styles.containerMobile),
+        ...styles.container,
         ...(openDropdown === id && { zIndex: 1000 }),
       }}
     >
-      <span style={width > 800 ? styles.lbl : styles.lblMobile}>
+      <span style={styles.lbl}>
         {label} {isRequired ? "*" : ""}
       </span>
-      <div
-        ref={dropdownRef}
-        style={width < 800 ? { width: "100%" } : { width: "70%" }}
-      >
+      <div ref={dropdownRef} style={{ width: "100%" }}>
         <button
           style={styles.dropdown}
           onClick={() => {
@@ -193,12 +164,13 @@ function DropdownOption({
             }
           }}
         >
-          <span style={styles.placeholder}>
+          <span style={{
+            ...styles.dropdownText,
+            ...(value ? { color: "#1a1a1a" } : {}),
+          }}>
             {value
-              ? `${value.label} (+$${
-                  value.priceIncrease !== null ? value.priceIncrease : 0
-                })`
-              : label}
+              ? `${value.label}${parseFloat(value.priceIncrease ?? "0") > 0 ? ` (+$${value.priceIncrease})` : ""}`
+              : `Select ${label}`}
           </span>
           {value ? (
             <button
@@ -206,14 +178,14 @@ function DropdownOption({
                 e.stopPropagation();
                 setValue({ option: null, listIndex: null });
               }}
-              style={{ marginTop: 5, marginRight: 5, background: "none", border: "none", cursor: "pointer" }}
+              style={{ marginRight: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }}
             >
-              <MdClear size={24} color="red" />
+              <MdClear size={20} color="#94a3b8" />
             </button>
           ) : openDropdown === id ? (
-            <FiChevronUp size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
+            <FiChevronUp size={20} color="#94a3b8" style={{ marginRight: 10 }} />
           ) : (
-            <FiChevronDown size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
+            <FiChevronDown size={20} color="#94a3b8" style={{ marginRight: 10 }} />
           )}
         </button>
       </div>
@@ -224,56 +196,61 @@ function DropdownOption({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-    alignSelf: "stretch",
-    height: 44,
-    display: "flex",
-  },
-  containerMobile: {
     marginBottom: 20,
     alignSelf: "stretch",
   },
   lbl: {
     display: "inline-block",
     fontWeight: "700",
-    color: "#3e3f41",
-    width: "25%",
-  },
-  lblMobile: {
-    display: "inline-block",
-    fontWeight: "700",
-    color: "#3e3f41",
-    width: "100%",
+    color: "#1a1a1a",
+    fontSize: 14,
     marginBottom: 10,
   },
   dropdown: {
     width: "100%",
     height: 44,
-    backgroundColor: "rgba(255,255,255,1)",
+    backgroundColor: "#ffffff",
     borderRadius: 10,
-    border: "2px solid #6987d3",
+    border: "1px solid #e2e8f0",
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     display: "flex",
     cursor: "pointer",
     padding: 0,
   },
-  placeholder: {
+  dropdownText: {
     fontWeight: "500",
-    color: "#7f838c",
-    fontSize: 12,
-    margin: 10,
+    color: "#94a3b8",
+    fontSize: 14,
+    marginLeft: 14,
   },
-  downIcon: {
-    color: "rgba(128,128,128,1)",
-    fontSize: 30,
-    margin: 0,
-    marginTop: 2,
-    marginRight: 2,
+  optionsList: {
+    width: "100%",
+    position: "absolute",
+    backgroundColor: "white",
+    borderRadius: 10,
+    border: "1px solid #e2e8f0",
+    overflow: "auto",
+    maxHeight: 44 * 4,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    marginTop: 4,
+  },
+  optionItem: {
+    width: "100%",
+    height: 44,
+    backgroundColor: "white",
+    padding: "0 14px",
+    border: "none",
+    borderBottom: "1px solid #f1f5f9",
+    cursor: "pointer",
+    textAlign: "left",
+    display: "flex",
+    alignItems: "center",
+  },
+  optionItemText: {
+    fontSize: 14,
+    color: "#1a1a1a",
   },
 };
 

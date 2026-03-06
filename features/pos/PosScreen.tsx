@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   productBuilderState,
+  resetProductBuilderState,
   cartState,
   storeDetailsState,
   storeProductsState,
@@ -285,7 +286,7 @@ function PosScreen() {
       </Modal>
       <Modal
         isVisible={ProductBuilderProps.isOpen ? true : false}
-        onBackdropPress={() => {}}
+        onBackdropPress={() => resetProductBuilderState()}
         animationIn="slideInLeft"
         animationOut="slideOutLeft"
       >
@@ -296,7 +297,7 @@ function PosScreen() {
             flexDirection: "row",
             display: "flex",
           }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={() => resetProductBuilderState()}
         >
           <div
             style={{
@@ -304,6 +305,7 @@ function PosScreen() {
               width: width > 1000 ? width - 340 : "100%",
               borderTopRightRadius: 3,
             }}
+            onClick={(e) => e.stopPropagation()}
           >
             {ProductBuilderProps.product && <ProductBuilderModal />}
           </div>

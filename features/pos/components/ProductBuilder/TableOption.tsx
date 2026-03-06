@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { FiChevronDown } from "react-icons/fi";
+import { FiCheck, FiMinus, FiPlus } from "react-icons/fi";
 import { MdClear } from "react-icons/md";
-import { IoRefresh, IoCheckmark } from "react-icons/io5";
-import Modal from "shared/components/ui/Modal";
-import useWindowSize from "shared/hooks/useWindowSize";
-import OptionSelectorContainer from "./OptionSelectorContainer";
 import { Option, OptionsList, ProductProp } from "types";
 
 interface TableOptionProps {
@@ -28,326 +24,253 @@ function TableOption({
   e,
   optionsSelectedLabel,
 }: TableOptionProps) {
-  const [localMyObjProfile, setlocalMyObjProfile] =
-    useState<ProductProp>(myObjProfile);
-  const [modalVisible, setmodalVisible] = useState(false);
-  const { height, width } = useWindowSize();
+  const options = e.optionsList;
 
-  useEffect(() => {
-    setlocalMyObjProfile(myObjProfile);
-  }, [myObjProfile]);
+  const getTotalSelected = () => {
+    let total = 0;
+    myObjProfile.options[index].optionsList.forEach((op) => {
+      const countsAs = parseFloat(op.countsAs ?? "1");
+      total += parseFloat(op.selectedTimes ?? "0") * countsAs;
+    });
+    return total;
+  };
 
-  const onMinusPress = ({
-    option,
-    listIndex,
-  }: {
-    option: OptionsList;
-    listIndex: number;
-  }) => {
-    const newMyObjProfile = structuredClone(localMyObjProfile);
-    const thisItemCountsAs = option.countsAs ?? "1";
-    const selectedTimes = parseFloat(
-      newMyObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
+  const toggleItem = (listIndex: number, option: OptionsList) => {
+    const currentTimes = parseFloat(
+      myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
     );
+    const countsAs = parseFloat(option.countsAs ?? "1");
 
-    if (selectedTimes > 0) {
-      newMyObjProfile.options[index].optionsList[listIndex].selectedTimes = (
-        selectedTimes -
-        1 * parseFloat(thisItemCountsAs)
+    if (currentTimes > 0) {
+      // Deselect
+      const newProfile = structuredClone(myObjProfile);
+      newProfile.options[index].optionsList[listIndex].selectedTimes = "0";
+      setMyObjProfile(newProfile);
+    } else {
+      // Check limit
+      const totalSelected = getTotalSelected();
+      const numOfSelectable = parseFloat(e.numOfSelectable ?? "0");
+
+      if (
+        numOfSelectable > 0 &&
+        totalSelected + countsAs > numOfSelectable
+      ) {
+        return;
+      }
+
+      const newProfile = structuredClone(myObjProfile);
+      newProfile.options[index].optionsList[listIndex].selectedTimes = "1";
+      setMyObjProfile(newProfile);
+    }
+  };
+
+  const onMinusPress = (listIndex: number) => {
+    const currentTimes = parseFloat(
+      myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
+    );
+    if (currentTimes > 0) {
+      const newProfile = structuredClone(myObjProfile);
+      newProfile.options[index].optionsList[listIndex].selectedTimes = (
+        currentTimes - 1
       ).toString();
+      setMyObjProfile(newProfile);
     }
-
-    setlocalMyObjProfile(newMyObjProfile);
   };
 
-  const onPlusPress = ({
-    option,
-    listIndex,
-  }: {
-    option: OptionsList;
-    listIndex: number;
-  }) => {
-    const newMyObjProfile = structuredClone(localMyObjProfile);
+  const onPlusPress = (listIndex: number, option: OptionsList) => {
+    const countsAs = parseFloat(option.countsAs ?? "1");
+    const totalSelected = getTotalSelected();
+    const numOfSelectable = parseFloat(e.numOfSelectable ?? "0");
 
-    const selectedItems = newMyObjProfile.options[index].optionsList.filter(
-      (op) => {
-        const opSelectedTimes = parseFloat(op.selectedTimes ?? "0");
-        return opSelectedTimes > 0;
-      }
+    if (numOfSelectable > 0 && totalSelected + countsAs > numOfSelectable) {
+      return;
+    }
+
+    const currentTimes = parseFloat(
+      myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
     );
-
-    const thisItemCountsAs = parseFloat(option.countsAs ?? "1");
-
-    let selectedTimesTotal = thisItemCountsAs;
-
-    selectedItems.map((op) => {
-      selectedTimesTotal +=
-        op.countsAs ?? false
-          ? parseFloat(op.selectedTimes ?? "0") * thisItemCountsAs
-          : parseFloat(op.selectedTimes ?? "0");
-    });
-
-    if (
-      parseFloat(e.numOfSelectable ?? "0") >= selectedTimesTotal ||
-      !e.numOfSelectable ||
-      e.numOfSelectable === "0"
-    ) {
-      const selectedTimes = parseFloat(
-        newMyObjProfile.options[index].optionsList[listIndex].selectedTimes ??
-          "0"
-      );
-
-      if (selectedTimes ?? 0 > 0) {
-        newMyObjProfile.options[index].optionsList[listIndex].selectedTimes = (
-          selectedTimes + 1
-        ).toString();
-      } else {
-        newMyObjProfile.options[index].optionsList[listIndex].selectedTimes =
-          "1";
-      }
-      setlocalMyObjProfile(newMyObjProfile);
-    }
+    const newProfile = structuredClone(myObjProfile);
+    newProfile.options[index].optionsList[listIndex].selectedTimes = (
+      currentTimes + 1
+    ).toString();
+    setMyObjProfile(newProfile);
   };
 
-  const clearOptions = () => {
-    const newMyObjProfile = structuredClone(localMyObjProfile);
-    newMyObjProfile.options[index].optionsList.map((op) => {
+  const clearAll = () => {
+    const newProfile = structuredClone(myObjProfile);
+    newProfile.options[index].optionsList.forEach((op) => {
       op.selectedTimes = "0";
     });
-    setlocalMyObjProfile(newMyObjProfile);
+    setMyObjProfile(newProfile);
   };
 
-  const clearOptionsMain = () => {
-    const newMyObjProfile = structuredClone(localMyObjProfile);
-    newMyObjProfile.options[index].optionsList.map((op) => {
-      op.selectedTimes = "0";
-    });
-    setMyObjProfile(newMyObjProfile);
-  };
+  const hasAnySelected = options.some(
+    (op) => parseFloat(op.selectedTimes ?? "0") > 0
+  );
 
   return (
-    <div style={width > 800 ? styles.container : styles.containerMobile}>
-      <span style={width > 800 ? styles.lbl : styles.lblMobile}>
-        {label} {isRequired ? "*" : ""}
-      </span>
-      <div style={width < 800 ? { width: "100%" } : { width: "70%" }}>
-        <button
-          style={styles.dropdown}
-          onClick={() => {
-            setmodalVisible(true);
-          }}
-        >
-          {optionsSelectedLabel !== "" ? (
-            <span style={styles.placeholder}>{optionsSelectedLabel}</span>
-          ) : (
-            <span style={styles.placeholder}>Select {label}</span>
-          )}
-          {optionsSelectedLabel.length > 0 ? (
-            <button
-              style={{ marginTop: 5, marginRight: 5, background: "none", border: "none", cursor: "pointer" }}
-              onClick={(e) => { e.stopPropagation(); clearOptionsMain(); }}
-            >
-              <MdClear size={24} color="red" />
-            </button>
-          ) : (
-            <FiChevronDown size={30} color="rgba(128,128,128,1)" style={{ marginTop: 2, marginRight: 2 }} />
-          )}
-        </button>
+    <div style={styles.container}>
+      <div style={styles.headerRow}>
+        <span style={styles.lbl}>
+          {label} {isRequired ? "*" : ""}
+        </span>
+        {hasAnySelected && (
+          <button style={styles.clearBtn} onClick={clearAll}>
+            <MdClear size={16} color="#94a3b8" />
+            <span style={styles.clearText}>Clear</span>
+          </button>
+        )}
       </div>
-      <Modal
-        isVisible={modalVisible}
-        onBackdropPress={() => {
-          setmodalVisible(false);
-          setMyObjProfile(localMyObjProfile);
-        }}
-      >
-        <div style={{ cursor: "default" }} onClick={(e) => e.stopPropagation()}>
-          <div
-            style={{
-              ...styles.modalContainer,
-              height: height * 0.9,
-              width: width * 0.9,
-              padding: 20,
-            }}
-          >
-            <div style={styles.innerContainer}>
-              <div style={styles.header}>
-                <button
-                  onClick={clearOptions}
-                  style={{
-                    backgroundColor: "rgba(208,2,27,1)",
-                    borderRadius: 50,
-                    height: 40,
-                    width: 40,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "flex",
-                  }}
-                >
-                  <IoRefresh size={35} color="white" />
-                </button>
-                <span style={styles.optionName}>{e.label}</span>
-                <button
-                  onClick={() => {
-                    setmodalVisible(false);
-                    setMyObjProfile(localMyObjProfile);
-                  }}
-                  style={{
-                    backgroundColor: "#314ab0",
-                    borderRadius: 50,
-                    height: 40,
-                    width: 40,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "flex",
-                  }}
-                >
-                  <IoCheckmark size={40} color="white" />
-                </button>
-              </div>
-              <div style={styles.scrollArea}>
+      <div style={styles.grid}>
+        {options.map((option, listIndex) => {
+          const selectedTimes = parseFloat(
+            myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
+          );
+          const isSelected = selectedTimes > 0;
+
+          return (
+            <button
+              key={option.id ?? listIndex}
+              style={{
+                ...styles.gridItem,
+                ...(isSelected
+                  ? {
+                      backgroundColor: "#eef2ff",
+                      borderColor: "#1e293b",
+                    }
+                  : {}),
+              }}
+              onClick={() => toggleItem(listIndex, option)}
+            >
+              <div style={styles.gridItemLeft}>
                 <div
-                  style={{ overflow: "auto", ...styles.scrollArea_contentContainerStyle }}
+                  style={{
+                    ...styles.checkbox,
+                    ...(isSelected
+                      ? { backgroundColor: "#1e293b", borderColor: "#1e293b" }
+                      : {}),
+                  }}
                 >
-                  <div style={styles.flexwrapRow}>
-                    {localMyObjProfile.options[index].optionsList.map(
-                      (option, listIndex) => (
-                        <OptionSelectorContainer
-                          key={listIndex}
-                          style={styles.optionSelectorItemContainer}
-                          option={option}
-                          onMinusPress={() =>
-                            onMinusPress({ option, listIndex })
-                          }
-                          onPlusPress={() =>
-                            onPlusPress({ option, listIndex })
-                          }
-                        />
-                      )
-                    )}
-                  </div>
+                  {isSelected && <FiCheck size={12} color="#ffffff" />}
                 </div>
+                <span
+                  style={{
+                    ...styles.gridItemLabel,
+                    ...(isSelected ? { fontWeight: "600" } : {}),
+                  }}
+                >
+                  {option.label}
+                </span>
               </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
+              <div style={styles.gridItemRight}>
+                {parseFloat(option.priceIncrease ?? "0") > 0 && (
+                  <span style={styles.priceTag}>+${option.priceIncrease}</span>
+                )}
+                {selectedTimes > 1 && (
+                  <span style={styles.qtyBadge}>x{selectedTimes}</span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
+    marginBottom: 20,
+    alignSelf: "stretch",
+  },
+  headerRow: {
+    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-    alignSelf: "stretch",
-    height: 44,
-    display: "flex",
-  },
-  containerMobile: {
-    marginBottom: 20,
-    alignSelf: "stretch",
-  },
-  lbl: {
-    display: "inline-block",
-    fontWeight: "700",
-    color: "#3e3f41",
-    width: "25%",
-  },
-  lblMobile: {
-    display: "inline-block",
-    fontWeight: "700",
-    color: "#3e3f41",
-    width: "100%",
     marginBottom: 10,
   },
-  modalContainer: {
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    display: "flex",
-    flexDirection: "column",
+  lbl: {
+    fontWeight: "700",
+    color: "#1a1a1a",
+    fontSize: 14,
   },
-  dropdown: {
-    width: "100%",
-    height: 44,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    border: "2px solid #6987d3",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  clearBtn: {
     display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    background: "none",
+    border: "none",
     cursor: "pointer",
     padding: 0,
   },
-  placeholder: {
-    fontWeight: "500",
-    color: "#7f838c",
+  clearText: {
     fontSize: 12,
-    margin: 10,
+    color: "#94a3b8",
+    fontWeight: "500",
   },
-  downIcon: {
-    color: "rgba(128,128,128,1)",
-    fontSize: 30,
-    margin: 0,
-    marginTop: 2,
-    marginRight: 2,
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
   },
-  innerContainer: {
-    width: "90%",
-    height: "90%",
-    justifyContent: "space-between",
+  gridItem: {
     display: "flex",
-    flexDirection: "column",
-  },
-  header: {
-    width: "100%",
-    height: 44,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#ffffff",
+    cursor: "pointer",
+    minHeight: 40,
+  },
+  gridItemLeft: {
     display: "flex",
-  },
-  closeIcon: {
-    color: "white",
-    fontSize: 40,
-  },
-  optionName: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
-  },
-  resetIcon: {
-    color: "white",
-    fontSize: 35,
-  },
-  scrollArea: {
-    width: "100%",
-    height: "85%",
-  },
-  scrollArea_contentContainerStyle: {
-    height: "100%",
-    width: "100%",
-    paddingRight: 15,
-    paddingLeft: 15,
-  },
-  flexwrapRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    display: "flex",
+    alignItems: "center",
+    gap: 10,
   },
-  optionSelectorItemContainer: {
-    marginBottom: 20,
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    border: "1.5px solid #cbd5e1",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  gridItemLabel: {
+    fontSize: 13,
+    color: "#1a1a1a",
+    fontWeight: "400",
+  },
+  gridItemRight: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  priceTag: {
+    fontSize: 12,
+    color: "#6366f1",
+    fontWeight: "500",
+    backgroundColor: "#eef2ff",
+    padding: "2px 8px",
+    borderRadius: 10,
+  },
+  qtyBadge: {
+    fontSize: 11,
+    color: "#ffffff",
+    fontWeight: "600",
+    backgroundColor: "#1e293b",
+    padding: "2px 6px",
+    borderRadius: 8,
+    minWidth: 20,
+    textAlign: "center",
   },
 };
 

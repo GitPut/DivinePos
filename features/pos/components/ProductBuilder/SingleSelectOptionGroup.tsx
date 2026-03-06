@@ -1,6 +1,5 @@
 import React from "react";
 import SingleSelectButton from "./SingleSelectButton";
-import useWindowSize from "shared/hooks/useWindowSize";
 import { OptionsList } from "types";
 
 interface SingleSelectOptionGroupProps {
@@ -18,39 +17,26 @@ function SingleSelectOptionGroup({
   value,
   setValue,
 }: SingleSelectOptionGroupProps) {
-  const { width } = useWindowSize();
-
-  const stylesGrid = {
-    gridContainer: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-      gap: "10px",
-      width: width > 800 ? "70%" : "100%",
-    },
-  };
-
   return (
-    <div style={width > 800 ? styles.container : styles.containerMobile}>
-      <span style={width > 800 ? styles.lbl : styles.lblMobile}>
+    <div style={styles.container}>
+      <span style={styles.lbl}>
         {label} {isRequired ? "*" : ""}
       </span>
-      <div style={stylesGrid.gridContainer}>
+      <div style={styles.pillsRow}>
         {options.map((option, listIndex) => {
           return (
             <SingleSelectButton
               key={option.id}
               label={
-                parseFloat(option.priceIncrease ?? '0') > 0
+                parseFloat(option.priceIncrease ?? "0") > 0
                   ? `${option.label} (+$${option.priceIncrease})`
                   : option.label
               }
-              style={styles.nonActiveOneTimeSelectableBtn}
               onPress={() => {
                 setValue({
                   option: {
                     label: option.label,
-                    priceIncrease:
-                      option.priceIncrease ?? '0',
+                    priceIncrease: option.priceIncrease ?? "0",
                     id: option.id,
                   },
                   listIndex: listIndex,
@@ -73,58 +59,21 @@ function SingleSelectOptionGroup({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-    alignSelf: "stretch",
-    display: "flex",
-  },
-  containerMobile: {
     marginBottom: 20,
     alignSelf: "stretch",
   },
   lbl: {
     display: "inline-block",
     fontWeight: "700",
-    color: "#3e3f41",
-    width: "25%",
-  },
-  lblMobile: {
-    display: "inline-block",
-    fontWeight: "700",
-    color: "#3e3f41",
-    width: "100%",
+    color: "#1a1a1a",
+    fontSize: 14,
     marginBottom: 10,
   },
-  optionsRow: {
-    width: "70%",
+  pillsRow: {
+    display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",
-    display: "flex",
-  },
-  activeOneTimeSelectableBtn: {
-    height: 33,
-    width: 110,
-    marginRight: 7,
-    marginBottom: 15,
-  },
-  nonActiveOneTimeSelectableBtn: {
-    width: "100%",
-    padding: 5,
-    height: 33,
-  },
-  nonActiveOneTimeSelectableBtn1: {
-    height: 33,
-    width: 110,
-    marginRight: 7,
-    marginBottom: 15,
-  },
-  nonActiveOneTimeSelectableBtn2: {
-    height: 33,
-    width: 110,
-    marginRight: 7,
-    marginBottom: 15,
+    gap: 8,
   },
 };
 

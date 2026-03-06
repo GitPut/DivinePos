@@ -163,11 +163,6 @@ const OptionDisplay = ({
       )
       .join("");
 
-    const Component =
-      e.optionType === "Quantity Dropdown" || isOnlineOrder
-        ? MultiSelectOptionGroup
-        : TableOption;
-
     switch (e.optionType) {
       case "Dropdown":
         return (
@@ -196,9 +191,8 @@ const OptionDisplay = ({
           />
         );
       case "Quantity Dropdown":
-      case "Table View":
         return (
-          <Component
+          <MultiSelectOptionGroup
             e={e}
             index={index}
             myObjProfile={myObjProfile}
@@ -210,13 +204,22 @@ const OptionDisplay = ({
             isRequired={e.isRequired ? true : false}
             optionsSelectedLabel={optionsSelectedLabel}
             scrollY={scrollY}
+          />
+        );
+      case "Table View":
+        return (
+          <TableOption
+            e={e}
+            index={index}
+            myObjProfile={myObjProfile}
             setMyObjProfile={setMyObjProfile}
+            label={e.label ?? ""}
+            isRequired={e.isRequired ? true : false}
+            optionsSelectedLabel={optionsSelectedLabel}
           />
         );
       case "Included Selections": {
         const displayStyle = e.includedDisplayStyle ?? "Quantity Dropdown";
-        const IncludedComponent =
-          displayStyle === "Table View" ? TableOption : IncludedSelectionsGroup;
 
         const includedCount = parseFloat(e.includedSelections ?? "0");
         const extraPrice = parseFloat(e.extraSelectionPrice ?? "0");
@@ -227,29 +230,55 @@ const OptionDisplay = ({
         const extraSelections = Math.max(0, totalSelected - includedCount);
 
         return (
-          <div style={{ alignSelf: "stretch", marginBottom: 20 }}>
-            <div style={{ marginBottom: 6, fontSize: 12, color: "#64748b", fontWeight: "500" }}>
-              {Math.min(totalSelected, includedCount)} of {includedCount} included
+          <div style={{ alignSelf: "stretch" }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 4,
+            }}>
+              <span style={{
+                fontSize: 12,
+                color: "#64748b",
+                fontWeight: "500",
+              }}>
+                {Math.min(totalSelected, includedCount)} of {includedCount} included
+              </span>
               {extraSelections > 0 && (
-                <span style={{ color: "#ef4444", fontWeight: "600" }}>
-                  {" "}(+{extraSelections} extra = +${(extraSelections * extraPrice).toFixed(2)})
+                <span style={{
+                  fontSize: 12,
+                  color: "#ef4444",
+                  fontWeight: "600",
+                }}>
+                  +{extraSelections} extra = +${(extraSelections * extraPrice).toFixed(2)}
                 </span>
               )}
             </div>
-            <IncludedComponent
-              e={e}
-              index={index}
-              myObjProfile={myObjProfile}
-              setmyObjProfile={setMyObjProfile}
-              id={index.toString()}
-              setopenDropdown={setopenOptions}
-              openDropdown={openOptions}
-              label={e.label ?? ""}
-              isRequired={e.isRequired ? true : false}
-              optionsSelectedLabel={optionsSelectedLabel}
-              scrollY={scrollY}
-              setMyObjProfile={setMyObjProfile}
-            />
+            {displayStyle === "Table View" ? (
+              <TableOption
+                e={e}
+                index={index}
+                myObjProfile={myObjProfile}
+                setMyObjProfile={setMyObjProfile}
+                label={e.label ?? ""}
+                isRequired={e.isRequired ? true : false}
+                optionsSelectedLabel={optionsSelectedLabel}
+              />
+            ) : (
+              <IncludedSelectionsGroup
+                e={e}
+                index={index}
+                myObjProfile={myObjProfile}
+                setmyObjProfile={setMyObjProfile}
+                id={index.toString()}
+                setopenDropdown={setopenOptions}
+                openDropdown={openOptions}
+                label={e.label ?? ""}
+                isRequired={e.isRequired ? true : false}
+                optionsSelectedLabel={optionsSelectedLabel}
+                scrollY={scrollY}
+              />
+            )}
           </div>
         );
       }
