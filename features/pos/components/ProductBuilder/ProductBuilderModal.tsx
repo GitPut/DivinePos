@@ -58,6 +58,17 @@ function ProductBuilderModal() {
   const getPrice = () => {
     let total = parseFloat(myObjProfile.price);
     myObjProfile.options.forEach((op) => {
+      if (op.optionType === "Included Selections") {
+        const includedCount = parseFloat(op.includedSelections ?? "0");
+        const extraPrice = parseFloat(op.extraSelectionPrice ?? "0");
+        let totalSelected = 0;
+        op.optionsList.forEach((item) => {
+          totalSelected += parseFloat(item.selectedTimes ?? "0");
+        });
+        const extraSelections = Math.max(0, totalSelected - includedCount);
+        total += extraSelections * extraPrice;
+        return;
+      }
       op.optionsList
         .filter((f) => f.selected === true)
         .map(
@@ -68,6 +79,7 @@ function ProductBuilderModal() {
         );
     });
     myObjProfile.options.forEach((op) => {
+      if (op.optionType === "Included Selections") return;
       op.optionsList
         .filter((f) => f.selectedTimes ?? 0 > 0)
         .map((e) => {

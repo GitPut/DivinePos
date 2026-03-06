@@ -56,6 +56,9 @@ export type Option = {
   selected?: boolean;
   selectedTimes?: string;
   numOfSelectable?: string | null;
+  includedSelections?: string;
+  extraSelectionPrice?: string;
+  includedDisplayStyle?: string;
   id?: string;
 };
 

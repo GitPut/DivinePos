@@ -111,7 +111,7 @@ function OptionsItemExpanded({
                   optionType: val,
                 }));
               }}
-              options={["Dropdown", "Quantity Dropdown", "Table View", "Row"]}
+              options={["Dropdown", "Quantity Dropdown", "Table View", "Row", "Included Selections"]}
               scrollY={scrollY}
             />
           </div>
@@ -214,8 +214,84 @@ function OptionsItemExpanded({
             </div>
           </div>
         )}
-        <div style={{ width: 195 }} />
+        {e.optionType === "Included Selections" ? (
+          <>
+            <div style={styles.selectionLimitInputGroup1}>
+              <span style={styles.selectionLimitInputLbl1}>Included Selections</span>
+              <input
+                style={styles.selectionLimitInput2}
+                onChange={(ev) => {
+                  const val = ev.target.value;
+                  sete((prevState) => ({
+                    ...prevState,
+                    includedSelections: val,
+                  }));
+                  setnewProductOptions((prev) => {
+                    const clone = structuredClone(prev);
+                    clone[index].includedSelections = val;
+                    return clone;
+                  });
+                }}
+                value={e.includedSelections ?? ""}
+                placeholder="e.g. 3"
+              />
+            </div>
+            <div style={styles.selectionLimitInputGroup1}>
+              <span style={styles.selectionLimitInputLbl1}>Extra Selection Price</span>
+              <input
+                style={styles.selectionLimitInput2}
+                onChange={(ev) => {
+                  const val = ev.target.value;
+                  sete((prevState) => ({
+                    ...prevState,
+                    extraSelectionPrice: val,
+                  }));
+                  setnewProductOptions((prev) => {
+                    const clone = structuredClone(prev);
+                    clone[index].extraSelectionPrice = val;
+                    return clone;
+                  });
+                }}
+                value={e.extraSelectionPrice ?? ""}
+                placeholder="e.g. 1.50"
+              />
+            </div>
+          </>
+        ) : (
+          <div style={{ width: 195 }} />
+        )}
       </div>
+      {e.optionType === "Included Selections" && (
+        <>
+          <div style={styles.spacer5}></div>
+          <div style={styles.optionMainInfoRow1}>
+            <div style={styles.optionTypeGroup1}>
+              <span style={styles.optionTypeDropdownLbl1}>Display Style</span>
+              <div>
+                <DropdownStringOptions
+                  placeholder="Choose Style"
+                  value={e.includedDisplayStyle ?? null}
+                  setValue={(val) => {
+                    sete((prevState) => ({
+                      ...prevState,
+                      includedDisplayStyle: val ?? undefined,
+                    }));
+                    setnewProductOptions((prev) => {
+                      const clone = structuredClone(prev);
+                      clone[index].includedDisplayStyle = val ?? undefined;
+                      return clone;
+                    });
+                  }}
+                  options={["Quantity Dropdown", "Table View"]}
+                  scrollY={scrollY}
+                />
+              </div>
+            </div>
+            <div style={{ width: 239 }} />
+            <div style={{ width: 195 }} />
+          </div>
+        </>
+      )}
       <div style={styles.spacer6}></div>
       {testMap.map((e, indexInnerList) => (
         <OptionSelectionItem

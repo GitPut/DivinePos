@@ -3,6 +3,7 @@ import DropdownOption from "./DropdownOption";
 import MultiSelectOptionGroup from "./MultiSelectOptionGroup";
 import TableOption from "./TableOption";
 import SingleSelectOptionGroup from "./SingleSelectOptionGroup";
+import IncludedSelectionsGroup from "./IncludedSelectionsGroup";
 import { Option, OptionsList, ProductProp } from "types";
 
 interface OptionDisplayProps {
@@ -212,6 +213,46 @@ const OptionDisplay = ({
             setMyObjProfile={setMyObjProfile}
           />
         );
+      case "Included Selections": {
+        const displayStyle = e.includedDisplayStyle ?? "Quantity Dropdown";
+        const IncludedComponent =
+          displayStyle === "Table View" ? TableOption : IncludedSelectionsGroup;
+
+        const includedCount = parseFloat(e.includedSelections ?? "0");
+        const extraPrice = parseFloat(e.extraSelectionPrice ?? "0");
+        let totalSelected = 0;
+        e.optionsList.forEach((item) => {
+          totalSelected += parseFloat(item.selectedTimes ?? "0");
+        });
+        const extraSelections = Math.max(0, totalSelected - includedCount);
+
+        return (
+          <div style={{ alignSelf: "stretch", marginBottom: 20 }}>
+            <div style={{ marginBottom: 6, fontSize: 12, color: "#64748b", fontWeight: "500" }}>
+              {Math.min(totalSelected, includedCount)} of {includedCount} included
+              {extraSelections > 0 && (
+                <span style={{ color: "#ef4444", fontWeight: "600" }}>
+                  {" "}(+{extraSelections} extra = +${(extraSelections * extraPrice).toFixed(2)})
+                </span>
+              )}
+            </div>
+            <IncludedComponent
+              e={e}
+              index={index}
+              myObjProfile={myObjProfile}
+              setmyObjProfile={setMyObjProfile}
+              id={index.toString()}
+              setopenDropdown={setopenOptions}
+              openDropdown={openOptions}
+              label={e.label ?? ""}
+              isRequired={e.isRequired ? true : false}
+              optionsSelectedLabel={optionsSelectedLabel}
+              scrollY={scrollY}
+              setMyObjProfile={setMyObjProfile}
+            />
+          </div>
+        );
+      }
       default:
         return (
           <SingleSelectOptionGroup
