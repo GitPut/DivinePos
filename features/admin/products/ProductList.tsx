@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ProductOptionBox from "./components/ProductOptionBox";
 import { FiSearch, FiPlus } from "react-icons/fi";
-import { MdFormatListBulletedAdd } from "react-icons/md";
 import {
   onlineStoreState,
   updateStoreProductsState,
@@ -19,7 +18,7 @@ function ProductList() {
   const onlineStoreDetails = onlineStoreState.use();
   const [searchFilterValue, setsearchFilterValue] = useState<string>("");
   const [selectedCategory, setselectedCategory] = useState<string | null>();
-  const [editMode, seteditMode] = useState<boolean>(false);
+  const editMode = true;
   const [addProductModal, setaddProductModal] = useState<boolean>(false);
   const [existingProduct, setexistingProduct] = useState<ProductProp | null>(
     null
@@ -131,13 +130,7 @@ function ProductList() {
             }}
           />
         </div>
-        <button
-          style={styles.manageProductsBtn}
-          onClick={() => seteditMode((prev) => !prev)}
-        >
-          <MdFormatListBulletedAdd style={styles.manageProductIcon} />
-          <span style={styles.manageProductsTxt}>Manage Products</span>
-        </button>
+        <div style={{ width: 181 }} />
       </div>
       <div style={styles.categoriesScrollView}>
         <div style={{ display: "flex", flexDirection: "row", overflow: "auto", width: "100%" }}>
@@ -173,22 +166,23 @@ function ProductList() {
         </div>
       </div>
       <div style={styles.scrollArea}>
-        <div style={{ overflow: "auto", flexGrow: 1, justifyContent: "flex-start" }}>
+        <div style={{ padding: "0 0 20px 0" }}>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(215px, 1fr))",
-              gap: 30,
+              gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
+              gap: 20,
               width: "100%",
             }}
           >
             <button
-              style={{ ...styles.addProductBtn, ...(editMode ? { height: 322 } : {}) }}
+              className="admin-card"
+              style={styles.addProductBtn}
               onClick={() => setaddProductModal(true)}
             >
               <FiPlus style={styles.addProductPlusIcon} />
               <span style={styles.addNewItemTxt}>Add New Item</span>
-              <span style={styles.addNewItemTxt}>Or</span>
+              <span style={{ color: "#999", fontSize: 13 }}>or</span>
               <button
                 style={styles.templateBtn}
                 onClick={(e) => {
@@ -202,10 +196,6 @@ function ProductList() {
             {catalog.products.map((product) => (
               <div key={product.id} id={product.id}>
                 <ProductOptionBox
-                  style={{
-                    ...styles.productOptionBox,
-                    ...(editMode ? { height: 322 } : {}),
-                  }}
                   product={product}
                   editMode={editMode}
                   deleteProduct={() => confirmText(product.id)}
@@ -283,6 +273,8 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "flex-start",
     width: "100%",
+    overflow: "hidden",
+    minHeight: 0,
   },
   topRow: {
     width: "95%",
@@ -296,6 +288,8 @@ const styles: Record<string, React.CSSProperties> = {
   scrollArea: {
     flex: 1,
     width: "95%",
+    overflow: "auto",
+    minHeight: 0,
   },
   productManagementTxt: {
     fontWeight: "700",
@@ -311,27 +305,6 @@ const styles: Record<string, React.CSSProperties> = {
     paddingLeft: 10,
     boxSizing: "border-box" as const,
   },
-  manageProductsBtn: {
-    width: 181,
-    height: 38,
-    backgroundColor: "#fdfdff",
-    border: "1px solid #000000",
-    borderRadius: 10,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    cursor: "pointer",
-  },
-  manageProductIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 22,
-  },
-  manageProductsTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 14,
-  },
   categoriesScrollView: {
     width: "85%",
     marginBottom: 30,
@@ -342,54 +315,45 @@ const styles: Record<string, React.CSSProperties> = {
     display: "inline-block",
   },
   addProductBtn: {
-    width: 215,
-    height: 285,
-    border: "3px dashed #858585",
-    borderRadius: 10,
-    backgroundColor: "#f5f5f5",
+    border: "2px dashed #ccc",
+    borderRadius: 12,
+    backgroundColor: "#fafafa",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 30,
-    marginBottom: 30,
     cursor: "pointer",
+    padding: "24px 16px",
+    gap: 6,
+    minHeight: 200,
   },
   addProductPlusIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 25,
+    color: "#888",
+    fontSize: 28,
   },
   addNewItemTxt: {
-    color: "#121212",
-    fontSize: 16,
-    marginTop: 20,
+    color: "#555",
+    fontSize: 14,
+    fontWeight: "600",
     display: "inline-block",
   },
   templateBtn: {
-    width: 175,
-    height: 48,
+    width: 150,
+    height: 38,
     backgroundColor: "#1c294e",
-    borderRadius: 20,
+    borderRadius: 8,
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 8,
     border: "none",
     cursor: "pointer",
   },
   templatesBtnLbl: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 17,
-    marginRight: 10,
-  },
-  productOptionBox: {
-    height: 285,
-    width: 215,
-    marginLeft: 0,
-    marginBottom: 30,
-    marginRight: 30,
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 13,
   },
 };
 

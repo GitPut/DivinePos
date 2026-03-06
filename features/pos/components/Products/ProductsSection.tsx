@@ -18,8 +18,8 @@ const ProductsSection = ({ catalog, setallLoaded }: ProductsSectionProps) => {
   const styles = {
     scrollAreaProducts: {
       width: "95%",
-      height: width > 800 ? "60vh" : "50vh",
-      justifyContent: "center",
+      flex: 1,
+      minHeight: 0,
       marginLeft: "auto",
       marginRight: "auto",
     },
@@ -27,9 +27,10 @@ const ProductsSection = ({ catalog, setallLoaded }: ProductsSectionProps) => {
       display: "grid",
       gridTemplateColumns:
         width > 1250
-          ? "repeat(auto-fill, minmax(250px, 1fr))"
+          ? "repeat(auto-fill, minmax(220px, 1fr))"
           : "repeat(auto-fill, minmax(140px, 1fr))",
-      gap: "20px",
+      gap: "14px",
+      paddingBottom: 20,
     },
   };
 

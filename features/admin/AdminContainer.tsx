@@ -371,6 +371,9 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: "#ffffff",
     boxShadow: "3px 3px 15px rgba(0,0,0,0.2)",
     height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
   },
   logoutFromAccount: {
     fontWeight: "700",

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { FiSearch, FiPlus } from "react-icons/fi";
-import { MdFormatListBulletedAdd } from "react-icons/md";
 import {
   onlineStoreState,
   updateStoreProductsState,
@@ -16,7 +15,7 @@ function CategoryList() {
   const catalog = storeProductsState.use();
   const [searchFilterValue, setsearchFilterValue] = useState<string>("");
   const onlineStoreDetails = onlineStoreState.use();
-  const [editMode, seteditMode] = useState<boolean>(false);
+  const editMode = true;
   const [addCategoryModal, setaddCategoryModal] = useState<
     boolean | string | null
   >(false);
@@ -104,26 +103,21 @@ function CategoryList() {
             }}
           />
         </div>
-        <button
-          style={styles.manageProductsBtn}
-          onClick={() => seteditMode((prev) => !prev)}
-        >
-          <MdFormatListBulletedAdd style={styles.manageProductIcon} />
-          <span style={styles.manageProductsTxt}>Manage Categories</span>
-        </button>
+        <div style={{ width: 181 }} />
       </div>
       <div style={styles.scrollArea}>
-        <div style={{ overflow: "auto", flexGrow: 1, justifyContent: "flex-start" }}>
+        <div style={{ padding: "0 0 20px 0" }}>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(215px, 1fr))",
-              gap: 30,
+              gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
+              gap: 20,
               width: "100%",
             }}
           >
             <button
-              style={{ ...styles.addProductBtn, ...(editMode ? { height: 322 } : {}) }}
+              className="admin-card"
+              style={styles.addProductBtn}
               onClick={() => setaddCategoryModal(true)}
             >
               <FiPlus style={styles.addProductPlusIcon} />
@@ -132,10 +126,6 @@ function CategoryList() {
             {catalog.categories.map((category) => (
               <div key={category} id={category}>
                 <CategoryOptionBox
-                  style={{
-                    ...styles.productOptionBox,
-                    ...(editMode ? { height: 322 } : {}),
-                  }}
                   category={category}
                   editMode={editMode}
                   deleteCategory={() => confirmText(category)}
@@ -212,6 +202,8 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "flex-start",
     width: "100%",
+    overflow: "hidden",
+    minHeight: 0,
   },
   topRow: {
     width: "95%",
@@ -225,6 +217,8 @@ const styles: Record<string, React.CSSProperties> = {
   scrollArea: {
     flex: 1,
     width: "95%",
+    overflow: "auto",
+    minHeight: 0,
   },
   productManagementTxt: {
     fontWeight: "700",
@@ -240,57 +234,28 @@ const styles: Record<string, React.CSSProperties> = {
     paddingLeft: 10,
     boxSizing: "border-box" as const,
   },
-  manageProductsBtn: {
-    width: 181,
-    height: 38,
-    backgroundColor: "#fdfdff",
-    border: "1px solid #000000",
-    borderRadius: 10,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    cursor: "pointer",
-  },
-  manageProductIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 22,
-  },
-  manageProductsTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 14,
-  },
   addProductBtn: {
-    width: 215,
-    height: 285,
-    border: "3px dashed #858585",
-    borderRadius: 10,
-    backgroundColor: "#f5f5f5",
+    border: "2px dashed #ccc",
+    borderRadius: 12,
+    backgroundColor: "#fafafa",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 30,
-    marginBottom: 30,
     cursor: "pointer",
+    padding: "24px 16px",
+    gap: 6,
+    minHeight: 180,
   },
   addProductPlusIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 25,
+    color: "#888",
+    fontSize: 28,
   },
   addNewItemTxt: {
-    color: "#121212",
-    fontSize: 16,
-    marginTop: 20,
+    color: "#555",
+    fontSize: 14,
+    fontWeight: "600",
     display: "inline-block",
-  },
-  productOptionBox: {
-    height: 285,
-    width: 215,
-    marginLeft: 0,
-    marginBottom: 30,
-    marginRight: 30,
   },
 };
 

@@ -23,12 +23,12 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
   },
   amountLbl: {
-    color: "#121212",
-    fontSize: 15,
+    color: "#666",
+    fontSize: 13,
   },
   amountValue: {
-    color: "#121212",
-    fontSize: 15,
+    color: "#1a1a1a",
+    fontSize: 13,
   },
 };
 

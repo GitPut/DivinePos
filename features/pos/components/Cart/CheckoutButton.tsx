@@ -35,19 +35,10 @@ const CheckoutButton = () => {
 
   if (updatingOrder) {
     return (
-      <div
-        style={{
-          flexDirection: "row",
-          width: "90%",
-          alignSelf: "center",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 10,
-          display: "flex",
-        }}
-      >
+      <div style={styles.btnRow}>
         <button
-          style={{ ...styles.checkoutBtn, ...(cart.length < 1 ? { opacity: 0.8 } : {}) }}
+          className="pos-checkout-btn pos-checkout-filled"
+          style={{ ...styles.checkoutBtn, ...styles.filledBtn, ...(cart.length < 1 ? { opacity: 0.5 } : {}) }}
           disabled={cart.length < 1}
           onClick={() => {
             db.collection("users")
@@ -76,15 +67,16 @@ const CheckoutButton = () => {
             });
           }}
         >
-          <span style={styles.checkoutLbl}>Update</span>
+          <span style={styles.filledLbl}>Update</span>
         </button>
         <button
-          style={{ ...styles.checkoutBtn, backgroundColor: "red" }}
+          className="pos-checkout-btn pos-checkout-danger"
+          style={{ ...styles.checkoutBtn, backgroundColor: "#ef4444" }}
           onClick={() => {
             resetPosState();
           }}
         >
-          <span style={styles.checkoutLbl}>Cancel</span>
+          <span style={styles.filledLbl}>Cancel</span>
         </button>
       </div>
     );
@@ -92,33 +84,27 @@ const CheckoutButton = () => {
 
   if (!ongoingDelivery) {
     return (
-      <div
-        style={{
-          flexDirection: "row",
-          width: "90%",
-          alignSelf: "center",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 10,
-          display: "flex",
-        }}
-      >
+      <div style={styles.btnRow}>
         <button
+          className="pos-checkout-btn pos-checkout-outlined"
           style={{
             ...styles.checkoutBtn,
-            ...((cart.length < 1 || ongoingDelivery) ? { opacity: 0.8 } : {}),
+            ...styles.outlinedBtn,
+            ...((cart.length < 1 || ongoingDelivery) ? { opacity: 0.5 } : {}),
           }}
           onClick={() => {
             updatePosState({ cashModal: true });
           }}
           disabled={cart.length < 1 || ongoingDelivery}
         >
-          <span style={styles.checkoutLbl}>Cash</span>
+          <span style={styles.outlinedLbl}>Cash</span>
         </button>
         <button
+          className="pos-checkout-btn pos-checkout-filled"
           style={{
             ...styles.checkoutBtn,
-            ...((cart.length < 1 || ongoingDelivery) ? { opacity: 0.8 } : {}),
+            ...styles.filledBtn,
+            ...((cart.length < 1 || ongoingDelivery) ? { opacity: 0.5 } : {}),
           }}
           onClick={() => {
             Print({
@@ -142,15 +128,17 @@ const CheckoutButton = () => {
           }}
           disabled={cart.length < 1 || ongoingDelivery}
         >
-          <span style={styles.checkoutLbl}>Card</span>
+          <span style={styles.filledLbl}>Card</span>
         </button>
       </div>
     );
   }
   if (ongoingDelivery && cart.length > 0) {
     return (
+      <div style={styles.btnRow}>
       <button
-        style={styles.checkoutBtn}
+        className="pos-checkout-btn pos-checkout-filled"
+        style={{ ...styles.checkoutBtn, ...styles.filledBtn, width: "100%" }}
         onClick={() => {
           Print({
             method: deliveryChecked ? "deliveryOrder" : "pickupOrder",
@@ -172,19 +160,23 @@ const CheckoutButton = () => {
           });
         }}
       >
-        <span style={styles.checkoutLbl}>Checkout</span>
+        <span style={styles.filledLbl}>Checkout</span>
       </button>
+      </div>
     );
   } else {
     return (
+      <div style={styles.btnRow}>
       <button
-        style={styles.checkoutBtn}
+        className="pos-checkout-btn pos-checkout-outlined"
+        style={{ ...styles.checkoutBtn, ...styles.outlinedBtn, width: "100%" }}
         onClick={() => {
           resetPosState();
         }}
       >
-        <span style={styles.checkoutLbl}>Cancel</span>
+        <span style={styles.outlinedLbl}>Cancel</span>
       </button>
+      </div>
     );
   }
 };
@@ -192,20 +184,41 @@ const CheckoutButton = () => {
 export default CheckoutButton;
 
 const styles: Record<string, React.CSSProperties> = {
-  checkoutBtn: {
-    width: 170,
-    height: 48,
-    backgroundColor: "#1a2951",
-    borderRadius: 20,
+  btnRow: {
+    flexDirection: "row",
+    width: "88%",
+    alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
-    border: "none",
+    marginBottom: 12,
+    display: "flex",
+    gap: 10,
+  },
+  checkoutBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
     cursor: "pointer",
     display: "flex",
   },
-  checkoutLbl: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 20,
+  filledBtn: {
+    backgroundColor: "#1e293b",
+    border: "none",
+  },
+  outlinedBtn: {
+    backgroundColor: "#fff",
+    border: "2px solid #1e293b",
+  },
+  filledLbl: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 15,
+  },
+  outlinedLbl: {
+    fontWeight: "600",
+    color: "#1e293b",
+    fontSize: 15,
   },
 };

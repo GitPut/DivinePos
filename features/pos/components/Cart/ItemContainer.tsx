@@ -1,7 +1,7 @@
 import React from "react";
 import { addCartState, cartState, setProductBuilderState } from "store/appState";
 import ProductImage from "shared/components/ui/ProductImage";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiImage } from "react-icons/fi";
 import { ProductProp } from "types";
 
 interface ItemContainerProps {
@@ -38,15 +38,27 @@ function ItemContainer({ product, onLayout, width }: ItemContainerProps) {
             );
           }
         }}
+        className="pos-product-card"
         style={width > 1250 ? styles.container : styles.containerMobile}
       >
-        {product.hasImage && product.imageUrl && (
+        {product.hasImage && product.imageUrl ? (
           <ProductImage
             key={product.id}
             source={product.imageUrl}
             style={width < 1250 ? styles.itemImgSmall : styles.itemImg}
             alt={product.name}
           />
+        ) : (
+          <div style={{
+            ...(width < 1250 ? styles.itemImgSmall : styles.itemImg),
+            backgroundColor: "#f5f5f5",
+            borderRadius: 8,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <FiImage size={24} color="#ccc" />
+          </div>
         )}
         <div style={styles.rightSide}>
           <span style={styles.familyCombo}>{product.name}</span>
@@ -56,15 +68,14 @@ function ItemContainer({ product, onLayout, width }: ItemContainerProps) {
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              paddingBottom: 10,
-              paddingTop: 10,
-              marginBottom: 20,
+              paddingBottom: 6,
+              paddingTop: 4,
               display: "flex",
             }}
           >
             <span style={styles.price}>${product.price}</span>
             <div style={styles.openBtn}>
-              <FiPlus size={30} color="rgba(0,0,0,1)" />
+              <FiPlus size={18} color="#555" />
             </div>
           </div>
         </div>
@@ -76,67 +87,73 @@ function ItemContainer({ product, onLayout, width }: ItemContainerProps) {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     backgroundColor: "#ffffff",
-    borderRadius: 20,
+    borderRadius: 12,
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "flex-start",
     alignItems: "center",
-    height: 160,
     width: "100%",
-    paddingLeft: 10,
+    padding: "10px 12px",
     display: "flex",
-    border: "none",
+    border: "1px solid #f0f0f0",
     cursor: "pointer",
+    transition: "box-shadow 0.15s ease",
+    gap: 12,
+    boxSizing: "border-box" as const,
   },
   containerMobile: {
     backgroundColor: "#ffffff",
-    borderRadius: 20,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    height: 240,
     width: "100%",
-    paddingLeft: 10,
-    paddingTop: 10,
+    padding: "12px 10px",
     display: "flex",
     flexDirection: "column",
-    border: "none",
+    border: "1px solid #f0f0f0",
     cursor: "pointer",
+    transition: "box-shadow 0.15s ease",
+    gap: 8,
+    boxSizing: "border-box" as const,
   },
   itemImg: {
-    height: 133,
-    width: 117,
+    height: 90,
+    width: 90,
+    objectFit: "contain" as const,
+    flexShrink: 0,
   },
   itemImgSmall: {
-    height: 100,
-    width: 117,
+    height: 80,
+    width: 90,
+    objectFit: "contain" as const,
   },
   rightSide: {
     flex: 1,
     justifyContent: "space-between",
-    marginTop: 14,
     alignSelf: "stretch",
-    height: 150,
     display: "flex",
     flexDirection: "column",
+    minHeight: 70,
   },
   familyCombo: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 18,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    fontSize: 14,
     alignSelf: "stretch",
     width: "90%",
     display: "inline-block",
+    lineHeight: "1.3",
   },
   price: {
     fontWeight: "700",
     color: "#00c93b",
-    fontSize: 18,
+    fontSize: 15,
   },
   openBtn: {
-    width: 35,
-    height: 35,
-    backgroundColor: "rgba(255,255,255,1)",
+    width: 28,
+    height: 28,
+    backgroundColor: "#fff",
     borderRadius: 100,
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.2)",
+    border: "1px solid #e0e0e0",
     alignItems: "center",
     justifyContent: "center",
     display: "flex",

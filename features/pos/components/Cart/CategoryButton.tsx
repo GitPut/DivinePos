@@ -18,6 +18,7 @@ function CategoryButton({
 }: CategoryButtonProps) {
   return (
     <button
+      className="pos-category-btn"
       style={{
         ...styles.container,
         ...style,
@@ -57,20 +58,21 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
+    gap: 4,
+    padding: 6,
   },
   categoryLbl: {
-    fontWeight: "700",
-    fontSize: 16,
+    fontWeight: "600",
+    fontSize: 12,
     marginTop: 0,
     marginBottom: 0,
     textAlign: "center",
     display: "inline-block",
   },
   categoryImg: {
-    height: 96,
-    width: 95,
-    marginTop: 0,
-    marginBottom: 0,
+    height: 48,
+    width: 48,
+    objectFit: "contain" as const,
   },
 };
 

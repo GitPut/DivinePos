@@ -74,31 +74,29 @@ const Cart = () => {
   }, [cart, discountAmount, deliveryChecked, cartSub, cartNote, storeDetails]);
 
   return (
-    <div
-      style={{
-        ...styles.cartContainer,
-        ...(width > 1300 ? { width: "30%" } : { width: "37%" }),
-      }}
-    >
+    <div style={styles.cartContainer}>
       <div
         style={{
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          width: "90%",
+          width: "88%",
           display: "flex",
+          paddingTop: 16,
+          paddingBottom: 8,
         }}
       >
         <span style={styles.myCartTxt}>My Cart</span>
         {cart.length > 0 ? (
           <button
+            className="pos-clear-btn"
             style={{
-              borderRadius: 10,
-              height: 40,
-              width: 40,
+              borderRadius: 8,
+              height: 30,
+              width: 30,
               justifyContent: "center",
               alignItems: "center",
-              backgroundColor: "#1a2951",
+              backgroundColor: "#1e293b",
               border: "none",
               cursor: "pointer",
               display: "flex",
@@ -108,13 +106,13 @@ const Cart = () => {
               updatePosState({ discountAmount: null });
             }}
           >
-            <MdClear size={30} color="white" />
+            <MdClear size={18} color="white" />
           </button>
         ) : (
-          <div style={{ height: 40, width: 40 }} />
+          <div style={{ height: 30, width: 30 }} />
         )}
       </div>
-      <div style={{ ...styles.cartItems, height: height * 0.4 }}>
+      <div style={styles.cartItems}>
         {cart.length > 0 ? (
           <div
             style={{ overflow: "auto", height: "100%", width: "100%" }}
@@ -161,18 +159,22 @@ const Cart = () => {
               justifyContent: "center",
               alignItems: "center",
               display: "flex",
+              flexDirection: "column",
+              gap: 8,
             }}
           >
             <img
               src={noItemsImg}
               alt=""
               style={{
-                width: 200,
-                height: "80%",
+                width: 100,
+                height: 100,
                 objectFit: "contain",
+                opacity: 0.6,
               }}
               key={"noItemsImg"}
             />
+            <span style={{ color: "#aaa", fontSize: 13 }}>No items added</span>
           </div>
         )}
       </div>
@@ -180,17 +182,19 @@ const Cart = () => {
         <div style={styles.topGroupTotalsContainer}>
           <div>
             <textarea
+              className="pos-note-textarea"
               placeholder="Write a note..."
               style={{
-                height: 80,
+                height: 52,
                 width: "100%",
                 backgroundColor: "white",
-                borderRadius: 10,
-                padding: 10,
-                marginBottom: 10,
-                border: "none",
+                borderRadius: 8,
+                padding: 8,
+                marginBottom: 8,
+                border: "1px solid #eee",
                 resize: "none",
                 fontFamily: "inherit",
+                fontSize: 13,
                 boxSizing: "border-box",
               }}
               value={cartNote ? cartNote : ""}
@@ -212,16 +216,17 @@ const Cart = () => {
               />
               {discountAmount && (
                 <button
+                  className="pos-remove-btn"
                   style={{
                     borderRadius: 30,
-                    height: 22,
-                    width: 22,
+                    height: 18,
+                    width: 18,
                     justifyContent: "center",
                     alignItems: "center",
-                    backgroundColor: "red",
+                    backgroundColor: "#ef4444",
                     position: "absolute",
-                    right: -35,
-                    top: 0,
+                    right: -28,
+                    top: 1,
                     border: "none",
                     cursor: "pointer",
                     display: "flex",
@@ -230,7 +235,7 @@ const Cart = () => {
                     updatePosState({ discountAmount: null });
                   }}
                 >
-                  <MdClear size={20} color="white" />
+                  <MdClear size={14} color="white" />
                 </button>
               )}
             </div>
@@ -281,17 +286,19 @@ const Cart = () => {
       </div>
       {isOnlineOrder ? (
         <button
+          className="pos-checkout-btn pos-checkout-filled"
           style={{
-            width: 170,
-            height: 48,
-            backgroundColor: "#1a2951",
-            borderRadius: 20,
+            width: "88%",
+            height: 44,
+            backgroundColor: "#1e293b",
+            borderRadius: 10,
             justifyContent: "center",
             alignItems: "center",
-            opacity: cart.length < 1 ? 0.8 : 1,
+            opacity: cart.length < 1 ? 0.5 : 1,
             border: "none",
             cursor: "pointer",
             display: "flex",
+            marginBottom: 12,
           }}
           disabled={cart.length < 1}
           onClick={() => {
@@ -337,9 +344,9 @@ const Cart = () => {
         >
           <span
             style={{
-              fontWeight: "700",
-              color: "rgba(255,255,255,1)",
-              fontSize: 20,
+              fontWeight: "600",
+              color: "#fff",
+              fontSize: 15,
             }}
           >
             Checkout
@@ -356,118 +363,77 @@ export default Cart;
 
 const styles: Record<string, React.CSSProperties> = {
   cartContainer: {
-    width: "28%",
-    backgroundColor: "rgba(255,255,255,1)",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.5)",
-    alignSelf: "stretch",
-    justifyContent: "space-around",
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#fff",
+    borderLeft: "1px solid #e8eaed",
+    justifyContent: "flex-start",
     alignItems: "center",
     display: "flex",
     flexDirection: "column",
   },
   myCartTxt: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 24,
-    width: "90%",
-    height: 29,
+    color: "#1a1a1a",
+    fontSize: 18,
     display: "inline-block",
   },
   cartItems: {
-    width: "90%",
-  },
-  cartItems_contentContainerStyle: {
-    height: "100%",
-    width: "100%",
+    width: "88%",
+    flex: 1,
+    minHeight: 0,
   },
   cartItem1: {
     width: "100%",
-    marginBottom: 10,
-  },
-  cartItem2: {
-    width: "100%",
-    marginBottom: 10,
-  },
-  cartItem3: {
-    height: 86,
-    width: "100%",
-    marginBottom: 10,
-  },
-  cartItem4: {
-    height: 86,
-    width: "100%",
-    marginBottom: 10,
-  },
-  cartItem5: {
-    height: 86,
-    width: "100%",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   totalsContainer: {
-    width: "90%",
-    height: 250,
-    backgroundColor: "rgba(238,242,255,1)",
-    borderRadius: 20,
-    justifyContent: "space-around",
-    alignItems: "center",
-    boxShadow: "3px 3px 3px rgba(0,0,0,0.1)",
+    width: "88%",
+    backgroundColor: "#f8f9fc",
+    borderRadius: 12,
+    padding: "12px 14px",
     display: "flex",
     flexDirection: "column",
+    gap: 6,
+    marginBottom: 8,
   },
   topGroupTotalsContainer: {
-    width: 280,
-    height: 120,
-    justifyContent: "space-between",
+    width: "100%",
+    justifyContent: "flex-start",
     display: "flex",
     flexDirection: "column",
+    gap: 4,
   },
   discountRow: {
-    height: 18,
     alignSelf: "stretch",
   },
   subtotalRow: {
-    height: 18,
     alignSelf: "stretch",
   },
   taxRow: {
-    height: 18,
     alignSelf: "stretch",
   },
   totalRowGroup: {
-    width: 280,
-    alignItems: "center",
-    justifyContent: "space-between",
+    width: "100%",
+    borderTop: "1px solid #e0e0e0",
+    paddingTop: 8,
     display: "flex",
     flexDirection: "column",
   },
   totalRow: {
     flexDirection: "row",
-    height: 18,
     alignSelf: "stretch",
     justifyContent: "space-between",
     display: "flex",
   },
   total2: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 18,
+    color: "#1a1a1a",
+    fontSize: 15,
   },
   totalValue: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 18,
-  },
-  discountCodeBtn: {
-    minWidth: 140,
-    minHeight: 35,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  discountCode: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 16,
+    color: "#1a1a1a",
+    fontSize: 15,
   },
 };

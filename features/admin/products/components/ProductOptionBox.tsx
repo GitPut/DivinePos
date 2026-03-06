@@ -1,6 +1,6 @@
 import ProductImage from "shared/components/ui/ProductImage";
 import React from "react";
-import { FiEdit3, FiTrash } from "react-icons/fi";
+import { FiEdit3, FiTrash, FiImage } from "react-icons/fi";
 import { ProductProp } from "types";
 
 interface ProductOptionBoxProps {
@@ -22,36 +22,45 @@ function ProductOptionBox({
 }: ProductOptionBoxProps) {
   return (
     <button
+      className="admin-card"
       style={{ ...styles.container, ...style }}
       onClick={() => setexistingProduct(product)}
     >
-      <div>
+      {product.imageUrl ? (
         <ProductImage
-          source={product.imageUrl ? product.imageUrl : "https://via.placeholder.com/150"}
+          source={product.imageUrl}
           style={styles.productImage}
+          alt={product.name}
         />
+      ) : (
+        <div style={styles.noImagePlaceholder}>
+          <FiImage style={{ fontSize: 28, color: "#ccc" }} />
+          <span style={{ fontSize: 11, color: "#bbb" }}>No image</span>
+        </div>
+      )}
+      <div style={styles.infoSection}>
+        <span style={styles.productNameTxt}>
+          {product.name.length > 22
+            ? product.name.substring(0, 22) + "..."
+            : product.name}
+        </span>
+        <span style={styles.productPriceTxt}>${product.price}</span>
       </div>
-      <span style={styles.productNameTxt}>
-        {product.name.length > 20
-          ? product.name.substring(0, 20) + "..."
-          : product.name}
-      </span>
-      <span style={styles.productPriceTxt}>${product.price}</span>
       {editMode ? (
-        <div>
-          <div style={{ ...styles.editProductBtn, borderRadius: 0 }}>
+        <div style={styles.actionBtns}>
+          <div style={styles.editProductBtn}>
             <FiEdit3 style={styles.editProductIcon} />
-            <span style={styles.editProductTxt}>Edit Product</span>
+            <span style={styles.editProductTxt}>Edit</span>
           </div>
           <button
             onClick={(e) => {
               e.stopPropagation();
               deleteProduct?.();
             }}
-            style={{ ...styles.editProductBtn, backgroundColor: "#d33" }}
+            style={styles.deleteProductBtn}
           >
             <FiTrash style={styles.editProductIcon} />
-            <span style={styles.editProductTxt}>Delete Product</span>
+            <span style={styles.editProductTxt}>Delete</span>
           </button>
         </div>
       ) : (
@@ -68,40 +77,64 @@ function ProductOptionBox({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
-    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    backgroundColor: "#fff",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "space-between",
-    border: "none",
+    justifyContent: "flex-start",
+    border: "1px solid #e8eaed",
     cursor: "pointer",
     padding: 0,
+    overflow: "hidden",
+    width: "100%",
   },
   productImage: {
-    height: 125,
-    width: 127,
-    marginTop: 20,
+    height: 110,
+    width: "100%",
+    objectFit: "cover" as const,
+  },
+  noImagePlaceholder: {
+    height: 110,
+    width: "100%",
+    backgroundColor: "#f5f5f5",
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  infoSection: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+    padding: "12px 10px",
+    width: "100%",
+    boxSizing: "border-box" as const,
   },
   productNameTxt: {
-    color: "#121212",
-    fontSize: 15,
-    paddingLeft: 10,
-    paddingRight: 10,
+    color: "#1a1a1a",
+    fontSize: 14,
+    fontWeight: "600",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "100%",
   },
   productPriceTxt: {
     fontWeight: "700",
     color: "#20c85c",
-    fontSize: 20,
+    fontSize: 15,
+  },
+  actionBtns: {
+    display: "flex",
+    flexDirection: "row",
+    width: "100%",
   },
   editProductBtn: {
-    width: 215,
-    height: 37,
-    borderRadius: 10,
-    borderBottomRightRadius: 10,
-    borderBottomLeftRadius: 10,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
+    flex: 1,
+    height: 36,
     backgroundColor: "#2b3659",
     display: "flex",
     flexDirection: "row",
@@ -109,15 +142,27 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     border: "none",
     cursor: "pointer",
+    gap: 6,
+  },
+  deleteProductBtn: {
+    flex: 1,
+    height: 36,
+    backgroundColor: "#dc2626",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "none",
+    cursor: "pointer",
+    gap: 6,
   },
   editProductIcon: {
-    color: "rgba(255,254,254,1)",
-    fontSize: 20,
+    color: "#fff",
+    fontSize: 14,
   },
   editProductTxt: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 14,
-    marginLeft: 10,
+    color: "#fff",
+    fontSize: 13,
   },
 };
 

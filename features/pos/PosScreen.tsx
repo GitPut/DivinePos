@@ -13,6 +13,14 @@ import PhoneOrderModal from "shared/components/modals/PhoneOrderModal/PhoneOrder
 import SavedCustomersModal from "shared/components/modals/SavedCustomersModal/SavedCustomersModal";
 import ClockInModal from "shared/components/modals/ClockInModal/ClockInModal";
 import LeftMenuBar from "./components/Products/LeftMenuBar";
+import pendingOrderIcon from "assets/images/pendingOrderIcon.png";
+import clockInIcon from "assets/images/clockInIcon.png";
+import phoneOrderIcon from "assets/images/phoneOrderIcon.png";
+import percentIcon from "assets/images/percentIcon.png";
+import dollarSignIcon from "assets/images/dollarSignIcon.png";
+import settingsIcon from "assets/images/settingsIcon.png";
+import { settingsAuthState } from "store/appState";
+import { useHistory } from "react-router-dom";
 import Cart from "./components/Cart/Cart";
 import Modal from "shared/components/ui/Modal";
 import { posState, updatePosState } from "store/posState";
@@ -20,7 +28,7 @@ import CustomCashModal from "shared/components/modals/CustomCashModal";
 import AuthModal from "shared/components/modals/AuthModal";
 import ProductBuilderModal from "./components/ProductBuilder/ProductBuilderModal";
 import CartMobile from "./components/CartMobile";
-import { FiLogOut, FiShoppingCart } from "react-icons/fi";
+import { FiLogOut, FiShoppingCart, FiMenu, FiX } from "react-icons/fi";
 import useWindowSize from "shared/hooks/useWindowSize";
 const CategorySection = React.lazy(
   () => import("./components/Products/CategorySection")
@@ -35,6 +43,8 @@ function PosScreen() {
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
   const [cartOpen, setcartOpen] = useState(false);
+  const [mobileMenuOpen, setmobileMenuOpen] = useState(false);
+  const history = useHistory();
 
   const {
     section,
@@ -97,6 +107,7 @@ function PosScreen() {
         element.style.height = "auto";
         element.style.overflow = "visible";
         element.style.pointerEvents = "auto";
+        element.style.animation = "pos-grid-fade 0.25s ease-out";
       } else {
         element.style.visibility = "hidden";
         element.style.position = "absolute";
@@ -113,11 +124,10 @@ function PosScreen() {
       <div
         style={{
           ...styles.menuContainer,
-          ...(width > 1300 ? { width: "65%" } : { width: "58%" }),
-          ...(width < 1000 && { width: "100%" }),
+          ...(width < 1000 ? { width: "100%" } : { flex: 1 }),
         }}
       >
-        {width < 1000 && (
+        {width < 1250 && (
           <div
             style={{
               flexDirection: "row",
@@ -130,9 +140,7 @@ function PosScreen() {
             }}
           >
             <button
-              onClick={() => {
-                // noop
-              }}
+              onClick={() => setmobileMenuOpen(true)}
               style={{
                 backgroundColor: "#1D294E",
                 borderRadius: 10,
@@ -145,34 +153,31 @@ function PosScreen() {
                 display: "flex",
               }}
             >
-              <FiLogOut size={20} color="white" />
+              <FiMenu size={20} color="white" />
             </button>
-            <button
-              onClick={() => {
-                setcartOpen(true);
-              }}
-              style={{
-                backgroundColor: "#1D294E",
-                borderRadius: 10,
-                justifyContent: "space-between",
-                alignItems: "center",
-                width: 58,
-                height: 34,
-                flexDirection: "row",
-                padding: 5,
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-              }}
-            >
-              <FiShoppingCart
-                size={20}
-                color="white"
-              />
-              <span style={{ color: "white", fontSize: 20 }}>
-                {cart.length}
-              </span>
-            </button>
+            {width < 1000 && (
+              <button
+                onClick={() => setcartOpen(true)}
+                style={{
+                  backgroundColor: "#1D294E",
+                  borderRadius: 10,
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: 58,
+                  height: 34,
+                  flexDirection: "row",
+                  padding: 5,
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                }}
+              >
+                <FiShoppingCart size={20} color="white" />
+                <span style={{ color: "white", fontSize: 20 }}>
+                  {cart.length}
+                </span>
+              </button>
+            )}
           </div>
         )}
         {catalog.products.length > 0 && (
@@ -183,7 +188,9 @@ function PosScreen() {
         )}
       </div>
       {width > 1000 ? (
-        <Cart />
+        <div style={{ width: 340, alignSelf: "stretch", flexShrink: 0 }}>
+          <Cart />
+        </div>
       ) : (
         <CartMobile
           cartOpen={cartOpen}
@@ -208,6 +215,80 @@ function PosScreen() {
       <DiscountModal />
       <AuthModal />
       <Modal
+        isVisible={mobileMenuOpen}
+        onBackdropPress={() => setmobileMenuOpen(false)}
+        animationIn="slideInLeft"
+        animationOut="slideOutLeft"
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: 260,
+            height: "100%",
+            backgroundColor: "#fff",
+            boxShadow: "2px 0 12px rgba(0,0,0,0.1)",
+            display: "flex",
+            flexDirection: "column",
+            padding: "20px 0",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => setmobileMenuOpen(false)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              alignSelf: "flex-end",
+              marginRight: 16,
+              marginBottom: 10,
+              padding: 4,
+            }}
+          >
+            <FiX size={22} color="#333" />
+          </button>
+          {[
+            { label: "Pending Orders", icon: pendingOrderIcon, action: () => { updatePosState({ ongoingOrderListModal: true }); setmobileMenuOpen(false); } },
+            { label: "Clock In", icon: clockInIcon, action: () => { updatePosState({ clockinModal: true }); setmobileMenuOpen(false); } },
+            { label: "Phone Order", icon: phoneOrderIcon, action: () => { updatePosState({ deliveryModal: true }); setmobileMenuOpen(false); } },
+            { label: "Discount", icon: percentIcon, action: () => { updatePosState({ discountModal: true }); setmobileMenuOpen(false); } },
+            { label: "Custom Cash", icon: dollarSignIcon, action: () => { updatePosState({ customCashModal: true }); setmobileMenuOpen(false); } },
+            { label: "Settings", icon: settingsIcon, action: () => {
+              setmobileMenuOpen(false);
+              if (storeDetails.settingsPassword?.length > 0) {
+                updatePosState({ settingsPasswordModalVis: true });
+              } else {
+                settingsAuthState.set(true);
+                history.push("/authed/dashboard");
+                localStorage.setItem("isAuthedBackend", "true");
+              }
+            }},
+          ].map((item) => (
+            <button
+              key={item.label}
+              onClick={item.action}
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                padding: "12px 24px",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                width: "100%",
+                textAlign: "left",
+              }}
+            >
+              <img src={item.icon} style={{ width: 22, height: 22 }} alt="" />
+              <span style={{ fontSize: 15, color: "#1a1a1a", fontWeight: "500" }}>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </Modal>
+      <Modal
         isVisible={ProductBuilderProps.isOpen ? true : false}
         onBackdropPress={() => {}}
         animationIn="slideInLeft"
@@ -223,19 +304,11 @@ function PosScreen() {
           onClick={(e) => e.stopPropagation()}
         >
           <div
-            style={
-              width > 1400
-                ? {
-                    height: "100%",
-                    width: "70%",
-                    borderTopRightRadius: 3,
-                  }
-                : {
-                    height: "100%",
-                    width: "100%",
-                    borderTopRightRadius: 3,
-                  }
-            }
+            style={{
+              height: "100%",
+              width: width > 1000 ? width - 340 : "100%",
+              borderTopRightRadius: 3,
+            }}
           >
             {ProductBuilderProps.product && <ProductBuilderModal />}
           </div>

@@ -45,7 +45,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    zIndex: 100000,
+    zIndex: 100,
   },
   bottom: {
     flexDirection: "row",

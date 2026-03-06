@@ -33,7 +33,7 @@ interface ProductImageProps {
 const ProductImage = React.memo(({
   source,
   style = {},
-  alt = "Description unavailable",
+  alt = "Product image",
 }: ProductImageProps) => {
   // Ensure we have both a loadedImages entry AND an Image object for canvas drawing
   if (!imageObjects.has(source)) {

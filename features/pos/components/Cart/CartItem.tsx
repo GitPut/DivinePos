@@ -25,7 +25,7 @@ function CartItem({
   const [isOpen, setisOpen] = useState(false);
 
   return (
-    <div style={{ ...styles.container, ...style }}>
+    <div className="pos-cart-item" style={{ ...styles.container, ...style }}>
       <button
         style={{
           ...styles.topRowWithImgContainer,
@@ -69,8 +69,10 @@ function CartItem({
             {!cartItem.editableObj && <div />}
             {cartItem.editableObj && (
               <button
+                className="pos-cart-action-btn"
                 style={styles.cartItemEditBtn}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (!cartItem.editableObj) return;
                   setProductBuilderState({
                     product: {
@@ -89,14 +91,16 @@ function CartItem({
                 }}
               >
                 <MdEdit
-                  size={20}
-                  color="rgba(0,0,0,1)"
+                  size={16}
+                  color="#555"
                 />
               </button>
             )}
             <button
+              className="pos-cart-action-btn"
               style={styles.cartItemDecreaseBtn}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 if (parseFloat(cartItem.quantity ?? "0") === 1 || !cartItem.quantity) {
                   removeAction();
                 } else {
@@ -104,13 +108,17 @@ function CartItem({
                 }
               }}
             >
-              <FiMinus size={25} color="rgba(0,0,0,1)" />
+              <FiMinus size={16} color="#555" />
             </button>
             <button
+              className="pos-cart-action-btn"
               style={styles.cartItemIncreaseBtn}
-              onClick={increaseAction}
+              onClick={(e) => {
+                e.stopPropagation();
+                increaseAction();
+              }}
             >
-              <FiPlus size={25} color="rgba(0,0,0,1)" />
+              <FiPlus size={16} color="#555" />
             </button>
           </div>
         </div>
@@ -119,9 +127,10 @@ function CartItem({
         <div
           style={{
             width: "90%",
-            padding: 15,
-            backgroundColor: "rgba(238,242,255,1)",
-            borderRadius: 20,
+            padding: 10,
+            backgroundColor: "#f0f2f8",
+            borderRadius: 8,
+            fontSize: 12,
           }}
         >
           {cartItem.options &&
@@ -152,17 +161,17 @@ function CartItem({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: "rgba(238,242,255,1)",
-    borderRadius: 20,
+    backgroundColor: "#f4f5f9",
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    minHeight: 100,
+    padding: "10px 0",
     display: "flex",
     flexDirection: "column",
   },
   topRowWithImgContainer: {
     width: "90%",
-    height: 61,
+    height: 50,
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
@@ -173,33 +182,32 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 0,
   },
   cartItemImg: {
-    height: 61,
-    width: 61,
-    objectFit: "contain",
+    height: 48,
+    width: 48,
+    objectFit: "contain" as const,
+    borderRadius: 6,
   },
   group: {
     width: "80%",
-    height: 33,
     alignItems: "flex-end",
     display: "flex",
     flexDirection: "column",
   },
   topRowTxt: {
     width: "95%",
-    height: 24,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 9,
+    alignItems: "center",
+    marginTop: 4,
     display: "flex",
   },
   cartItemQuantity: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 19,
+    color: "#1a1a1a",
+    fontSize: 15,
   },
   xPlusNameGroup: {
-    width: "60%",
-    height: 24,
+    width: "55%",
     flexDirection: "row",
     justifyContent: "flex-start",
     alignItems: "center",
@@ -208,62 +216,61 @@ const styles: Record<string, React.CSSProperties> = {
   txtX: {
     fontWeight: "700",
     color: "#00c93b",
-    fontSize: 16,
-    marginRight: 10,
+    fontSize: 13,
+    marginRight: 6,
     display: "inline-block",
   },
   veggiePizza: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    fontSize: 13,
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   cartItemPrice: {
     fontWeight: "700",
     color: "#00c93b",
-    fontSize: 18,
+    fontSize: 14,
   },
   bottomBtnRow: {
-    width: 120,
-    height: 30,
+    width: 100,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 8,
     display: "flex",
   },
   cartItemIncreaseBtn: {
-    width: 30,
-    height: 30,
-    backgroundColor: "rgba(255,255,255,1)",
+    width: 26,
+    height: 26,
+    backgroundColor: "#fff",
     borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "3px 3px 3px rgba(0,0,0,0.1)",
-    border: "none",
+    border: "1px solid #e0e0e0",
     cursor: "pointer",
     display: "flex",
   },
   cartItemDecreaseBtn: {
-    width: 30,
-    height: 30,
-    backgroundColor: "rgba(255,255,255,1)",
+    width: 26,
+    height: 26,
+    backgroundColor: "#fff",
     borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "3px 3px 3px rgba(0,0,0,0.1)",
-    border: "none",
+    border: "1px solid #e0e0e0",
     cursor: "pointer",
     display: "flex",
   },
   cartItemEditBtn: {
-    width: 30,
-    height: 30,
-    backgroundColor: "rgba(255,255,255,1)",
+    width: 26,
+    height: 26,
+    backgroundColor: "#fff",
     borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "3px 3px 3px rgba(0,0,0,0.1)",
-    border: "none",
+    border: "1px solid #e0e0e0",
     cursor: "pointer",
     display: "flex",
   },

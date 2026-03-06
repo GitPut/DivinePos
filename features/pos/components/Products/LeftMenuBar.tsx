@@ -26,6 +26,7 @@ const LeftMenuBar = () => {
     <div style={styles.leftMenuBarContainer}>
       <div>
         <button
+          className={`pos-sidebar-btn${!ongoingOrderListModal && !clockinModal && !deliveryModal && !settingsPasswordModalVis ? " pos-sidebar-btn-active" : ""}`}
           style={
             !ongoingOrderListModal &&
             !clockinModal &&
@@ -36,7 +37,7 @@ const LeftMenuBar = () => {
           }
         >
           <FiMenu
-            size={40}
+            size={24}
             color={
               !ongoingOrderListModal &&
               !clockinModal &&
@@ -48,6 +49,7 @@ const LeftMenuBar = () => {
           />
         </button>
         <button
+          className={`pos-sidebar-btn${ongoingOrderListModal ? " pos-sidebar-btn-active" : ""}`}
           style={
             ongoingOrderListModal ? styles.activeBtn : styles.notActiveBtn
           }
@@ -61,16 +63,17 @@ const LeftMenuBar = () => {
               ongoingOrderListModal
                 ? {
                     filter: "invert(100%)",
-                    width: 40,
-                    height: 40,
+                    width: 24,
+                    height: 24,
                   }
-                : { width: 40, height: 40 }
+                : { width: 24, height: 24 }
             }
             key={"pendingOrderIcon"}
             alt=""
           />
         </button>
         <button
+          className={`pos-sidebar-btn${clockinModal ? " pos-sidebar-btn-active" : ""}`}
           style={clockinModal ? styles.activeBtn : styles.notActiveBtn}
           onClick={() => {
             updatePosState({ clockinModal: true });
@@ -82,16 +85,17 @@ const LeftMenuBar = () => {
               clockinModal
                 ? {
                     filter: "invert(100%)",
-                    width: 40,
-                    height: 40,
+                    width: 24,
+                    height: 24,
                   }
-                : { width: 40, height: 40 }
+                : { width: 24, height: 24 }
             }
             key={"clockInIcon"}
             alt=""
           />
         </button>
         <button
+          className={`pos-sidebar-btn${deliveryModal ? " pos-sidebar-btn-active" : ""}`}
           style={deliveryModal ? styles.activeBtn : styles.notActiveBtn}
           onClick={() => {
             updatePosState({ deliveryModal: true });
@@ -103,16 +107,17 @@ const LeftMenuBar = () => {
               deliveryModal
                 ? {
                     filter: "invert(100%)",
-                    width: 40,
-                    height: 40,
+                    width: 24,
+                    height: 24,
                   }
-                : { width: 40, height: 40 }
+                : { width: 24, height: 24 }
             }
             key={"phoneOrderIcon"}
             alt=""
           />
         </button>
         <button
+          className={`pos-sidebar-btn${discountModal ? " pos-sidebar-btn-active" : ""}`}
           style={discountModal ? styles.activeBtn : styles.notActiveBtn}
           onClick={() => {
             updatePosState({ discountModal: true });
@@ -124,16 +129,17 @@ const LeftMenuBar = () => {
               discountModal
                 ? {
                     filter: "invert(100%)",
-                    width: 30,
-                    height: 30,
+                    width: 22,
+                    height: 22,
                   }
-                : { width: 30, height: 30 }
+                : { width: 22, height: 22 }
             }
             key={"percentIcon"}
             alt=""
           />
         </button>
         <button
+          className={`pos-sidebar-btn${customCashModal ? " pos-sidebar-btn-active" : ""}`}
           style={customCashModal ? styles.activeBtn : styles.notActiveBtn}
           onClick={() => {
             updatePosState({ customCashModal: true });
@@ -145,10 +151,10 @@ const LeftMenuBar = () => {
               customCashModal
                 ? {
                     filter: "invert(100%)",
-                    width: 40,
-                    height: 40,
+                    width: 24,
+                    height: 24,
                   }
-                : { width: 40, height: 40 }
+                : { width: 24, height: 24 }
             }
             key={"dollarSignIcon"}
             alt=""
@@ -157,6 +163,7 @@ const LeftMenuBar = () => {
       </div>
       <div style={{ marginBottom: 15 }}>
         <button
+          className={`pos-sidebar-btn${settingsPasswordModalVis ? " pos-sidebar-btn-active" : ""}`}
           style={
             settingsPasswordModalVis ? styles.activeBtn : styles.notActiveBtn
           }
@@ -176,10 +183,10 @@ const LeftMenuBar = () => {
               settingsPasswordModalVis
                 ? {
                     filter: "invert(100%)",
-                    width: 40,
-                    height: 40,
+                    width: 24,
+                    height: 24,
                   }
-                : { width: 40, height: 40 }
+                : { width: 24, height: 24 }
             }
             key={"settingsIcon"}
             alt=""
@@ -194,34 +201,36 @@ export default LeftMenuBar;
 
 const styles: Record<string, React.CSSProperties> = {
   leftMenuBarContainer: {
-    width: "5%",
-    backgroundColor: "rgba(255,255,255,1)",
+    width: 64,
+    flexShrink: 0,
+    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "space-between",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.5)",
+    borderRight: "1px solid #e8eaed",
+    boxShadow: "1px 0 4px rgba(0,0,0,0.04)",
     alignSelf: "stretch",
     display: "flex",
     flexDirection: "column",
   },
   activeBtn: {
-    width: 50,
-    height: 50,
-    backgroundColor: "rgba(29,41,78,1)",
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    backgroundColor: "#1e293b",
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 30,
+    marginTop: 20,
     border: "none",
     cursor: "pointer",
     display: "flex",
   },
   notActiveBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 30,
+    marginTop: 20,
     background: "none",
     border: "none",
     cursor: "pointer",
