@@ -4,6 +4,7 @@ import Modal from "shared/components/ui/Modal";
 import { posState, updatePosState } from "store/posState";
 import { cartState, storeDetailsState } from "store/appState";
 import { useAlert } from "react-alert";
+import { verifyEmployeePin, logEmployeeActivity } from "utils/employeeAuth";
 
 const DiscountModal = () => {
   const { discountModal, discountAmount, deliveryChecked, cartSub } =
@@ -19,19 +20,32 @@ const DiscountModal = () => {
   );
   const alertP = useAlert();
 
+  const tryApplyDiscount = () => {
+    if (
+      !storeDetails.settingsPassword ||
+      storeDetails.settingsPassword === code
+    ) {
+      updatePosState({
+        discountAmount: localDiscountAmount,
+        discountModal: false,
+      });
+      return;
+    }
+    const employee = verifyEmployeePin(code, "discount");
+    if (employee) {
+      logEmployeeActivity(employee.id, employee.name, `Applied discount: ${localDiscountAmount}`);
+      updatePosState({
+        discountAmount: localDiscountAmount,
+        discountModal: false,
+      });
+      return;
+    }
+    alertP.error("Incorrect Code");
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (
-        !storeDetails.settingsPassword ||
-        storeDetails.settingsPassword === code
-      ) {
-        updatePosState({
-          discountAmount: localDiscountAmount,
-          discountModal: false,
-        });
-      } else {
-        alertP.error("Incorrect Code");
-      }
+      tryApplyDiscount();
     }
   };
 
@@ -137,19 +151,7 @@ const DiscountModal = () => {
                     ? false
                     : true
                 }
-                onClick={() => {
-                  if (
-                    !storeDetails.settingsPassword ||
-                    storeDetails.settingsPassword === code
-                  ) {
-                    updatePosState({
-                      discountAmount: localDiscountAmount,
-                      discountModal: false,
-                    });
-                  } else {
-                    alertP.error("Incorrect Code");
-                  }
-                }}
+                onClick={tryApplyDiscount}
                 style={{
                   ...styles.confirmBtn,
                   ...(!(

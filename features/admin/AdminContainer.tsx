@@ -136,6 +136,11 @@ function AdminContainer(props: { match: { url: string } }) {
                   link: "/authed/report/employeesreport",
                   active: pathname.includes("employeesreport"),
                 },
+                {
+                  label: "Activity Log",
+                  link: "/authed/report/activitylog",
+                  active: pathname.includes("activitylog"),
+                },
               ]}
             />
             <DropdownMenuButton

@@ -28,6 +28,7 @@ interface PosState {
   authPasswordModal: boolean;
   managerAuthorizedStatus: boolean;
   pendingAuthAction: string;
+  pendingAuthPermission: string;
 }
 
 export const posState = entity<PosState>({
@@ -57,6 +58,7 @@ export const posState = entity<PosState>({
   authPasswordModal: false,
   managerAuthorizedStatus: false,
   pendingAuthAction: "",
+  pendingAuthPermission: "",
 });
 
 export const setPosState = (val: PosState): void => {
@@ -90,6 +92,7 @@ export const resetPosState = (): void => {
     authPasswordModal: false,
     managerAuthorizedStatus: false,
     pendingAuthAction: "",
+    pendingAuthPermission: "",
   });
 };
 

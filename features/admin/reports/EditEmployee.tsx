@@ -9,6 +9,7 @@ import { Employee, HourItem } from "types";
 import { parseDate } from "utils/dateFormatting";
 import firebase from "firebase/compat/app";
 import useWindowSize from "shared/hooks/useWindowSize";
+import Switch from "shared/components/ui/Switch";
 
 function EditEmployee() {
   const { height } = useWindowSize();
@@ -66,10 +67,29 @@ function EditEmployee() {
         name: employee ? employee.name : null,
         pin: employee ? employee.pin : null,
         role: employee ? employee.role : null,
+        permissions: employee?.permissions ?? {},
       });
     const newEmployeesList = [...employees];
     const index = newEmployeesList.findIndex((e) => e.id === employee.id);
     newEmployeesList[index] = employee;
+    setEmployeesState(newEmployeesList);
+  }
+
+  function togglePermission(key: keyof NonNullable<Employee["permissions"]>) {
+    const updatedPermissions = {
+      ...employee.permissions,
+      [key]: !employee.permissions?.[key],
+    };
+    const updatedEmployee = { ...employee, permissions: updatedPermissions };
+    setemployee(updatedEmployee);
+    db.collection("users")
+      .doc(auth?.currentUser?.uid)
+      .collection("employees")
+      .doc(employeeId)
+      .update({ permissions: updatedPermissions });
+    const newEmployeesList = [...employees];
+    const idx = newEmployeesList.findIndex((e) => e.id === employee.id);
+    newEmployeesList[idx] = updatedEmployee;
     setEmployeesState(newEmployeesList);
   }
 
@@ -159,6 +179,39 @@ function EditEmployee() {
                 >
                   <span style={styles.removeEmployeeTxt}>Remove Employee</span>
                 </button>
+              </div>
+              <div style={styles.permissionsContainer}>
+                <span style={styles.permissionsHeader}>Permissions</span>
+                <div style={styles.permissionsGrid}>
+                  <div style={styles.permissionRow}>
+                    <span style={styles.permissionLabel}>Access Backend</span>
+                    <Switch
+                      isActive={!!employee?.permissions?.accessBackend}
+                      toggleSwitch={() => togglePermission("accessBackend")}
+                    />
+                  </div>
+                  <div style={styles.permissionRow}>
+                    <span style={styles.permissionLabel}>Apply Discounts</span>
+                    <Switch
+                      isActive={!!employee?.permissions?.discount}
+                      toggleSwitch={() => togglePermission("discount")}
+                    />
+                  </div>
+                  <div style={styles.permissionRow}>
+                    <span style={styles.permissionLabel}>Custom Payment</span>
+                    <Switch
+                      isActive={!!employee?.permissions?.customPayment}
+                      toggleSwitch={() => togglePermission("customPayment")}
+                    />
+                  </div>
+                  <div style={styles.permissionRow}>
+                    <span style={styles.permissionLabel}>Manage Orders</span>
+                    <Switch
+                      isActive={!!employee?.permissions?.manageOrders}
+                      toggleSwitch={() => togglePermission("manageOrders")}
+                    />
+                  </div>
+                </div>
               </div>
               <div style={styles.addHoursContainer}>
                 <span style={styles.addHoursSectionHeader}>Add hours</span>
@@ -702,6 +755,33 @@ const styles: Record<string, React.CSSProperties> = {
     height: 41,
     width: 986,
     marginBottom: 30,
+  },
+  permissionsContainer: {
+    width: 985,
+    marginTop: 30,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  permissionsHeader: {
+    fontWeight: "700",
+    color: "#121212",
+    fontSize: 16,
+  },
+  permissionsGrid: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 40,
+  },
+  permissionRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  permissionLabel: {
+    fontSize: 14,
+    color: "#333",
   },
 };
 

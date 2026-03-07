@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import BackendPosContainer from "features/admin/AdminContainer";
 import HomeScreen from "features/pos/PosScreen";
 import CustomerDisplay from "features/customer-display/CustomerDisplay";
+import OrderPage from "features/online-store/OrderPage";
 import {
   RouteComponentProps,
   Switch,
@@ -21,7 +22,10 @@ const AuthRoute: React.FC<AuthRouteProps> = (props) => {
       if (isLoginSettings === "false") {
         history.push("/pos");
       }
-    } else if (!location.pathname?.includes("customer-display")) {
+    } else if (
+      !location.pathname?.includes("customer-display") &&
+      !location.pathname?.includes("/order/")
+    ) {
       history.push("/pos");
     }
   }, [location.pathname]);
@@ -31,6 +35,7 @@ const AuthRoute: React.FC<AuthRouteProps> = (props) => {
       <Route path="/pos" component={HomeScreen} />
       <Route path="/authed" component={BackendPosContainer} />
       <Route path="/customer-display" component={CustomerDisplay} />
+      <Route path="/order/:urlEnding" component={OrderPage} />
     </Switch>
   );
 };

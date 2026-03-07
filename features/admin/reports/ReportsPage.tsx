@@ -3,6 +3,7 @@ import { Redirect, Route, Switch } from "react-router-dom";
 import Invoices from "./Invoices";
 import EmployeesReport from "./EmployeesList";
 import EditEmployee from "./EditEmployee";
+import ActivityLog from "./ActivityLog";
 
 const ReportsPage = ({ match }: { match: { url: string } }) => (
   <Switch>
@@ -17,6 +18,7 @@ const ReportsPage = ({ match }: { match: { url: string } }) => (
       path={`${match.url}/editemployee/:employeeId`}
       component={EditEmployee}
     />
+    <Route path={`${match.url}/activitylog`} component={ActivityLog} />
   </Switch>
 );
 

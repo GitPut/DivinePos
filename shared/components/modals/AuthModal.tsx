@@ -3,15 +3,17 @@ import { IoEye, IoEyeOff } from "react-icons/io5";
 import { storeDetailsState } from "store/appState";
 import Modal from "shared/components/ui/Modal";
 import { posState, updatePosState } from "store/posState";
+import { verifyEmployeePin, logEmployeeActivity, PermissionKey } from "utils/employeeAuth";
 
 const AuthModal = () => {
   const [password, setpassword] = useState("");
   const storeDetails = storeDetailsState.use();
   const [inccorectPass, setinccorectPass] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { authPasswordModal } = posState.use();
+  const { authPasswordModal, pendingAuthAction, pendingAuthPermission } = posState.use();
 
   const Authorize = () => {
+    // Manager code check
     if (
       (storeDetails.settingsPassword?.length > 0 &&
         storeDetails.settingsPassword === password) ||
@@ -24,9 +26,24 @@ const AuthModal = () => {
       setpassword("");
       setinccorectPass(false);
       setShowPassword(false);
-    } else {
-      setinccorectPass(true);
+      return;
     }
+    // Employee PIN check
+    if (pendingAuthPermission) {
+      const employee = verifyEmployeePin(password, pendingAuthPermission as PermissionKey);
+      if (employee) {
+        logEmployeeActivity(employee.id, employee.name, pendingAuthAction);
+        updatePosState({
+          managerAuthorizedStatus: true,
+          authPasswordModal: false,
+        });
+        setpassword("");
+        setinccorectPass(false);
+        setShowPassword(false);
+        return;
+      }
+    }
+    setinccorectPass(true);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -42,6 +59,7 @@ const AuthModal = () => {
         updatePosState({
           authPasswordModal: false,
           pendingAuthAction: "",
+          pendingAuthPermission: "",
         });
       }}
     >

@@ -7,6 +7,7 @@ import { useHistory } from "react-router-dom";
 import Modal from "shared/components/ui/Modal";
 import { posState, updatePosState } from "store/posState";
 import { useAlert } from "react-alert";
+import { verifyEmployeePin, logEmployeeActivity } from "utils/employeeAuth";
 
 const SettingsPasswordModal = () => {
   const [password, setpassword] = useState("");
@@ -17,17 +18,31 @@ const SettingsPasswordModal = () => {
   const { settingsPasswordModalVis } = posState.use();
   const alertP = useAlert();
 
+  const tryAuthorize = () => {
+    if (password == storeDetails.settingsPassword) {
+      setSettingsAuthState(true);
+      history.push("/authed/dashboard");
+      localStorage.setItem("isAuthedBackend", "true");
+      updatePosState({ settingsPasswordModalVis: false });
+      setinccorectPass(false);
+      return;
+    }
+    const employee = verifyEmployeePin(password, "accessBackend");
+    if (employee) {
+      logEmployeeActivity(employee.id, employee.name, "Accessed backend settings");
+      setSettingsAuthState(true);
+      history.push("/authed/dashboard");
+      localStorage.setItem("isAuthedBackend", "true");
+      updatePosState({ settingsPasswordModalVis: false });
+      setinccorectPass(false);
+      return;
+    }
+    setinccorectPass(true);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (password == storeDetails.settingsPassword) {
-        setSettingsAuthState(true);
-        history.push("/authed/dashboard");
-        localStorage.setItem("isAuthedBackend", "true");
-        updatePosState({ settingsPasswordModalVis: false });
-        setinccorectPass(false);
-      } else {
-        setinccorectPass(true);
-      }
+      tryAuthorize();
     }
   };
 
@@ -116,17 +131,7 @@ const SettingsPasswordModal = () => {
           )}
           <div style={styles.bottomSectionContainer}>
             <button
-              onClick={() => {
-                if (password == storeDetails.settingsPassword) {
-                  setSettingsAuthState(true);
-                  history.push("/authed/dashboard");
-                  updatePosState({ settingsPasswordModalVis: false });
-                  setinccorectPass(false);
-                  localStorage.setItem("isAuthedBackend", 'true');
-                } else {
-                  setinccorectPass(true);
-                }
-              }}
+              onClick={tryAuthorize}
               style={{
                 ...styles.goBtn,
                 ...(password.length < 1 && { opacity: 0.8 }),

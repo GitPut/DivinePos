@@ -4,6 +4,8 @@ import InputField from "../components/InputField";
 import { auth, db } from "services/firebase/config";
 import { employeesState, setEmployeesState } from "store/appState";
 import { useAlert } from "react-alert";
+import Switch from "shared/components/ui/Switch";
+import { EmployeePermissions } from "types";
 
 interface AddEmployeeModalProps {
   setaddEmployeeModal: (val: boolean) => void;
@@ -19,6 +21,7 @@ function AddEmployeeModal({
   const [name, setname] = useState("");
   const [role, setrole] = useState("");
   const [pin, setpin] = useState("");
+  const [permissions, setPermissions] = useState<EmployeePermissions>({});
   const alertP = useAlert();
 
   useEffect(() => {
@@ -26,6 +29,7 @@ function AddEmployeeModal({
       setname("");
       setrole("");
       setpin("");
+      setPermissions({});
     }
   }, [addEmployeeModal]);
 
@@ -35,6 +39,7 @@ function AddEmployeeModal({
       role: role,
       pin: pin,
       id: Math.random().toString(36).substr(2, 9),
+      permissions: permissions,
     };
 
     if (!employee.name) {
@@ -95,6 +100,45 @@ function AddEmployeeModal({
                 setValue={setpin}
               />
             </div>
+            <div style={styles.permissionsSection}>
+              <span style={styles.permissionsHeader}>Permissions</span>
+              <div style={styles.permissionRow}>
+                <span style={styles.permissionLabel}>Access Backend</span>
+                <Switch
+                  isActive={!!permissions.accessBackend}
+                  toggleSwitch={() =>
+                    setPermissions((p) => ({ ...p, accessBackend: !p.accessBackend }))
+                  }
+                />
+              </div>
+              <div style={styles.permissionRow}>
+                <span style={styles.permissionLabel}>Apply Discounts</span>
+                <Switch
+                  isActive={!!permissions.discount}
+                  toggleSwitch={() =>
+                    setPermissions((p) => ({ ...p, discount: !p.discount }))
+                  }
+                />
+              </div>
+              <div style={styles.permissionRow}>
+                <span style={styles.permissionLabel}>Custom Payment</span>
+                <Switch
+                  isActive={!!permissions.customPayment}
+                  toggleSwitch={() =>
+                    setPermissions((p) => ({ ...p, customPayment: !p.customPayment }))
+                  }
+                />
+              </div>
+              <div style={styles.permissionRow}>
+                <span style={styles.permissionLabel}>Manage Orders</span>
+                <Switch
+                  isActive={!!permissions.manageOrders}
+                  toggleSwitch={() =>
+                    setPermissions((p) => ({ ...p, manageOrders: !p.manageOrders }))
+                  }
+                />
+              </div>
+            </div>
             <div style={styles.bottomBtnsRow}>
               <button
                 style={styles.cancelBtn}
@@ -123,16 +167,15 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     width: 609,
-    height: 399,
     backgroundColor: "white",
+    padding: "30px 0",
   },
   innerContainer: {
     width: 352,
-    height: 358,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 20,
   },
   addEmployeeHeaderLbl: {
     fontWeight: "700",
@@ -198,6 +241,27 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "700",
     color: "rgba(255,255,255,1)",
     fontSize: 16,
+  },
+  permissionsSection: {
+    width: 278,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+  permissionsHeader: {
+    fontWeight: "700",
+    color: "#121212",
+    fontSize: 15,
+  },
+  permissionRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  permissionLabel: {
+    fontSize: 14,
+    color: "#333",
   },
 };
 

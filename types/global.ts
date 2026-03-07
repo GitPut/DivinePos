@@ -166,6 +166,13 @@ export type OngoingListStateProp = {
   dateCompleted?: { seconds: number | string } | Date | string;
 };
 
+export type EmployeePermissions = {
+  accessBackend?: boolean;
+  discount?: boolean;
+  customPayment?: boolean;
+  manageOrders?: boolean;
+};
+
 export type Employee = {
   name: string;
   pin: string;
@@ -175,6 +182,7 @@ export type Employee = {
     date: Date;
   };
   role?: string;
+  permissions?: EmployeePermissions;
 };
 
 export type Device = {

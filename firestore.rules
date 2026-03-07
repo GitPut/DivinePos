@@ -41,6 +41,10 @@ match /public/{uid} {
         allow read, write: if request.auth.uid == uid;
       }
 
+      match /activityLog/{id} {
+        allow read, write: if request.auth.uid == uid;
+      }
+
       match /products/{id} {
         allow read, write: if request.auth.uid == uid;
 

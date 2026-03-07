@@ -4,6 +4,7 @@ import { posState, updatePosState } from "store/posState";
 import { deviceState, storeDetailsState } from "store/appState";
 import { useAlert } from "react-alert";
 import qz from "qz-tray";
+import { verifyEmployeePin, logEmployeeActivity } from "utils/employeeAuth";
 
 const CustomcustomCashModal = () => {
   const { customCashModal } = posState.use();
@@ -20,16 +21,28 @@ const CustomcustomCashModal = () => {
     setmanagerCodeEntered("");
   };
 
-  const CompletePayment = () => {
-    if (!myDeviceDetails.id) {
-      alertP.error("Please set up a device in Settings -> Devices");
-      return;
-    }
+  const isCodeAuthorized = (action: string): boolean => {
     if (
       (storeDetails.settingsPassword?.length > 0 &&
         storeDetails.settingsPassword === managerCodeEntered) ||
       storeDetails.settingsPassword?.length === 0
     ) {
+      return true;
+    }
+    const employee = verifyEmployeePin(managerCodeEntered, "customPayment");
+    if (employee) {
+      logEmployeeActivity(employee.id, employee.name, action);
+      return true;
+    }
+    return false;
+  };
+
+  const CompletePayment = () => {
+    if (!myDeviceDetails.id) {
+      alertP.error("Please set up a device in Settings -> Devices");
+      return;
+    }
+    if (isCodeAuthorized(`Custom payment: $${total}`)) {
       if (parseFloat(total) > 0 && parseFloat(cash) > 0) {
         qz.websocket
           .connect()
@@ -115,11 +128,7 @@ const CustomcustomCashModal = () => {
       alertP.error("Please set up a device in Settings -> Devices");
       return;
     }
-    if (
-      (storeDetails.settingsPassword?.length > 0 &&
-        storeDetails.settingsPassword === managerCodeEntered) ||
-      storeDetails.settingsPassword?.length === 0
-    ) {
+    if (isCodeAuthorized("Opened register")) {
       qz.websocket
         .connect()
         .then(function () {

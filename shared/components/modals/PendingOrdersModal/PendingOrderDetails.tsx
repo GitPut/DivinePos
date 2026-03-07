@@ -143,6 +143,7 @@ function PendingOrderDetails({
                   updatePosState({
                     authPasswordModal: true,
                     pendingAuthAction: `updateOrder${element?.id}`,
+                    pendingAuthPermission: "manageOrders",
                   });
                 } else if (element && element.id) {
                   updateOrderHandler({
@@ -181,6 +182,7 @@ function PendingOrderDetails({
                 updatePosState({
                   authPasswordModal: true,
                   pendingAuthAction: `cancelOrder${element?.id}`,
+                  pendingAuthPermission: "manageOrders",
                 });
               } else {
                 db.collection("users")

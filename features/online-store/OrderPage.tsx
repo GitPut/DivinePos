@@ -49,13 +49,15 @@ const OrderPage = () => {
       .then((querySnapshot) => {
         if (querySnapshot.empty) {
           history.push("/404");
+          return;
         }
 
         if (!querySnapshot.docs[0].data().onlineStoreActive) {
           history.push("/404");
+          return;
         }
 
-        const products: ProductProp[] = [];
+        const publicDoc = querySnapshot.docs[0];
 
         setProductBuilderState({
           product: null,
@@ -66,15 +68,16 @@ const OrderPage = () => {
         });
 
         setStoreDetailsState({
-          ...querySnapshot.docs[0].data().storeDetails,
-          docID: querySnapshot.docs[0].id,
-          stripePublicKey: querySnapshot.docs[0].data().stripePublicKey,
+          ...publicDoc.data().storeDetails,
+          docID: publicDoc.id,
+          stripePublicKey: publicDoc.data().stripePublicKey,
         });
 
-        querySnapshot.docs[0].ref
+        publicDoc.ref
           .collection("products")
           .get()
           .then((docs) => {
+            const products: ProductProp[] = [];
             if (!docs.empty) {
               docs.forEach((element) => {
                 const productData = element.data();
@@ -87,49 +90,31 @@ const OrderPage = () => {
                   id: productData.id,
                 });
               });
-              if (products.length > 0) {
-                setdata([]);
-                products.sort(customSort).map((product, index) => {
-                  setdata((prev) => {
-                    const productsWithCategory: ProductProp[] = [];
-
-                    prev.forEach((item) => {
-                      if (item.category === product.category) {
-                        productsWithCategory.push(item);
-                      }
-                    });
-
-                    if (productsWithCategory.length > 0) {
-                      const indexOfLastItem = prev.indexOf(
-                        productsWithCategory[productsWithCategory.length - 1]
-                      );
-                      prev.splice(indexOfLastItem + 1, 0, {
-                        ...product,
-                        index: index + 1,
-                      });
-                      return prev;
-                    }
-
-                    return [
-                      ...prev,
-                      {
-                        ...product,
-                        index: index + 1,
-                      },
-                    ];
-                  });
-                });
-              }
             }
+
+            const sorted = products.sort(customSort);
+            const grouped: ProductProp[] = [];
+            sorted.forEach((product, index) => {
+              const lastIndex = grouped.reduce(
+                (acc, item, i) => (item.category === product.category ? i : acc),
+                -1
+              );
+              if (lastIndex >= 0) {
+                grouped.splice(lastIndex + 1, 0, { ...product, index: index + 1 });
+              } else {
+                grouped.push({ ...product, index: index + 1 });
+              }
+            });
+            setdata(grouped);
+
+            setcatalog({
+              categories: publicDoc.data().categories ?? [],
+              products: products,
+              docID: publicDoc.id,
+            });
+
+            fadeOut();
           });
-
-        setcatalog({
-          categories: querySnapshot.docs[0].data().categories,
-          products: products,
-          docID: querySnapshot.docs[0].id,
-        });
-
-        fadeOut();
       });
   }, []);
 
