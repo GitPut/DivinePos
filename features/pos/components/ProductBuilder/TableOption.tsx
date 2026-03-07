@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { FiCheck, FiMinus, FiPlus } from "react-icons/fi";
+import React, { useState } from "react";
+import { FiCheck } from "react-icons/fi";
 import { MdClear } from "react-icons/md";
 import { Option, OptionsList, ProductProp } from "types";
+import { resolveOptionPrice } from "utils/resolveOptionPrice";
 
 interface TableOptionProps {
   label: string;
@@ -26,6 +27,10 @@ function TableOption({
 }: TableOptionProps) {
   const options = e.optionsList;
 
+  const [isHalfActive, setIsHalfActive] = useState(
+    options.some((op) => op.halfSide !== undefined && parseFloat(op.selectedTimes ?? "0") > 0)
+  );
+
   const getTotalSelected = () => {
     let total = 0;
     myObjProfile.options[index].optionsList.forEach((op) => {
@@ -42,12 +47,13 @@ function TableOption({
     const countsAs = parseFloat(option.countsAs ?? "1");
 
     if (currentTimes > 0) {
-      // Deselect
       const newProfile = structuredClone(myObjProfile);
       newProfile.options[index].optionsList[listIndex].selectedTimes = "0";
+      if (isHalfActive) {
+        delete newProfile.options[index].optionsList[listIndex].halfSide;
+      }
       setMyObjProfile(newProfile);
     } else {
-      // Check limit
       const totalSelected = getTotalSelected();
       const numOfSelectable = parseFloat(e.numOfSelectable ?? "0");
 
@@ -60,6 +66,9 @@ function TableOption({
 
       const newProfile = structuredClone(myObjProfile);
       newProfile.options[index].optionsList[listIndex].selectedTimes = "1";
+      if (isHalfActive) {
+        newProfile.options[index].optionsList[listIndex].halfSide = "whole";
+      }
       setMyObjProfile(newProfile);
     }
   };
@@ -70,9 +79,11 @@ function TableOption({
     );
     if (currentTimes > 0) {
       const newProfile = structuredClone(myObjProfile);
-      newProfile.options[index].optionsList[listIndex].selectedTimes = (
-        currentTimes - 1
-      ).toString();
+      const newTimes = currentTimes - 1;
+      newProfile.options[index].optionsList[listIndex].selectedTimes = newTimes.toString();
+      if (newTimes === 0 && isHalfActive) {
+        delete newProfile.options[index].optionsList[listIndex].halfSide;
+      }
       setMyObjProfile(newProfile);
     }
   };
@@ -93,6 +104,9 @@ function TableOption({
     newProfile.options[index].optionsList[listIndex].selectedTimes = (
       currentTimes + 1
     ).toString();
+    if (isHalfActive && !newProfile.options[index].optionsList[listIndex].halfSide) {
+      newProfile.options[index].optionsList[listIndex].halfSide = "whole";
+    }
     setMyObjProfile(newProfile);
   };
 
@@ -100,7 +114,30 @@ function TableOption({
     const newProfile = structuredClone(myObjProfile);
     newProfile.options[index].optionsList.forEach((op) => {
       op.selectedTimes = "0";
+      delete op.halfSide;
     });
+    setMyObjProfile(newProfile);
+  };
+
+  const toggleHalfAndHalf = () => {
+    const newActive = !isHalfActive;
+    setIsHalfActive(newActive);
+    const newProfile = structuredClone(myObjProfile);
+    newProfile.options[index].optionsList.forEach((op) => {
+      if (newActive) {
+        if (parseFloat(op.selectedTimes ?? "0") > 0) {
+          op.halfSide = "whole";
+        }
+      } else {
+        delete op.halfSide;
+      }
+    });
+    setMyObjProfile(newProfile);
+  };
+
+  const setSide = (listIndex: number, side: "left" | "right" | "whole") => {
+    const newProfile = structuredClone(myObjProfile);
+    newProfile.options[index].optionsList[listIndex].halfSide = side;
     setMyObjProfile(newProfile);
   };
 
@@ -114,12 +151,30 @@ function TableOption({
         <span style={styles.lbl}>
           {label} {isRequired ? "*" : ""}
         </span>
-        {hasAnySelected && (
-          <button style={styles.clearBtn} onClick={clearAll}>
-            <MdClear size={16} color="#94a3b8" />
-            <span style={styles.clearText}>Clear</span>
-          </button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {e.allowHalfAndHalf && (
+            <button
+              style={{
+                ...styles.halfToggle,
+                ...(isHalfActive
+                  ? { backgroundColor: "#1e293b", color: "#ffffff" }
+                  : {}),
+              }}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                toggleHalfAndHalf();
+              }}
+            >
+              Half & Half
+            </button>
+          )}
+          {hasAnySelected && (
+            <button style={styles.clearBtn} onClick={clearAll}>
+              <MdClear size={16} color="#94a3b8" />
+              <span style={styles.clearText}>Clear</span>
+            </button>
+          )}
+        </div>
       </div>
       <div style={styles.grid}>
         {options.map((option, listIndex) => {
@@ -127,50 +182,94 @@ function TableOption({
             myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
           );
           const isSelected = selectedTimes > 0;
+          const currentSide = myObjProfile.options[index].optionsList[listIndex].halfSide;
 
           return (
-            <button
+            <div
               key={option.id ?? listIndex}
               style={{
                 ...styles.gridItem,
-                ...(isSelected
-                  ? {
-                      backgroundColor: "#eef2ff",
-                      borderColor: "#1e293b",
-                    }
-                  : {}),
+                backgroundColor: isSelected ? "#eef2ff" : "#ffffff",
+                borderColor: isSelected ? "#1e293b" : "#e2e8f0",
               }}
-              onClick={() => toggleItem(listIndex, option)}
             >
-              <div style={styles.gridItemLeft}>
-                <div
-                  style={{
-                    ...styles.checkbox,
-                    ...(isSelected
-                      ? { backgroundColor: "#1e293b", borderColor: "#1e293b" }
-                      : {}),
-                  }}
-                >
-                  {isSelected && <FiCheck size={12} color="#ffffff" />}
+              <button
+                style={styles.gridItemClickable}
+                onClick={() => toggleItem(listIndex, option)}
+              >
+                <div style={styles.gridItemLeft}>
+                  <div
+                    style={{
+                      ...styles.checkbox,
+                      ...(isSelected
+                        ? { backgroundColor: "#1e293b", borderColor: "#1e293b" }
+                        : {}),
+                    }}
+                  >
+                    {isSelected && <FiCheck size={12} color="#ffffff" />}
+                  </div>
+                  <span
+                    style={{
+                      ...styles.gridItemLabel,
+                      ...(isSelected ? { fontWeight: "600" } : {}),
+                    }}
+                  >
+                    {option.label}
+                  </span>
                 </div>
-                <span
-                  style={{
-                    ...styles.gridItemLabel,
-                    ...(isSelected ? { fontWeight: "600" } : {}),
-                  }}
-                >
-                  {option.label}
-                </span>
-              </div>
-              <div style={styles.gridItemRight}>
-                {parseFloat(option.priceIncrease ?? "0") > 0 && (
-                  <span style={styles.priceTag}>+${option.priceIncrease}</span>
-                )}
-                {selectedTimes > 1 && (
-                  <span style={styles.qtyBadge}>x{selectedTimes}</span>
-                )}
-              </div>
-            </button>
+                <div style={styles.gridItemRight}>
+                  {(() => {
+                    const displayPrice = resolveOptionPrice(option, e, myObjProfile.options);
+                    return parseFloat(displayPrice) > 0 ? (
+                      <span style={styles.priceTag}>+${displayPrice}</span>
+                    ) : null;
+                  })()}
+                  {selectedTimes > 1 && (
+                    <span style={styles.qtyBadge}>x{selectedTimes}</span>
+                  )}
+                </div>
+              </button>
+              {isHalfActive && isSelected && (
+                <div style={styles.sideSelector}>
+                  <button
+                    style={{
+                      ...styles.sideBtn,
+                      ...(currentSide === "left" ? styles.sideBtnActive : {}),
+                    }}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      setSide(listIndex, "left");
+                    }}
+                  >
+                    L
+                  </button>
+                  <button
+                    style={{
+                      ...styles.sideBtn,
+                      ...(currentSide === "whole" ? styles.sideBtnActive : {}),
+                    }}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      setSide(listIndex, "whole");
+                    }}
+                  >
+                    W
+                  </button>
+                  <button
+                    style={{
+                      ...styles.sideBtn,
+                      ...(currentSide === "right" ? styles.sideBtnActive : {}),
+                    }}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      setSide(listIndex, "right");
+                    }}
+                  >
+                    R
+                  </button>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -194,6 +293,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "700",
     color: "#1a1a1a",
     fontSize: 14,
+  },
+  halfToggle: {
+    fontSize: 11,
+    fontWeight: "600",
+    padding: "4px 10px",
+    borderRadius: 12,
+    border: "1px solid #cbd5e1",
+    backgroundColor: "#ffffff",
+    color: "#64748b",
+    cursor: "pointer",
   },
   clearBtn: {
     display: "flex",
@@ -220,10 +329,22 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "10px 12px",
+    padding: "0",
     borderRadius: 8,
     border: "1px solid #e2e8f0",
     backgroundColor: "#ffffff",
+    minHeight: 40,
+    overflow: "hidden",
+  },
+  gridItemClickable: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flex: 1,
+    padding: "10px 12px",
+    background: "none",
+    border: "none",
     cursor: "pointer",
     minHeight: 40,
   },
@@ -271,6 +392,32 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 8,
     minWidth: 20,
     textAlign: "center",
+  },
+  sideSelector: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 2,
+    padding: "0 8px 0 0",
+  },
+  sideBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    border: "1px solid #cbd5e1",
+    backgroundColor: "#ffffff",
+    color: "#64748b",
+    fontSize: 10,
+    fontWeight: "700",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+  },
+  sideBtnActive: {
+    backgroundColor: "#1e293b",
+    borderColor: "#1e293b",
+    color: "#ffffff",
   },
 };
 

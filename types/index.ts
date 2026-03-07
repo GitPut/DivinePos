@@ -65,6 +65,8 @@ export type Option = {
   extraSelectionPrice?: string;
   includedDisplayStyle?: string;
   id?: string;
+  sizeLinkedOptionLabel?: string;
+  allowHalfAndHalf?: boolean;
 };
 
 export type OptionsList = {
@@ -74,6 +76,8 @@ export type OptionsList = {
   countsAs?: string;
   id: string;
   priceIncrease?: string | null;
+  priceBySize?: Record<string, string>;
+  halfSide?: "left" | "right" | "whole";
 };
 
 export type CartItemProp = {

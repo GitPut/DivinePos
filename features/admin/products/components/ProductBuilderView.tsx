@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ItemNoOptionsView from "./ItemNoOptionsView";
 import DisplayOption from "features/pos/components/ProductBuilder/OptionDisplay";
 import { ProductProp } from "types";
+import { resolveOptionPrice } from "utils/resolveOptionPrice";
 
 interface ProductBuilderViewProps {
   product: ProductProp;
@@ -27,9 +28,10 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
     myObjProfile.options.forEach((op) => {
       op.optionsList
         .filter((f) => f.selected === true)
-        .map(
-          (e) => (total += e.priceIncrease ? parseFloat(e.priceIncrease) : 0)
-        );
+        .map((e) => {
+          const resolved = parseFloat(resolveOptionPrice(e, op, myObjProfile.options));
+          total += resolved || 0;
+        });
     });
     myObjProfile.options.forEach((op) => {
       op.optionsList
@@ -39,8 +41,9 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
             ? parseInt(e.selectedTimes)
             : 0;
           const thisItemCountsAs = e.countsAs ? parseInt(e.countsAs) : 1;
-          total += e.priceIncrease
-            ? parseFloat(e.priceIncrease) *
+          const resolved = resolveOptionPrice(e, op, myObjProfile.options);
+          total += resolved
+            ? parseFloat(resolved) *
               thisItemCountsAs *
               thisItemSelectedTimes
             : 0;

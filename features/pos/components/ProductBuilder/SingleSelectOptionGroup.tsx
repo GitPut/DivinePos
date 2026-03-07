@@ -1,6 +1,7 @@
 import React from "react";
 import SingleSelectButton from "./SingleSelectButton";
-import { OptionsList } from "types";
+import { Option, OptionsList } from "types";
+import { resolveOptionPrice } from "utils/resolveOptionPrice";
 
 interface SingleSelectOptionGroupProps {
   isRequired: boolean;
@@ -8,6 +9,8 @@ interface SingleSelectOptionGroupProps {
   options: OptionsList[];
   value: OptionsList | null;
   setValue: (val: { option: OptionsList; listIndex: number | null }) => void;
+  optionGroup?: Option;
+  allOptions?: Option[];
 }
 
 function SingleSelectOptionGroup({
@@ -16,6 +19,8 @@ function SingleSelectOptionGroup({
   options,
   value,
   setValue,
+  optionGroup,
+  allOptions,
 }: SingleSelectOptionGroupProps) {
   return (
     <div style={styles.container}>
@@ -27,11 +32,14 @@ function SingleSelectOptionGroup({
           return (
             <SingleSelectButton
               key={option.id}
-              label={
-                parseFloat(option.priceIncrease ?? "0") > 0
-                  ? `${option.label} (+$${option.priceIncrease})`
-                  : option.label
-              }
+              label={(() => {
+                const displayPrice = optionGroup && allOptions
+                  ? resolveOptionPrice(option, optionGroup, allOptions)
+                  : option.priceIncrease ?? "0";
+                return parseFloat(displayPrice) > 0
+                  ? `${option.label} (+$${displayPrice})`
+                  : option.label;
+              })()}
               onPress={() => {
                 setValue({
                   option: {

@@ -60,6 +60,13 @@ function OptionsItemExpanded({
     });
   }
 
+  const sizeLinkedLabels: string[] = e.sizeLinkedOptionLabel
+    ? (newProduct.options
+        .find((op) => op.label === e.sizeLinkedOptionLabel)
+        ?.optionsList.map((op) => op.label)
+        .filter(Boolean) as string[]) ?? []
+    : [];
+
   return (
     <div style={styles.innerOptionContainer1}>
       <div style={styles.optionMainInfoRow1}>
@@ -156,6 +163,25 @@ function OptionsItemExpanded({
             }}
           />
         </div>
+        {(e.optionType === "Table View" || e.optionType === "Quantity Dropdown" || e.optionType === "Included Selections") && (
+          <div style={styles.optionRequiredRow1}>
+            <span style={styles.isOptionTxt1}>Allow Half & Half?:</span>
+            <Switch
+              isActive={e.allowHalfAndHalf ?? false}
+              toggleSwitch={() => {
+                sete((prevState) => ({
+                  ...prevState,
+                  allowHalfAndHalf: !e.allowHalfAndHalf,
+                }));
+                setnewProductOptions((prev) => {
+                  const clone = structuredClone(prev);
+                  clone[index].allowHalfAndHalf = !e.allowHalfAndHalf;
+                  return clone;
+                });
+              }}
+            />
+          </div>
+        )}
         {(e.optionType === "Dropdown" || e.optionType === "Row") && (
           <div style={styles.optionTypeGroup1}>
             <span style={styles.optionTypeDropdownLbl1}>Default Value</span>
@@ -292,6 +318,37 @@ function OptionsItemExpanded({
           </div>
         </>
       )}
+      {optionLbls.length >= 1 && (
+        <>
+          <div style={styles.spacer5}></div>
+          <div style={styles.optionMainInfoRow1}>
+            <div style={styles.optionTypeGroup1}>
+              <span style={styles.optionTypeDropdownLbl1}>Link Pricing To</span>
+              <div>
+                <DropdownStringOptions
+                  placeholder="None"
+                  value={e.sizeLinkedOptionLabel ?? null}
+                  setValue={(val) => {
+                    sete((prevState) => ({
+                      ...prevState,
+                      sizeLinkedOptionLabel: val ?? undefined,
+                    }));
+                    setnewProductOptions((prev) => {
+                      const clone = structuredClone(prev);
+                      clone[index].sizeLinkedOptionLabel = val ?? undefined;
+                      return clone;
+                    });
+                  }}
+                  options={optionLbls}
+                  scrollY={scrollY}
+                />
+              </div>
+            </div>
+            <div style={{ width: 239 }} />
+            <div style={{ width: 195 }} />
+          </div>
+        </>
+      )}
       <div style={styles.spacer6}></div>
       {testMap.map((e, indexInnerList) => (
         <OptionSelectionItem
@@ -310,6 +367,7 @@ function OptionsItemExpanded({
           highlightedOptionID={highlightedOptionID}
           sethighlightedOptionID={sethighlightedOptionID}
           scrollToPositionIncluding={scrollToPositionIncluding}
+          sizeLinkedLabels={sizeLinkedLabels}
         />
       ))}
       {testMap.length > 0 && <div style={styles.spacer7}></div>}

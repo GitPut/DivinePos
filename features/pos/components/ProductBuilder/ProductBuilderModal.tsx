@@ -13,6 +13,7 @@ import { useAlert } from "react-alert";
 import OptionDisplay from "./OptionDisplay";
 import { ProductProp } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
+import { resolveOptionPrice } from "utils/resolveOptionPrice";
 
 function ProductBuilderModal() {
   const { product, itemIndex, imageUrl, isOnlineOrder } =
@@ -71,12 +72,10 @@ function ProductBuilderModal() {
       }
       op.optionsList
         .filter((f) => f.selected === true)
-        .map(
-          (e) =>
-            (total += parseFloat(e.priceIncrease ?? "0")
-              ? parseFloat(e.priceIncrease ?? "0")
-              : 0)
-        );
+        .map((e) => {
+          const resolved = parseFloat(resolveOptionPrice(e, op, myObjProfile.options));
+          total += resolved || 0;
+        });
     });
     myObjProfile.options.forEach((op) => {
       if (op.optionType === "Included Selections") return;
@@ -85,8 +84,9 @@ function ProductBuilderModal() {
         .map((e) => {
           const thisItemSelectedTimes = e.selectedTimes ? e.selectedTimes : "0";
           const thisItemCountsAs = e.countsAs ? e.countsAs : "1";
-          total += e.priceIncrease
-            ? parseFloat(e.priceIncrease) *
+          const resolved = resolveOptionPrice(e, op, myObjProfile.options);
+          total += resolved
+            ? parseFloat(resolved) *
               parseFloat(thisItemCountsAs) *
               parseFloat(thisItemSelectedTimes)
             : 0;
@@ -132,10 +132,18 @@ function ProductBuilderModal() {
         if (selectedItems.length > 0) {
           let opWVal = `${op.label}:\n`;
           selectedItems.map((e, index) => {
+            const sideLabel =
+              e.halfSide === "left"
+                ? " (Left)"
+                : e.halfSide === "right"
+                  ? " (Right)"
+                  : e.halfSide === "whole"
+                    ? " (Whole)"
+                    : "";
             if (index < selectedItems.length - 1) {
-              opWVal += "   " + e.selectedTimes + " X " + e.label + "\n";
+              opWVal += "   " + e.selectedTimes + " X " + e.label + sideLabel + "\n";
             } else {
-              opWVal += "   " + e.selectedTimes + " X " + e.label;
+              opWVal += "   " + e.selectedTimes + " X " + e.label + sideLabel;
             }
           });
           opsArray.push(opWVal);

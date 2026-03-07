@@ -188,6 +188,8 @@ const OptionDisplay = ({
             }
             value={optionVal}
             scrollY={scrollY}
+            optionGroup={e}
+            allOptions={myObjProfile.options}
           />
         );
       case "Quantity Dropdown":
@@ -298,6 +300,8 @@ const OptionDisplay = ({
             value={
               parseFloat(e.numOfSelectable ?? "0") === 1 ? optionVal : null
             }
+            optionGroup={e}
+            allOptions={myObjProfile.options}
           />
         );
     }

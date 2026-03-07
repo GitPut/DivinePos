@@ -98,6 +98,7 @@ function AddProductModal({
       setnewProduct(existingProduct);
       setnewProductOptions(existingProduct.options);
       setcurrentImgUrl(existingProduct.imageUrl);
+      (window as any).__productData = existingProduct;
     }
   }, [addProductModal, existingProduct]);
 
@@ -603,7 +604,11 @@ function AddProductModal({
                             alignItems: "center",
                             justifyContent: "center",
                           }}
-                          onClick={() => setnewProduct((prev) => ({ ...prev, recipe: undefined }))}
+                          onClick={() => setnewProduct((prev) => {
+                            const clone = { ...prev };
+                            delete clone.recipe;
+                            return clone;
+                          })}
                         >
                           <span style={{ fontSize: 13, fontWeight: "500", color: (!newProduct.recipe || newProduct.recipe.length === 0) ? "#fff" : "#64748b" }}>
                             Track by Count

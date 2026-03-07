@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { FiMinus, FiPlus } from "react-icons/fi";
 import { MdClear } from "react-icons/md";
 import { Option, OptionsList, ProductProp } from "types";
+import { resolveOptionPrice } from "utils/resolveOptionPrice";
 
 interface MultiSelectOptionGroupProps {
   setopenDropdown: (val: string | null) => void;
@@ -27,6 +28,10 @@ function MultiSelectOptionGroup({
 }: MultiSelectOptionGroupProps) {
   const options = e.optionsList;
 
+  const [isHalfActive, setIsHalfActive] = useState(
+    options.some((op) => op.halfSide !== undefined && parseFloat(op.selectedTimes ?? "0") > 0)
+  );
+
   const getTotalSelected = () => {
     let total = 0;
     myObjProfile.options[index].optionsList.forEach((op) => {
@@ -42,9 +47,11 @@ function MultiSelectOptionGroup({
     );
     if (currentTimes > 0) {
       const newProfile = structuredClone(myObjProfile);
-      newProfile.options[index].optionsList[listIndex].selectedTimes = (
-        currentTimes - 1
-      ).toString();
+      const newTimes = currentTimes - 1;
+      newProfile.options[index].optionsList[listIndex].selectedTimes = newTimes.toString();
+      if (newTimes === 0 && isHalfActive) {
+        delete newProfile.options[index].optionsList[listIndex].halfSide;
+      }
       setmyObjProfile(newProfile);
     }
   };
@@ -65,6 +72,9 @@ function MultiSelectOptionGroup({
     newProfile.options[index].optionsList[listIndex].selectedTimes = (
       currentTimes + 1
     ).toString();
+    if (isHalfActive && !newProfile.options[index].optionsList[listIndex].halfSide) {
+      newProfile.options[index].optionsList[listIndex].halfSide = "whole";
+    }
     setmyObjProfile(newProfile);
   };
 
@@ -72,7 +82,30 @@ function MultiSelectOptionGroup({
     const newProfile = structuredClone(myObjProfile);
     newProfile.options[index].optionsList.forEach((op) => {
       op.selectedTimes = "0";
+      delete op.halfSide;
     });
+    setmyObjProfile(newProfile);
+  };
+
+  const toggleHalfAndHalf = () => {
+    const newActive = !isHalfActive;
+    setIsHalfActive(newActive);
+    const newProfile = structuredClone(myObjProfile);
+    newProfile.options[index].optionsList.forEach((op) => {
+      if (newActive) {
+        if (parseFloat(op.selectedTimes ?? "0") > 0) {
+          op.halfSide = "whole";
+        }
+      } else {
+        delete op.halfSide;
+      }
+    });
+    setmyObjProfile(newProfile);
+  };
+
+  const setSide = (listIndex: number, side: "left" | "right" | "whole") => {
+    const newProfile = structuredClone(myObjProfile);
+    newProfile.options[index].optionsList[listIndex].halfSide = side;
     setmyObjProfile(newProfile);
   };
 
@@ -86,12 +119,30 @@ function MultiSelectOptionGroup({
         <span style={styles.lbl}>
           {label} {isRequired ? "*" : ""}
         </span>
-        {hasAnySelected && (
-          <button style={styles.clearBtn} onClick={clearAll}>
-            <MdClear size={16} color="#94a3b8" />
-            <span style={styles.clearText}>Clear</span>
-          </button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {e.allowHalfAndHalf && (
+            <button
+              style={{
+                ...styles.halfToggle,
+                ...(isHalfActive
+                  ? { backgroundColor: "#1e293b", color: "#ffffff" }
+                  : {}),
+              }}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                toggleHalfAndHalf();
+              }}
+            >
+              Half & Half
+            </button>
+          )}
+          {hasAnySelected && (
+            <button style={styles.clearBtn} onClick={clearAll}>
+              <MdClear size={16} color="#94a3b8" />
+              <span style={styles.clearText}>Clear</span>
+            </button>
+          )}
+        </div>
       </div>
       <div style={styles.grid}>
         {options.map((option, listIndex) => {
@@ -99,6 +150,8 @@ function MultiSelectOptionGroup({
             myObjProfile.options[index].optionsList[listIndex].selectedTimes ?? "0"
           );
           const isSelected = selectedTimes > 0;
+
+          const currentSide = myObjProfile.options[index].optionsList[listIndex].halfSide;
 
           return (
             <div
@@ -122,31 +175,76 @@ function MultiSelectOptionGroup({
                 >
                   {option.label}
                 </span>
-                {parseFloat(option.priceIncrease ?? "0") > 0 && (
-                  <span style={styles.priceTag}>+${option.priceIncrease}</span>
-                )}
+                {(() => {
+                  const displayPrice = resolveOptionPrice(option, e, myObjProfile.options);
+                  return parseFloat(displayPrice) > 0 ? (
+                    <span style={styles.priceTag}>+${displayPrice}</span>
+                  ) : null;
+                })()}
               </div>
-              <div style={styles.qtyControls}>
-                <button
-                  style={styles.qtyBtn}
-                  onClick={() => onMinusPress(listIndex)}
-                >
-                  <FiMinus size={14} color={isSelected ? "#1e293b" : "#cbd5e1"} />
-                </button>
-                <span
-                  style={{
-                    ...styles.qtyText,
-                    ...(isSelected ? { color: "#1e293b", fontWeight: "600" } : {}),
-                  }}
-                >
-                  {selectedTimes}
-                </span>
-                <button
-                  style={styles.qtyBtn}
-                  onClick={() => onPlusPress(listIndex, option)}
-                >
-                  <FiPlus size={14} color="#1e293b" />
-                </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {isHalfActive && isSelected && (
+                  <div style={styles.sideSelector}>
+                    <button
+                      style={{
+                        ...styles.sideBtn,
+                        ...(currentSide === "left" ? styles.sideBtnActive : {}),
+                      }}
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        setSide(listIndex, "left");
+                      }}
+                    >
+                      L
+                    </button>
+                    <button
+                      style={{
+                        ...styles.sideBtn,
+                        ...(currentSide === "whole" ? styles.sideBtnActive : {}),
+                      }}
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        setSide(listIndex, "whole");
+                      }}
+                    >
+                      W
+                    </button>
+                    <button
+                      style={{
+                        ...styles.sideBtn,
+                        ...(currentSide === "right" ? styles.sideBtnActive : {}),
+                      }}
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        setSide(listIndex, "right");
+                      }}
+                    >
+                      R
+                    </button>
+                  </div>
+                )}
+                <div style={styles.qtyControls}>
+                  <button
+                    style={styles.qtyBtn}
+                    onClick={() => onMinusPress(listIndex)}
+                  >
+                    <FiMinus size={14} color={isSelected ? "#1e293b" : "#cbd5e1"} />
+                  </button>
+                  <span
+                    style={{
+                      ...styles.qtyText,
+                      ...(isSelected ? { color: "#1e293b", fontWeight: "600" } : {}),
+                    }}
+                  >
+                    {selectedTimes}
+                  </span>
+                  <button
+                    style={styles.qtyBtn}
+                    onClick={() => onPlusPress(listIndex, option)}
+                  >
+                    <FiPlus size={14} color="#1e293b" />
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -251,6 +349,41 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "500",
     minWidth: 16,
     textAlign: "center",
+  },
+  halfToggle: {
+    fontSize: 11,
+    fontWeight: "600",
+    padding: "4px 10px",
+    borderRadius: 12,
+    border: "1px solid #cbd5e1",
+    backgroundColor: "#ffffff",
+    color: "#64748b",
+    cursor: "pointer",
+  },
+  sideSelector: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 2,
+  },
+  sideBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    border: "1px solid #cbd5e1",
+    backgroundColor: "#ffffff",
+    color: "#64748b",
+    fontSize: 10,
+    fontWeight: "700",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+  },
+  sideBtnActive: {
+    backgroundColor: "#1e293b",
+    borderColor: "#1e293b",
+    color: "#ffffff",
   },
 };
 

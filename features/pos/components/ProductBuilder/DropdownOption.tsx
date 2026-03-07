@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { MdClear } from "react-icons/md";
 import ReactDOM from "react-dom";
-import { OptionsList } from "types";
+import { Option, OptionsList } from "types";
+import { resolveOptionPrice } from "utils/resolveOptionPrice";
 
 interface DropdownOptionProps {
   setopenDropdown: (val: string | null) => void;
@@ -20,6 +21,8 @@ interface DropdownOptionProps {
   }) => void;
   options: OptionsList[];
   scrollY: number;
+  optionGroup?: Option;
+  allOptions?: Option[];
 }
 
 function DropdownOption({
@@ -32,6 +35,8 @@ function DropdownOption({
   setValue,
   options,
   scrollY,
+  optionGroup,
+  allOptions,
 }: DropdownOptionProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownLayout, setDropdownLayout] = useState<{
@@ -56,6 +61,13 @@ function DropdownOption({
   useEffect(() => {
     measureLayout();
   }, [scrollY]);
+
+  const getDisplayPrice = (item: OptionsList) => {
+    if (optionGroup && allOptions) {
+      return resolveOptionPrice(item, optionGroup, allOptions);
+    }
+    return item.priceIncrease ?? "0";
+  };
 
   const portalContent = openDropdown === id ? ReactDOM.createPortal(
     <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 9999 }}>
@@ -95,7 +107,7 @@ function DropdownOption({
           >
             <span style={styles.dropdownText}>
               {value
-                ? `${value.label}${parseFloat(value.priceIncrease ?? "0") > 0 ? ` (+$${value.priceIncrease})` : ""}`
+                ? `${value.label}${parseFloat(getDisplayPrice(value)) > 0 ? ` (+$${getDisplayPrice(value)})` : ""}`
                 : `Select ${label}`}
             </span>
             {openDropdown === id ? (
@@ -128,8 +140,8 @@ function DropdownOption({
                 >
                   <span style={styles.optionItemText}>
                     {optionI.label}
-                    {parseFloat(optionI.priceIncrease ?? "0") > 0
-                      ? ` (+$${optionI.priceIncrease})`
+                    {parseFloat(getDisplayPrice(optionI)) > 0
+                      ? ` (+$${getDisplayPrice(optionI)})`
                       : ""}
                   </span>
                 </button>
@@ -169,7 +181,7 @@ function DropdownOption({
             ...(value ? { color: "#1a1a1a" } : {}),
           }}>
             {value
-              ? `${value.label}${parseFloat(value.priceIncrease ?? "0") > 0 ? ` (+$${value.priceIncrease})` : ""}`
+              ? `${value.label}${parseFloat(getDisplayPrice(value)) > 0 ? ` (+$${getDisplayPrice(value)})` : ""}`
               : `Select ${label}`}
           </span>
           {value ? (
