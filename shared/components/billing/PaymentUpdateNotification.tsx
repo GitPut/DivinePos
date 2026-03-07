@@ -18,7 +18,7 @@ const PaymentUpdateNotification = ({
   const sendToCheckout = async () => {
     if (!auth.currentUser) return;
     await createCheckoutSession(
-      "price_1Oj9OpCIw3L7DOwIBviuzrSh",
+      "price_1T8TIlCIw3L7DOwIDUpngIcI",
       window.location.origin,
       window.location.origin,
       (msg) => alertP.error(msg || "An error occurred")
@@ -79,14 +79,13 @@ const PaymentUpdateNotification = ({
           something you dont like about the software, we can change that.
         </span>
         <span style={styles.txt3}>
-          Resubscribe to have access of your store again. At $40/month instead
-          of the normal $50/month
+          Resubscribe to have access of your store again starting at $49/month.
         </span>
         <button
           style={{ ...styles.updateBtn, width: 450 }}
           onClick={sendToCheckout}
         >
-          <span style={styles.updateBilling}>Resubscribe for $40/month</span>
+          <span style={styles.updateBilling}>Resubscribe for $49/month</span>
         </button>
         <span style={styles.txt4}>
           Please call (226) 600-5925 or email us at Support@DivinePos.com so

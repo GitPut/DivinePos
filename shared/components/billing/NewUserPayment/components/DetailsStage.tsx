@@ -1,6 +1,5 @@
 import React from "react";
 import HeaderTxt from "./HeaderTxt";
-import PeriodSlider from "./PeriodSlider";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
 
 import { GooglePlacesStyles } from "utils/googlePlacesStyles";
@@ -16,8 +15,6 @@ interface DetailsStageProps {
   setwebsite: (website: string) => void;
   setaddress: (address: AddressType) => void;
   address: AddressType | null;
-  paymentTerm: string;
-  setpaymentTerm: (paymentTerm: string) => void;
   planType: string | null;
   storeName: string;
   phoneNumber: string;
@@ -31,8 +28,6 @@ function DetailsStage({
   setwebsite,
   setaddress,
   address,
-  paymentTerm,
-  setpaymentTerm,
   planType,
   storeName,
   phoneNumber,
@@ -46,14 +41,9 @@ function DetailsStage({
       />
       <div style={styles.contentContainer}>
         <div style={styles.topSectionOfContainer}>
-          <PeriodSlider
-            setpaymentTerm={setpaymentTerm}
-            paymentTerm={paymentTerm}
-          />
           <div style={styles.plansRow}>
             <ViewPlan
               planType={planType}
-              paymentTerm={paymentTerm}
               setstageNum={setstageNum}
             />
             <div
@@ -132,7 +122,7 @@ const styles: Record<string, React.CSSProperties> = {
   topSectionOfContainer: {
     width: 860,
     height: 500,
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     display: "flex",
     flexDirection: "column",

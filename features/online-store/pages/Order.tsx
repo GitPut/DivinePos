@@ -138,8 +138,8 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
       <Modal
         isVisible={ProductBuilderProps.isOpen ? true : false}
         onBackdropPress={() => resetProductBuilderState()}
-        animationIn="slideInLeft"
-        animationOut="slideOutLeft"
+        animationIn={width < 800 ? "slideInUp" : "slideInLeft"}
+        animationOut={width < 800 ? "slideOutDown" : "slideOutLeft"}
       >
         <div
           style={{
@@ -154,7 +154,7 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
             style={{
               height: "100%",
               flex: 1,
-              borderTopRightRadius: 3,
+              borderTopRightRadius: width < 800 ? 0 : 3,
             }}
             onClick={(e) => e.stopPropagation()}
           >

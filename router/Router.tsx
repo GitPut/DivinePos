@@ -308,7 +308,8 @@ const AppRouter = () => {
               extraDevicesPayingFor += 1;
             }
 
-            if (sub.role === "Test Plan" || sub.role === "Pos Software Plan") {
+            // Starter plan (also backward-compat with old "Test Plan" / "Pos Software Plan")
+            if (sub.role === "Starter Plan" || sub.role === "Test Plan" || sub.role === "Pos Software Plan") {
               if (sub.status === "active") {
                 setisSubscribed(true);
                 setisNewUser(false);
@@ -326,7 +327,9 @@ const AppRouter = () => {
               }
             }
 
-            if (sub.role === "Premium Plan") {
+            // Professional plan (also backward-compat with old "Premium Plan")
+            // Includes online store access + 1 extra device
+            if (sub.role === "Professional Plan" || sub.role === "Premium Plan") {
               if (sub.status === "active") {
                 setisSubscribed(true);
                 setisNewUser(false);

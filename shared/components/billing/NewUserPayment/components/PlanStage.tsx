@@ -1,20 +1,15 @@
 import React from "react";
 import HeaderTxt from "./HeaderTxt";
-import PeriodSlider from "./PeriodSlider";
 import Plan from "./Plan";
 
 interface PlanStageProps {
   planType: string | null;
   setplanType: (planType: string) => void;
-  setpaymentTerm: (paymentTerm: string) => void;
-  paymentTerm: string;
 }
 
 function PlanStage({
   planType,
   setplanType,
-  setpaymentTerm,
-  paymentTerm,
 }: PlanStageProps) {
   return (
     <div style={styles.container}>
@@ -24,17 +19,13 @@ function PlanStage({
       />
       <div style={styles.contentContainer}>
         <div style={styles.topSectionOfContainer}>
-          <PeriodSlider
-            setpaymentTerm={setpaymentTerm}
-            paymentTerm={paymentTerm}
-          />
           <div style={styles.plansRow}>
             <Plan
               planName="Free Trial"
               planPrice="0"
               planPeriodDesc="For 1 month"
               planDescription={`
-- Data Anylitics on your store
+- Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
 - 1 station, and 1 location
@@ -46,43 +37,44 @@ function PlanStage({
               isPlanSelected={planType === "freeTrial"}
             />
             <Plan
-              planName="STANDARD"
-              planPrice={paymentTerm === "monthly" ? "50" : "40"}
+              planName="STARTER"
+              planPrice="49"
               planPeriodDesc="Auto-renews unless cancelled"
               planDescription={`
-- Data Anylitics on your store
+- Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
 - 1 station, and 1 location
 - 24/7 support
 - We setup Your Store for You
-- Add a extra station for $10 a month
+- Add an extra station for $10/month
               `}
               selectPlan={() => {
-                setplanType("standard");
+                setplanType("starter");
               }}
-              isPlanSelected={planType === "standard"}
+              isPlanSelected={planType === "starter"}
               recurence="/ Monthly"
             />
             <Plan
-              planName="PREMIUM"
-              planPrice={paymentTerm === "monthly" ? "90" : "80"}
+              planName="PROFESSIONAL"
+              planPrice="79"
               planPeriodDesc="Auto-renews unless cancelled"
               planDescription={`
-- Data Anylitics on your store
+- Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
 - 2 stations, and 1 location
 - 24/7 Support
-- Online Store
+- Online Store Included
 - We setup Your Store for You
-- Add a extra station for $10 a month
+- Add an extra station for $10/month
               `}
               selectPlan={() => {
-                setplanType("premium");
+                setplanType("professional");
               }}
-              isPlanSelected={planType === "premium"}
+              isPlanSelected={planType === "professional"}
               recurence="/ Monthly"
+              isRecommended
             />
           </div>
         </div>
@@ -117,7 +109,7 @@ const styles: Record<string, React.CSSProperties> = {
   topSectionOfContainer: {
     width: 860,
     height: 500,
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     display: "flex",
     flexDirection: "column",
@@ -128,32 +120,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  plan: {
-    height: 384,
-    width: 275,
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-  },
-  plan2: {
-    height: 384,
-    width: 275,
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-  },
-  plan3: {
-    height: 384,
-    width: 275,
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-  },
-  buttonRow: {
-    height: 50,
-    alignItems: "flex-end",
-    justifyContent: "flex-end",
-    display: "flex",
-    width: 860,
-  },
-  nextBtn: {
-    height: 50,
-    width: 143,
   },
 };
 

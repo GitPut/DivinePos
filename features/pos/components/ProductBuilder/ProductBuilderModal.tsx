@@ -218,6 +218,90 @@ function ProductBuilderModal() {
   const isMobile = width < 800;
   const extrasSummary = getIncludedExtrasSummary();
 
+  if (isMobile) {
+    return (
+      <div style={styles.container}>
+        {/* Mobile: single scroll layout */}
+        <div style={styles.mobileScrollArea}>
+          {/* Back button */}
+          <div style={styles.mobileTopBar}>
+            <GoBackButton onPress={goBack} />
+          </div>
+
+          {/* Product info */}
+          {imageUrl && (
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+              <ProductImage
+                source={imageUrl}
+                style={styles.mobileProductImg}
+                alt={myObj.name}
+              />
+            </div>
+          )}
+          <div style={{ padding: "0 16px" }}>
+            <span style={styles.productName}>{myObj.name}</span>
+            {myObj.calorieDetails && (
+              <span style={styles.calorieDetails}>{myObj.calorieDetails}</span>
+            )}
+            {myObj.description && (
+              <span style={styles.description}>{myObj.description}</span>
+            )}
+            <span style={styles.price}>${parseFloat(myObj.price).toFixed(2)}</span>
+          </div>
+
+          {/* Options inline */}
+          <div style={{ padding: "0 16px" }}>
+            {myObjProfile.options.map((option, index) => (
+              <OptionDisplay
+                key={index}
+                e={option}
+                index={index}
+                myObjProfile={myObjProfile}
+                setMyObjProfile={setmyObjProfile}
+                setopenOptions={setopenOptions}
+                openOptions={openOptions}
+                isOnlineOrder={isOnlineOrder}
+                scrollY={scrollY}
+              />
+            ))}
+          </div>
+
+          {/* Notes */}
+          <div style={{ padding: "0 16px", marginTop: 16 }}>
+            <span style={styles.sectionLabel}>Special Instructions</span>
+            <textarea
+              style={styles.notesInput}
+              placeholder="Add any special requests..."
+              rows={2}
+              onChange={(e) => setextraInput(e.target.value)}
+              value={extraInput}
+            />
+          </div>
+
+          {/* Item total */}
+          <div style={{ padding: "12px 16px 16px" }}>
+            <div style={styles.itemTotalCard}>
+              <span style={styles.itemTotalLabel}>Item Total</span>
+              <span style={styles.itemTotalPrice}>${total.toFixed(2)}</span>
+              {extrasSummary.map((line, i) => (
+                <span key={i} style={styles.itemTotalExtras}>{line}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Sticky bottom button */}
+        <div style={styles.mobileBottomBar}>
+          <AddToCartButton
+            title={isEditing ? "Save" : "Add to Cart"}
+            total={total}
+            onPress={AddToCart}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
       {/* Top bar */}
@@ -226,15 +310,9 @@ function ProductBuilderModal() {
       </div>
 
       {/* Content */}
-      <div style={{
-        ...styles.contentRow,
-        flexDirection: isMobile ? "column" : "row",
-      }}>
+      <div style={styles.contentRow}>
         {/* Left column - product info */}
-        <div style={{
-          ...styles.leftColumn,
-          ...(isMobile ? { width: "100%", marginBottom: 20 } : {}),
-        }}>
+        <div style={styles.leftColumn}>
           {imageUrl && (
             <ProductImage
               source={imageUrl}
@@ -251,35 +329,28 @@ function ProductBuilderModal() {
           )}
           <span style={styles.price}>${parseFloat(myObj.price).toFixed(2)}</span>
 
-          {!isMobile && (
-            <>
-              <div style={styles.spacer} />
-              <span style={styles.sectionLabel}>Special Instructions</span>
-              <textarea
-                style={styles.notesInput}
-                placeholder="Add any special requests..."
-                rows={3}
-                onChange={(e) => setextraInput(e.target.value)}
-                value={extraInput}
-              />
+          <div style={styles.spacer} />
+          <span style={styles.sectionLabel}>Special Instructions</span>
+          <textarea
+            style={styles.notesInput}
+            placeholder="Add any special requests..."
+            rows={3}
+            onChange={(e) => setextraInput(e.target.value)}
+            value={extraInput}
+          />
 
-              <div style={styles.spacer} />
-              <div style={styles.itemTotalCard}>
-                <span style={styles.itemTotalLabel}>Item Total</span>
-                <span style={styles.itemTotalPrice}>${total.toFixed(2)}</span>
-                {extrasSummary.map((line, i) => (
-                  <span key={i} style={styles.itemTotalExtras}>{line}</span>
-                ))}
-              </div>
-            </>
-          )}
+          <div style={styles.spacer} />
+          <div style={styles.itemTotalCard}>
+            <span style={styles.itemTotalLabel}>Item Total</span>
+            <span style={styles.itemTotalPrice}>${total.toFixed(2)}</span>
+            {extrasSummary.map((line, i) => (
+              <span key={i} style={styles.itemTotalExtras}>{line}</span>
+            ))}
+          </div>
         </div>
 
         {/* Right column - options */}
-        <div style={{
-          ...styles.rightColumn,
-          ...(isMobile ? { width: "100%" } : {}),
-        }}>
+        <div style={styles.rightColumn}>
           <div
             style={styles.optionsScrollArea}
             onScroll={(e) => setscrollY((e.target as HTMLDivElement).scrollTop)}
@@ -300,27 +371,6 @@ function ProductBuilderModal() {
           </div>
         </div>
       </div>
-
-      {/* Mobile notes + total */}
-      {isMobile && (
-        <div style={{ padding: "0 20px", width: "100%", boxSizing: "border-box" }}>
-          <span style={styles.sectionLabel}>Special Instructions</span>
-          <textarea
-            style={styles.notesInput}
-            placeholder="Add any special requests..."
-            rows={3}
-            onChange={(e) => setextraInput(e.target.value)}
-            value={extraInput}
-          />
-          <div style={{ ...styles.itemTotalCard, marginTop: 16 }}>
-            <span style={styles.itemTotalLabel}>Item Total</span>
-            <span style={styles.itemTotalPrice}>${total.toFixed(2)}</span>
-            {extrasSummary.map((line, i) => (
-              <span key={i} style={styles.itemTotalExtras}>{line}</span>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Bottom button */}
       <div style={styles.bottomBar}>
@@ -343,6 +393,29 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     overflow: "hidden",
   },
+  // Mobile styles
+  mobileScrollArea: {
+    flex: 1,
+    overflowY: "auto",
+    WebkitOverflowScrolling: "touch" as any,
+  },
+  mobileTopBar: {
+    padding: "12px 16px",
+    flexShrink: 0,
+  },
+  mobileProductImg: {
+    width: 160,
+    height: 160,
+    objectFit: "contain",
+    borderRadius: 12,
+  },
+  mobileBottomBar: {
+    padding: "12px 16px",
+    flexShrink: 0,
+    backgroundColor: "#f8f9fc",
+    borderTop: "1px solid #e2e8f0",
+  },
+  // Desktop styles
   topBar: {
     padding: "16px 24px",
     flexShrink: 0,

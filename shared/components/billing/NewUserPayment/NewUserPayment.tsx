@@ -11,6 +11,9 @@ import DetailsStage from "./components/DetailsStage";
 import { AddressType } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
 
+const STARTER_PRICE_ID = "price_1T8TIlCIw3L7DOwIDUpngIcI";
+const PROFESSIONAL_PRICE_ID = "price_1T8TJBCIw3L7DOwIlItWv4xo";
+
 const NewUserPayment = () => {
   const [planType, setplanType] = useState<string | null>(null);
   const [stageNum, setstageNum] = useState(1);
@@ -21,7 +24,6 @@ const NewUserPayment = () => {
     storeDetails.address ? storeDetails.address : null
   );
   const [website, setwebsite] = useState(storeDetails.website);
-  const [paymentTerm, setpaymentTerm] = useState<string>("monthly");
   const alertP = useAlert();
   const { height } = useWindowSize();
 
@@ -72,18 +74,10 @@ const NewUserPayment = () => {
       SendEmail();
     } else {
       let priceId;
-      if (paymentTerm === "monthly") {
-        if (planType === "standard") {
-          priceId = "price_1Mb2s4CIw3L7DOwI5PDx3qKx";
-        } else if (planType === "premium") {
-          priceId = "price_1P6zUFCIw3L7DOwIo9SCcg2R";
-        }
-      } else {
-        if (planType === "standard") {
-          priceId = "price_1Mb2s4CIw3L7DOwIF00zPa4q";
-        } else if (planType === "premium") {
-          priceId = "price_1P6zV2CIw3L7DOwIsuPy0rnM";
-        }
+      if (planType === "starter") {
+        priceId = STARTER_PRICE_ID;
+      } else if (planType === "professional") {
+        priceId = PROFESSIONAL_PRICE_ID;
       }
       if (!priceId) return;
 
@@ -120,8 +114,6 @@ const NewUserPayment = () => {
                 <PlanStage
                   planType={planType}
                   setplanType={setplanType}
-                  setpaymentTerm={setpaymentTerm}
-                  paymentTerm={paymentTerm}
                 />
               )}
               {stageNum === 2 && (
@@ -132,8 +124,6 @@ const NewUserPayment = () => {
                   setwebsite={setwebsite}
                   setaddress={setaddress}
                   address={address}
-                  paymentTerm={paymentTerm}
-                  setpaymentTerm={setpaymentTerm}
                   planType={planType}
                   storeName={storeName}
                   phoneNumber={phoneNumber}

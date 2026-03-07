@@ -2,11 +2,10 @@ import React, { useEffect, useState } from "react";
 
 interface PlanProps {
   planType: string | null;
-  paymentTerm: string;
   setstageNum: (stageNum: number) => void;
 }
 
-const ViewPlan = ({ planType, paymentTerm, setstageNum }: PlanProps) => {
+const ViewPlan = ({ planType, setstageNum }: PlanProps) => {
   const [planName, setplanName] = useState<string | null>(null);
   const [planPrice, setplanPrice] = useState<string | null>(null);
   const [planPeriodDesc, setplanPeriodDesc] = useState<string | null>(null);
@@ -20,48 +19,49 @@ const ViewPlan = ({ planType, paymentTerm, setstageNum }: PlanProps) => {
       setplanPeriodDesc("For 1 month");
       setplanDescription(
         `
-- Data Anylitics on your store
+- Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
 - 1 station, and 1 location
 - 24/7 support
 `
       );
-    } else if (planType === "standard") {
-      setplanName("STANDARD");
-      setplanPrice(paymentTerm === "monthly" ? "50" : "40");
+      setrecurence(null);
+    } else if (planType === "starter") {
+      setplanName("STARTER");
+      setplanPrice("49");
       setplanPeriodDesc("Auto-renews unless cancelled");
       setplanDescription(
         `
-- Data Anylitics on your store
+- Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
 - 1 station, and 1 location
 - 24/7 support
 - We setup Your Store for You
-- Add a extra station for $10 a month
+- Add an extra station for $10/month
               `
       );
       setrecurence("/ Monthly");
-    } else if (planType === "premium") {
-      setplanName("PREMIUM");
-      setplanPrice(paymentTerm === "monthly" ? "90" : "80");
+    } else if (planType === "professional") {
+      setplanName("PROFESSIONAL");
+      setplanPrice("79");
       setplanPeriodDesc("Auto-renews unless cancelled");
       setplanDescription(
         `
-- Data Anylitics on your store
+- Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
 - 2 stations, and 1 location
 - 24/7 Support
-- Online Store
+- Online Store Included
 - We setup Your Store for You
-- Add a extra station for $10 a month
+- Add an extra station for $10/month
               `
       );
       setrecurence("/ Monthly");
     }
-  }, [paymentTerm, planType]);
+  }, [planType]);
 
   return (
     <div

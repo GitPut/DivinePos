@@ -8,6 +8,7 @@ interface PlanProps {
   recurence?: string;
   selectPlan: () => void;
   isPlanSelected: boolean;
+  isRecommended?: boolean;
 }
 
 const Plan = ({
@@ -18,15 +19,15 @@ const Plan = ({
   recurence,
   selectPlan,
   isPlanSelected,
+  isRecommended,
 }: PlanProps) => {
   return (
     <div
       style={{
         ...styles.container,
-        ...(planName === "STANDARD"
+        ...(isRecommended
           ? {
               height: 430,
-              borderTopWidth: 10,
               borderTop: "10px solid #1D294E",
             }
           : {}),

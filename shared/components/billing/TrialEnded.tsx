@@ -1,31 +1,19 @@
 import React, { useState } from "react";
 import { IoPricetagsOutline, IoCheckmark } from "react-icons/io5";
 import { logout, createCheckoutSession } from "services/firebase/functions";
-import Select from "react-select";
 import { useAlert } from "react-alert";
 
+const STARTER_PRICE_ID = "price_1T8TIlCIw3L7DOwIDUpngIcI";
+const PROFESSIONAL_PRICE_ID = "price_1T8TJBCIw3L7DOwIlItWv4xo";
+
 const TrialEnded = () => {
-  const [planType, setplanType] = useState<{
-    value: string;
-    label: string;
-  } | null>({
-    value: "monthly",
-    label: "Monthly",
-  });
+  const [selectedPlan, setSelectedPlan] = useState<"starter" | "professional">("starter");
   const [loading, setloading] = useState(false);
   const alertP = useAlert();
 
   const Checkout = async () => {
-    if (!planType) return;
     setloading(true);
-
-    let priceId;
-    if (planType.value === "monthly") {
-      priceId = "price_1Mb2s4CIw3L7DOwI5PDx3qKx";
-    } else if (planType.value === "yearly") {
-      priceId = "price_1Mb2s4CIw3L7DOwIF00zPa4q";
-    }
-    if (!priceId) return;
+    const priceId = selectedPlan === "starter" ? STARTER_PRICE_ID : PROFESSIONAL_PRICE_ID;
 
     await createCheckoutSession(
       priceId,
@@ -59,31 +47,34 @@ const TrialEnded = () => {
             </div>
           </div>
           <span style={styles.allYearPayment}>Choose A Plan To Continue</span>
-          <div style={styles.group6}>
-            {planType?.value === "monthly" && (
-              <span style={styles.overview1}>$50.00 CAD</span>
-            )}
-            {planType?.value === "yearly" && (
-              <span style={styles.overview1}>$480.00 CAD</span>
-            )}
-            <span style={styles.monthly5}>/</span>
-            <Select
-              className="basic-single"
-              classNamePrefix="select"
-              name="Plan"
-              options={[
-                { value: "monthly", label: "Monthly" },
-                { value: "yearly", label: "Yearly" },
-              ]}
-              value={planType}
-              onChange={(e) => setplanType(e)}
-            />
+
+          {/* Plan selection */}
+          <div style={{ display: "flex", flexDirection: "row", gap: 16, width: "100%", marginBottom: 20 }}>
+            <button
+              style={{
+                ...styles.planCard,
+                ...(selectedPlan === "starter" ? styles.planCardActive : {}),
+              }}
+              onClick={() => setSelectedPlan("starter")}
+            >
+              <span style={{ fontWeight: "700", fontSize: 18, color: selectedPlan === "starter" ? "#fff" : "#1c294e" }}>Starter</span>
+              <span style={{ fontWeight: "700", fontSize: 28, color: selectedPlan === "starter" ? "#fff" : "#1c294e" }}>$49</span>
+              <span style={{ fontSize: 14, color: selectedPlan === "starter" ? "rgba(255,255,255,0.7)" : "#666" }}>/month</span>
+            </button>
+            <button
+              style={{
+                ...styles.planCard,
+                ...(selectedPlan === "professional" ? styles.planCardActive : {}),
+              }}
+              onClick={() => setSelectedPlan("professional")}
+            >
+              <span style={{ fontWeight: "700", fontSize: 18, color: selectedPlan === "professional" ? "#fff" : "#1c294e" }}>Professional</span>
+              <span style={{ fontWeight: "700", fontSize: 28, color: selectedPlan === "professional" ? "#fff" : "#1c294e" }}>$79</span>
+              <span style={{ fontSize: 14, color: selectedPlan === "professional" ? "rgba(255,255,255,0.7)" : "#666" }}>/month</span>
+              <span style={{ fontSize: 11, color: selectedPlan === "professional" ? "#a5f3fc" : "#0891b2", marginTop: 4 }}>Online Store Included</span>
+            </button>
           </div>
-          {planType?.value === "yearly" && (
-            <span style={{ fontSize: 12, color: "red", marginBottom: 15, display: "block" }}>
-              Paying anually saves you $10 a month!
-            </span>
-          )}
+
           <div style={styles.group7}>
             <span style={styles.cloudBased}>Cloud-Based</span>
             <IoCheckmark size={30} color="rgba(74,74,74,1)" />
@@ -93,7 +84,7 @@ const TrialEnded = () => {
             <IoCheckmark size={30} color="rgba(74,74,74,1)" />
           </div>
           <div style={styles.group7}>
-            <span style={styles.cloudBased}>24/H Support</span>
+            <span style={styles.cloudBased}>24/7 Support</span>
             <IoCheckmark size={30} color="rgba(74,74,74,1)" />
           </div>
           <div
@@ -103,7 +94,7 @@ const TrialEnded = () => {
               alignItems: "center",
               justifyContent: "space-between",
               width: "100%",
-              marginTop: 50,
+              marginTop: 40,
             }}
           >
             <button style={styles.group5} onClick={logout}>
@@ -127,6 +118,21 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     alignItems: "center",
     display: "flex",
+  },
+  planCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    border: "2px solid #e2e8f0",
+    backgroundColor: "#fff",
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    cursor: "pointer",
+  },
+  planCardActive: {
+    backgroundColor: "#1c294e",
+    borderColor: "#1c294e",
   },
   innerContainer: {
     backgroundColor: "white",
