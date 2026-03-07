@@ -167,9 +167,8 @@ function CheckOutDetails() {
               style={{
                 backgroundColor: "#f4f4f4",
                 borderRadius: 4,
-                justifyContent: "center",
-                alignItems: "center",
                 padding: 14,
+                display: "block",
               }}
             >
               <CardNumberElement options={CARD_ELEMENT_OPTIONS} />
@@ -185,9 +184,8 @@ function CheckOutDetails() {
                 style={{
                   backgroundColor: "#f4f4f4",
                   borderRadius: 4,
-                  justifyContent: "center",
-                  alignItems: "center",
                   padding: 14,
+                  display: "block",
                 }}
               >
                 <CardExpiryElement options={CARD_ELEMENT_OPTIONS} />
@@ -202,9 +200,8 @@ function CheckOutDetails() {
                 style={{
                   backgroundColor: "#f4f4f4",
                   borderRadius: 4,
-                  justifyContent: "center",
-                  alignItems: "center",
                   padding: 14,
+                  display: "block",
                 }}
               >
                 <CardCvcElement options={CARD_ELEMENT_OPTIONS} />

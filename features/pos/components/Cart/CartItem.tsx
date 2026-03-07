@@ -26,7 +26,7 @@ function CartItem({
 
   return (
     <div className="pos-cart-item" style={{ ...styles.container, ...style }}>
-      <button
+      <div
         style={{
           ...styles.topRowWithImgContainer,
           ...(isOpen && { paddingTop: 15, marginBottom: 30 }),
@@ -122,7 +122,7 @@ function CartItem({
             </button>
           </div>
         </div>
-      </button>
+      </div>
       {isOpen && (
         <div
           style={{

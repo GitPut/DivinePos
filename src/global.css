@@ -80,6 +80,18 @@ input, textarea {
  * that rely on browser-default display:block. Reset them here.
  */
 
+/* Stripe Elements */
+.StripeElement,
+.StripeElement div,
+.__PrivateStripeElement,
+.__PrivateStripeElement div {
+  display: block;
+  flex-direction: initial;
+  flex-shrink: initial;
+  align-items: initial;
+  border: initial;
+}
+
 /* recharts */
 .recharts-wrapper,
 .recharts-wrapper div,

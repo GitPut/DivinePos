@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { FaPhone } from "react-icons/fa";
 import { IoLocationSharp } from "react-icons/io5";
 import CheckOutDetails from "../components/CheckOutDetails";
@@ -24,7 +24,8 @@ function OnlineOrderHomeCheckout() {
   const { width: screenWidth } = useWindowSize();
 
   const stripeKey = storeDetails.stripePublicKey || onlineStore.stripePublicKey;
-  if (!stripeKey) return null;
+  const stripePromise = useMemo(() => stripeKey ? loadStripe(stripeKey) : null, [stripeKey]);
+  if (!stripePromise) return null;
 
   return (
     <div style={styles.container}>
@@ -94,7 +95,7 @@ function OnlineOrderHomeCheckout() {
                   />
                 </div>
                 {screenWidth > 1000 ? (
-                  <Elements stripe={loadStripe(stripeKey)}>
+                  <Elements stripe={stripePromise}>
                     <CheckOutDetails />
                   </Elements>
                 ) : (
@@ -107,7 +108,7 @@ function OnlineOrderHomeCheckout() {
                       flexDirection: "column",
                     }}
                   >
-                    <Elements stripe={loadStripe(stripeKey)}>
+                    <Elements stripe={stripePromise}>
                       <CheckOutDetails />
                     </Elements>
                   </div>
