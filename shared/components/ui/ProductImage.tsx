@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { FiImage } from "react-icons/fi";
 
 // Global cache of URLs that have been fully loaded — survives remounts
 const loadedImages = new Set<string>();
+// Track URLs that failed to load
+const failedImages = new Set<string>();
 
 // Keep loaded Image objects alive so we can draw them to canvas instantly
 const imageObjects = new Map<string, HTMLImageElement>();
@@ -16,13 +19,30 @@ export function prefetchImage(url: string): Promise<void> {
       imageObjects.set(url, img);
       resolve();
     };
-    img.onerror = () => resolve();
+    img.onerror = () => {
+      failedImages.add(url);
+      resolve();
+    };
     img.src = url;
   });
 }
 
 // For backwards compat with any code referencing the old export
 export const prefetchedImages = loadedImages;
+
+const ErrorPlaceholder = ({ style }: { style: React.CSSProperties }) => (
+  <div
+    style={{
+      ...style,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#f1f5f9",
+    }}
+  >
+    <FiImage size={28} color="#cbd5e1" />
+  </div>
+);
 
 interface ProductImageProps {
   source: string;
@@ -35,6 +55,11 @@ const ProductImage = React.memo(({
   style = {},
   alt = "Product image",
 }: ProductImageProps) => {
+  // If this URL already failed, show placeholder immediately
+  if (failedImages.has(source)) {
+    return <ErrorPlaceholder style={style} />;
+  }
+
   // Ensure we have both a loadedImages entry AND an Image object for canvas drawing
   if (!imageObjects.has(source)) {
     const probe = new window.Image();
@@ -47,15 +72,11 @@ const ProductImage = React.memo(({
 
   const alreadyCached = loadedImages.has(source);
   const [loaded, setLoaded] = useState(alreadyCached);
+  const [error, setError] = useState(false);
   const hasAnimated = useRef(alreadyCached);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Draw cached image to canvas BEFORE the browser paints — no blank frame.
-  // Depends on `loaded` so it re-runs when the component switches from
-  // uncached path (<img>) to cached path (<canvas>) after the image loads.
-  useLayoutEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !hasAnimated.current) return;
+  const drawCanvas = (canvas: HTMLCanvasElement) => {
     const cachedImg = imageObjects.get(source);
     if (!cachedImg || !cachedImg.complete) return;
 
@@ -81,9 +102,33 @@ const ProductImage = React.memo(({
     const y = (rect.height - drawH) / 2;
 
     ctx.drawImage(cachedImg, x, y, drawW, drawH);
+  };
+
+  // Draw cached image to canvas BEFORE the browser paints — no blank frame.
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !hasAnimated.current) return;
+    drawCanvas(canvas);
+  }, [source, loaded]);
+
+  // Redraw canvas when it becomes visible (e.g. parent goes from height:0 to auto)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !hasAnimated.current) return;
+
+    const observer = new ResizeObserver(() => {
+      drawCanvas(canvas);
+    });
+    observer.observe(canvas);
+    return () => observer.disconnect();
   }, [source, loaded]);
 
   useEffect(() => {
+    if (failedImages.has(source)) {
+      setError(true);
+      setLoaded(true);
+      return;
+    }
     if (loadedImages.has(source)) {
       setLoaded(true);
       hasAnimated.current = true;
@@ -96,7 +141,11 @@ const ProductImage = React.memo(({
       imageObjects.set(source, img);
       setLoaded(true);
     };
-    img.onerror = () => setLoaded(true);
+    img.onerror = () => {
+      failedImages.add(source);
+      setError(true);
+      setLoaded(true);
+    };
     img.src = source;
 
     return () => {
@@ -104,6 +153,10 @@ const ProductImage = React.memo(({
       img.onerror = null;
     };
   }, [source]);
+
+  if (error) {
+    return <ErrorPlaceholder style={style} />;
+  }
 
   // Cached images: canvas drawn synchronously before paint via useLayoutEffect
   if (hasAnimated.current) {
@@ -138,9 +191,12 @@ const ProductImage = React.memo(({
         onLoad={(e) => {
           loadedImages.add(source);
           hasAnimated.current = true;
-          // Store the loaded img element — works for drawImage() even after React detaches it
           imageObjects.set(source, e.currentTarget);
           setLoaded(true);
+        }}
+        onError={() => {
+          failedImages.add(source);
+          setError(true);
         }}
       />
     </div>

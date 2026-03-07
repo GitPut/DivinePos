@@ -299,6 +299,8 @@ const AppRouter = () => {
 
         // ── Process subscriptions ─────────────────────────────────────────
         if (subDocs && !subDocs.empty) {
+          let onlineStoreGrantedByPlan = false;
+
           for (const element of subDocs.docs) {
             const sub = element.data();
 
@@ -328,6 +330,7 @@ const AppRouter = () => {
               if (sub.status === "active") {
                 setisSubscribed(true);
                 setisNewUser(false);
+                onlineStoreGrantedByPlan = true;
                 setOnlineStoreState({
                   urlEnding: doc.data()?.urlEnding,
                   onlineStoreActive: doc.data()?.onlineStoreActive,
@@ -352,43 +355,37 @@ const AppRouter = () => {
             }
 
             if (sub.role === "Online Store") {
-              if (sub.status === "active") {
-                setOnlineStoreState({
-                  urlEnding: doc.data()?.urlEnding,
-                  onlineStoreActive: doc.data()?.onlineStoreActive,
-                  onlineStoreSetUp: doc.data()?.onlineStoreSetUp,
-                  stripePublicKey: doc.data()?.stripePublicKey,
-                  stripeSecretKey: doc.data()?.stripeSecretKey,
-                  paidStatus: "active",
-                });
-              } else if (sub.status === "canceled") {
-                const batch = db.batch();
-                batch.update(db.collection("users").doc(user.uid), { onlineStoreActive: false });
-                batch.update(db.collection("public").doc(user.uid), { onlineStoreActive: false });
-                batch.commit().catch(() => {});
-                setOnlineStoreState({
-                  urlEnding: doc.data()?.urlEnding,
-                  onlineStoreActive: false,
-                  onlineStoreSetUp: doc.data()?.onlineStoreSetUp,
-                  stripePublicKey: doc.data()?.stripePublicKey,
-                  stripeSecretKey: doc.data()?.stripeSecretKey,
-                  paidStatus: "canceled",
-                });
-              } else {
-                const batch = db.batch();
-                batch.update(db.collection("users").doc(user.uid), { onlineStoreActive: false });
-                batch.update(db.collection("public").doc(user.uid), { onlineStoreActive: false });
-                batch.commit().catch(() => {});
-                setOnlineStoreState({
-                  urlEnding: doc.data()?.urlEnding,
-                  onlineStoreActive: false,
-                  onlineStoreSetUp: doc.data()?.onlineStoreSetUp,
-                  stripePublicKey: doc.data()?.stripePublicKey,
-                  stripeSecretKey: doc.data()?.stripeSecretKey,
-                  paidStatus: null,
-                });
+              if (sub.status !== "canceled") {
+                // Any non-canceled status (active, trialing, past_due, etc.) grants access
+                onlineStoreGrantedByPlan = true;
               }
             }
+          }
+
+          // After processing ALL subscriptions, set online store state
+          if (onlineStoreGrantedByPlan) {
+            setOnlineStoreState({
+              urlEnding: doc.data()?.urlEnding,
+              onlineStoreActive: doc.data()?.onlineStoreActive,
+              onlineStoreSetUp: doc.data()?.onlineStoreSetUp,
+              stripePublicKey: doc.data()?.stripePublicKey,
+              stripeSecretKey: doc.data()?.stripeSecretKey,
+              paidStatus: "active",
+            });
+          } else {
+            // No plan grants online store access — deactivate
+            const batch = db.batch();
+            batch.update(db.collection("users").doc(user.uid), { onlineStoreActive: false });
+            batch.update(db.collection("public").doc(user.uid), { onlineStoreActive: false });
+            batch.commit().catch(() => {});
+            setOnlineStoreState({
+              urlEnding: doc.data()?.urlEnding,
+              onlineStoreActive: false,
+              onlineStoreSetUp: doc.data()?.onlineStoreSetUp,
+              stripePublicKey: doc.data()?.stripePublicKey,
+              stripeSecretKey: doc.data()?.stripeSecretKey,
+              paidStatus: "canceled",
+            });
           }
         } else if (doc.data()?.freeTrial) {
           setisSubscribed(true);

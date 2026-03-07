@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { FiMenu, FiLogOut, FiShoppingCart } from "react-icons/fi";
+import { FiArrowLeft, FiShoppingCart } from "react-icons/fi";
 import {
   orderDetailsState,
   productBuilderState,
+  resetProductBuilderState,
   cartState,
   setOrderDetailsState,
   storeDetailsState,
@@ -33,10 +34,10 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
   useEffect(() => {
     if (page === 4) {
       if (catalog.categories.length > 0) {
-        updatePosState({ section: catalog.categories[0] });
+        updatePosState({ section: "__all__" });
       }
     }
-  }, [page]);
+  }, [page, catalog]);
 
   useEffect(() => {
     if (cart.length > 0) {
@@ -56,110 +57,90 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
     catalog.products.map((product) => {
       const element = document.getElementById(product.id);
       if (!element) return;
-      if (product.category === section) {
-        element.style.display = "flex";
+      if (section === "__all__" || product.category === section) {
+        element.style.visibility = "visible";
+        element.style.position = "relative";
+        element.style.height = "auto";
+        element.style.overflow = "visible";
+        element.style.pointerEvents = "auto";
       } else {
-        element.style.display = "none";
+        element.style.visibility = "hidden";
+        element.style.position = "absolute";
+        element.style.height = "0";
+        element.style.overflow = "hidden";
+        element.style.pointerEvents = "none";
       }
     });
   }, [section, catalog, allLoaded]);
 
   return (
     <div style={styles.container}>
-      {width > 1250 && (
-        <div style={styles.leftMenuBarContainer}>
-          <button style={styles.menuBtn}>
-            <FiMenu style={styles.menuIcon} />
-          </button>
-          <button
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-            onClick={() => setOrderDetailsState({ page: 1 })}
-          >
-            <FiLogOut style={styles.icon} />
-          </button>
-        </div>
-      )}
-      <div
-        style={{
-          ...styles.menuContainer,
-          ...(width > 1300
-            ? { width: "65%" }
-            : { width: "58%" }),
-          ...(width < 1000 ? { width: "100%" } : {}),
-        }}
-      >
+      {/* Header bar */}
+      <div style={styles.headerBar}>
+        <button
+          onClick={() => setOrderDetailsState({ page: 1 })}
+          style={styles.backBtn}
+        >
+          <FiArrowLeft size={18} color="#fff" />
+        </button>
+        <span style={styles.storeName}>{storeDetails.name || "Menu"}</span>
         {width < 1000 && (
+          <button onClick={() => setcartOpen(true)} style={styles.cartBtn}>
+            <FiShoppingCart size={18} color="#fff" />
+            {cart.length > 0 && (
+              <span style={styles.cartBadge}>{cart.length}</span>
+            )}
+          </button>
+        )}
+        {width >= 1000 && <div style={{ width: 40 }} />}
+      </div>
+
+      {/* Main content area */}
+      <div style={styles.contentRow}>
+        {/* Products section */}
+        <div
+          style={{
+            ...styles.menuContainer,
+            ...(width >= 1000 ? { flex: 1 } : { width: "100%" }),
+          }}
+        >
+          {catalog.products.length > 0 && (
+            <>
+              <CategorySection catalog={catalog} section={section} />
+              <ProductsSection catalog={catalog} setallLoaded={setallLoaded} />
+            </>
+          )}
+        </div>
+
+        {/* Cart sidebar (desktop only) */}
+        {width >= 1000 && (
           <div
             style={{
-              flexDirection: "row",
-              width: "88%",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-              marginTop: 10,
-              display: "flex",
+              ...styles.cartSidebar,
+              width: width > 1300 ? 360 : 320,
             }}
           >
-            <button
-              onClick={() => {
-                setOrderDetailsState({ page: 1 });
-              }}
-              style={{
-                backgroundColor: "#1D294E",
-                borderRadius: 10,
-                justifyContent: "center",
-                alignItems: "center",
-                width: 34,
-                height: 34,
-                display: "flex",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              <FiLogOut style={{ color: "white", fontSize: 20 }} />
-            </button>
-            <button
-              onClick={() => {
-                setcartOpen(true);
-              }}
-              style={{
-                backgroundColor: "#1D294E",
-                borderRadius: 10,
-                justifyContent: "space-between",
-                alignItems: "center",
-                width: 58,
-                height: 34,
-                flexDirection: "row",
-                padding: 5,
-                display: "flex",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              <FiShoppingCart style={{ color: "white", fontSize: 20 }} />
-              <span style={{ color: "white", fontSize: 20 }}>
-                {cart.length}
-              </span>
-            </button>
+            <Cart />
           </div>
         )}
-        {catalog.products.length > 0 && (
-          <>
-            <CategorySection catalog={catalog} section={section} />
-            <ProductsSection catalog={catalog} setallLoaded={setallLoaded} />
-          </>
-        )}
       </div>
-      {width > 1000 ? (
-        <Cart />
-      ) : (
+
+      {/* Mobile cart */}
+      {width < 1000 && (
         <CartMobile
           cartOpen={cartOpen}
           setcartOpen={setcartOpen}
           cartSub={cartSub}
         />
       )}
-      <Modal isVisible={ProductBuilderProps.isOpen ? true : false}>
+
+      {/* Product builder modal */}
+      <Modal
+        isVisible={ProductBuilderProps.isOpen ? true : false}
+        onBackdropPress={() => resetProductBuilderState()}
+        animationIn="slideInLeft"
+        animationOut="slideOutLeft"
+      >
         <div
           style={{
             height: height,
@@ -167,25 +148,21 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
             flexDirection: "row",
             display: "flex",
           }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={() => resetProductBuilderState()}
         >
           <div
-            style={
-              width > 1400
-                ? {
-                    height: "100%",
-                    width: "70%",
-                    borderTopRightRadius: 3,
-                  }
-                : {
-                    height: "100%",
-                    width: "100%",
-                    borderTopRightRadius: 3,
-                  }
-            }
+            style={{
+              height: "100%",
+              flex: 1,
+              borderTopRightRadius: 3,
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
             {ProductBuilderProps.product && <ProductBuilderModal />}
           </div>
+          {width >= 1000 && (
+            <div style={{ width: width > 1300 ? 360 : 320, flexShrink: 0 }} />
+          )}
         </div>
       </Modal>
     </div>
@@ -196,251 +173,78 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
     width: "100%",
-    backgroundColor: "rgba(238,242,255,1)",
+    backgroundColor: "#f0f2ff",
+    display: "flex",
+    flexDirection: "column",
+  },
+  headerBar: {
+    display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    display: "flex",
-  },
-  leftMenuBarContainer: {
-    width: "5%",
-    backgroundColor: "rgba(255,255,255,1)",
-    alignItems: "center",
     justifyContent: "space-between",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.5)",
-    alignSelf: "stretch",
-    display: "flex",
-    flexDirection: "column",
+    padding: "10px 16px",
+    backgroundColor: "#1e293b",
+    flexShrink: 0,
   },
-  menuBtn: {
-    width: 50,
-    height: 50,
-    backgroundColor: "rgba(29,41,78,1)",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 30,
-    marginBottom: 30,
-    display: "flex",
-    border: "none",
-    cursor: "pointer",
-  },
-  menuIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 40,
-  },
-  icon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 40,
-    marginTop: 30,
-    marginBottom: 30,
-    display: "block",
-  },
-  menuContainer: {
-    width: "67%",
-    alignSelf: "stretch",
-    justifyContent: "space-around",
-    alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
-  },
-  bannerContainer: {
-    width: "88%",
-    height: 150,
-    backgroundColor: "rgba(29,41,78,1)",
+  backBtn: {
+    width: 36,
+    height: 36,
     borderRadius: 10,
-    flexDirection: "row",
-    justifyContent: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
     display: "flex",
-  },
-  logo: {
-    height: 75,
-    width: 250,
-    margin: 10,
-    objectFit: "contain",
-  },
-  categoryContainer: {
-    width: "88%",
-    height: 178,
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  lblTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 19,
-    marginBottom: 10,
-  },
-  scrollArea: {
-    height: 156,
-    alignSelf: "stretch",
-  },
-  scrollArea_contentContainerStyle: {
-    width: "88%",
-    height: 156,
-  },
-  activeCategoryBtn: {
-    width: 125,
-    marginRight: 15,
-    height: 150,
-  },
-  categoryBtn: {
-    width: 125,
-    marginRight: 18,
-    height: 150,
-  },
-  scrollAreaProducts: {
-    width: "88%",
-    height: "56%",
-    justifyContent: "center",
-    display: "flex",
-  },
-  scrollAreaProducts_contentContainerStyle: {
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    flexDirection: "row",
-    alignItems: "flex-start",
-    display: "flex",
-  },
-  itemContainer: {
-    height: 160,
-    width: 290,
-    marginBottom: 30,
-  },
-  cartContainer: {
-    width: "28%",
-    backgroundColor: "rgba(255,255,255,1)",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.5)",
-    alignSelf: "stretch",
-    justifyContent: "space-around",
-    alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
-  },
-  myCartTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 24,
-    width: "90%",
-    height: 29,
-  },
-  cartItems: {
-    width: "90%",
-    height: "40%",
-  },
-  cartItems_contentContainerStyle: {
-    height: "100%",
-    width: "100%",
-  },
-  cartItem1: {
-    width: "100%",
-    marginBottom: 10,
-  },
-  cartItem2: {
-    width: "100%",
-    marginBottom: 10,
-  },
-  cartItem3: {
-    width: "100%",
-    marginBottom: 10,
-  },
-  cartItem4: {
-    height: 86,
-    width: "100%",
-    marginBottom: 10,
-  },
-  cartItem5: {
-    height: 86,
-    width: "100%",
-    marginBottom: 10,
-  },
-  totalsContainer: {
-    width: "90%",
-    height: 250,
-    backgroundColor: "rgba(238,242,255,1)",
-    borderRadius: 20,
-    justifyContent: "space-around",
-    alignItems: "center",
-    boxShadow: "3px 3px 3px rgba(0,0,0,0.1)",
-    display: "flex",
-    flexDirection: "column",
-  },
-  topGroupTotalsContainer: {
-    width: 280,
-    height: 85,
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  discountRow: {
-    height: 18,
-    alignSelf: "stretch",
-  },
-  subtotalRow: {
-    height: 18,
-    alignSelf: "stretch",
-  },
-  taxRow: {
-    height: 18,
-    alignSelf: "stretch",
-  },
-  totalRowGroup: {
-    width: 280,
-    height: 66,
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  totalRow: {
-    flexDirection: "row",
-    height: 18,
-    alignSelf: "stretch",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  total2: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 18,
-  },
-  totalValue: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 18,
-  },
-  discountCodeBtn: {
-    minWidth: 120,
-    minHeight: 32,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    padding: 5,
-    display: "flex",
     border: "none",
     cursor: "pointer",
   },
-  discountCode: {
+  storeName: {
     fontWeight: "700",
-    color: "#121212",
+    color: "#fff",
     fontSize: 16,
   },
-  checkoutBtn: {
-    width: 170,
-    height: 48,
-    backgroundColor: "#1a2951",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+  cartBtn: {
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.15)",
     display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    padding: "0 12px",
     border: "none",
     cursor: "pointer",
+    position: "relative",
   },
-  checkoutLbl: {
+  cartBadge: {
+    backgroundColor: "#ef4444",
+    color: "#fff",
+    fontSize: 11,
     fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 20,
+    borderRadius: 10,
+    padding: "1px 6px",
+    minWidth: 18,
+    textAlign: "center",
+  },
+  contentRow: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "row",
+    minHeight: 0,
+    overflow: "hidden",
+  },
+  menuContainer: {
+    alignSelf: "stretch",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  cartSidebar: {
+    alignSelf: "stretch",
+    borderLeft: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
+    flexShrink: 0,
   },
 };
 

@@ -8,6 +8,7 @@ import {
   orderDetailsState,
   setOrderDetailsState,
   storeDetailsState,
+  onlineStoreState,
 } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
 import dposLogoWhite from "assets/images/dpos-logo-white.png";
@@ -17,11 +18,13 @@ import instagramIcon from "assets/images/image_CLpi..png";
 
 function OnlineOrderHomeCheckout() {
   const storeDetails = storeDetailsState.use();
+  const onlineStore = onlineStoreState.use();
   const orderDetails = orderDetailsState.use();
   const page = orderDetails.page;
   const { width: screenWidth } = useWindowSize();
 
-  if (!storeDetails.stripePublicKey) return null;
+  const stripeKey = storeDetails.stripePublicKey || onlineStore.stripePublicKey;
+  if (!stripeKey) return null;
 
   return (
     <div style={styles.container}>
@@ -91,7 +94,7 @@ function OnlineOrderHomeCheckout() {
                   />
                 </div>
                 {screenWidth > 1000 ? (
-                  <Elements stripe={loadStripe(storeDetails.stripePublicKey)}>
+                  <Elements stripe={loadStripe(stripeKey)}>
                     <CheckOutDetails />
                   </Elements>
                 ) : (
@@ -104,7 +107,7 @@ function OnlineOrderHomeCheckout() {
                       flexDirection: "column",
                     }}
                   >
-                    <Elements stripe={loadStripe(storeDetails.stripePublicKey)}>
+                    <Elements stripe={loadStripe(stripeKey)}>
                       <CheckOutDetails />
                     </Elements>
                   </div>

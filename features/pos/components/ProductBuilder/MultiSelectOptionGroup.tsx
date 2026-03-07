@@ -29,6 +29,7 @@ function MultiSelectOptionGroup({
   const options = e.optionsList;
 
   const [isHalfActive, setIsHalfActive] = useState(
+    !!e.allowHalfAndHalf ||
     options.some((op) => op.halfSide !== undefined && parseFloat(op.selectedTimes ?? "0") > 0)
   );
 
@@ -120,14 +121,9 @@ function MultiSelectOptionGroup({
           {label} {isRequired ? "*" : ""}
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {e.allowHalfAndHalf && (
+          {e.allowHalfAndHalf && !isHalfActive && (
             <button
-              style={{
-                ...styles.halfToggle,
-                ...(isHalfActive
-                  ? { backgroundColor: "#1e293b", color: "#ffffff" }
-                  : {}),
-              }}
+              style={styles.halfToggle}
               onClick={(ev) => {
                 ev.stopPropagation();
                 toggleHalfAndHalf();
@@ -195,19 +191,24 @@ function MultiSelectOptionGroup({
                         setSide(listIndex, "left");
                       }}
                     >
-                      L
+                      <svg width="20" height="20" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="9" stroke={currentSide === "left" ? "#fff" : "#94a3b8"} strokeWidth="1.5" fill="none" />
+                        <path d="M10 1 A9 9 0 0 0 10 19 Z" fill={currentSide === "left" ? "#fff" : "#94a3b8"} />
+                      </svg>
                     </button>
                     <button
                       style={{
                         ...styles.sideBtn,
-                        ...(currentSide === "whole" ? styles.sideBtnActive : {}),
+                        ...(currentSide === "whole" ? styles.sideBtnWhole : {}),
                       }}
                       onClick={(ev) => {
                         ev.stopPropagation();
                         setSide(listIndex, "whole");
                       }}
                     >
-                      W
+                      <svg width="20" height="20" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="9" fill={currentSide === "whole" ? "#fff" : "#94a3b8"} />
+                      </svg>
                     </button>
                     <button
                       style={{
@@ -219,7 +220,10 @@ function MultiSelectOptionGroup({
                         setSide(listIndex, "right");
                       }}
                     >
-                      R
+                      <svg width="20" height="20" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="9" stroke={currentSide === "right" ? "#fff" : "#94a3b8"} strokeWidth="1.5" fill="none" />
+                        <path d="M10 1 A9 9 0 0 1 10 19 Z" fill={currentSide === "right" ? "#fff" : "#94a3b8"} />
+                      </svg>
                     </button>
                   </div>
                 )}
@@ -366,14 +370,11 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 2,
   },
   sideBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    border: "1px solid #cbd5e1",
-    backgroundColor: "#ffffff",
-    color: "#64748b",
-    fontSize: 10,
-    fontWeight: "700",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    border: "none",
+    backgroundColor: "transparent",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -383,7 +384,10 @@ const styles: Record<string, React.CSSProperties> = {
   sideBtnActive: {
     backgroundColor: "#1e293b",
     borderColor: "#1e293b",
-    color: "#ffffff",
+  },
+  sideBtnWhole: {
+    backgroundColor: "#1e293b",
+    borderColor: "#1e293b",
   },
 };
 
