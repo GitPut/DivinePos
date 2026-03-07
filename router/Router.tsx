@@ -44,7 +44,7 @@ const AppRouter = () => {
   const [isCanceled, setisCanceled] = useState<boolean | null>(null);
   const wooCredentials = wooCommerceState.use();
   const [wooOrders, setwooOrders] = useState<any[]>([]);
-  const [isWooError, setisWooError] = useState(false);
+  const [wooErrorCount, setWooErrorCount] = useState(0);
   const trialDetails = trialDetailsState.use();
   const myDeviceDetails = deviceState.use();
   const storeDetails = storeDetailsState.use();
@@ -518,7 +518,7 @@ const AppRouter = () => {
     if (
       !wooCredentials.useWoocommerce ||
       !isSubscribed ||
-      isWooError ||
+      wooErrorCount >= 3 ||
       !myDeviceDetails.printOnlineOrders
     ) return;
 
@@ -534,7 +534,7 @@ const AppRouter = () => {
     let orders: any[] = [];
 
     const getOrders = async (): Promise<void> => {
-      const response = await WooCommerce.getAsync(`orders?page=${page}&per_page=100`);
+      const response = await WooCommerce.getAsync(`orders?page=${page}&per_page=100&status=processing`);
       const data = JSON.parse(response.body);
       orders = [...orders, ...data];
       if (data.length === 100) {
@@ -545,6 +545,7 @@ const AppRouter = () => {
 
     getOrders()
       .then(() => {
+        if (wooErrorCount > 0) setWooErrorCount(0);
         if (JSON.stringify(orders) === JSON.stringify(wooOrders)) return;
 
         for (let index = 0; index < orders.length; index++) {
@@ -580,7 +581,7 @@ const AppRouter = () => {
                     updated[orderIndex].printed = true;
                     return updated;
                   });
-                  wooOrders[index].printed = true;
+                  wooOrders[orderIndex].printed = true;
                 })
                 .catch(() => {});
             }
@@ -734,10 +735,15 @@ const AppRouter = () => {
         }
       })
       .catch(() => {
-        alertP.error(
-          "There was an error connecting to your woocommerce store. Please refresh the page to try again."
-        );
-        setisWooError(true);
+        setWooErrorCount((prev) => {
+          const next = prev + 1;
+          if (next >= 3) {
+            alertP.error(
+              "There was an error connecting to your WooCommerce store. Please check your credentials in settings."
+            );
+          }
+          return next;
+        });
       });
   }, 10000);
 

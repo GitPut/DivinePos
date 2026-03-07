@@ -40,7 +40,7 @@ export const signUp = async (
     const userDoc = db.collection("users").doc(userAuth.user.uid);
     await userDoc.set({
       categories: [],
-      wooCredentials: { ck: null, cs: null, useWoocommerce: false },
+      wooCredentials: { apiUrl: "", ck: "", cs: "", useWoocommerce: false },
       storeDetails: {
         name: null,
         address: null,
