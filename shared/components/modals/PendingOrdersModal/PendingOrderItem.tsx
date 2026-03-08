@@ -73,9 +73,15 @@ function PendingOrderItem({
               Online Order
             </span>
           )}
-          {!element.online && element.method !== "inStoreOrder" && (
+          {!element.online && element.method !== "inStoreOrder" && element.method !== "tableOrder" && (
             <span style={{ ...styles.orderTypeLabel, color: "#FF0F00" }}>
               Phone Order
+            </span>
+          )}
+          {element.method === "tableOrder" && (
+            <span style={{ ...styles.orderTypeLabel, color: "#6366f1" }}>
+              Table Order
+              {(element as any).tableName ? ` - ${(element as any).tableName}` : ""}
             </span>
           )}
           {element.method === "inStoreOrder" && (

@@ -113,7 +113,12 @@ function PendingOrderDetails({
             )}
             {!element?.online && (
               <>
-                {(element?.customer?.name?.length ?? 0) > 0 ? (
+                {element?.method === "tableOrder" ? (
+                  <span style={{ ...styles.orderType, color: "#6366f1" }}>
+                    Table Order{"\n"}
+                    {(element as any)?.tableName || ""}
+                  </span>
+                ) : (element?.customer?.name?.length ?? 0) > 0 ? (
                   <span style={{ ...styles.orderType, color: "#FF0F00" }}>
                     Phone Order{"\n"}
                     {element?.method === "pickupOrder" && "Pickup"}

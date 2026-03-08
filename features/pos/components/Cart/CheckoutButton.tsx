@@ -1,6 +1,6 @@
 import React from "react";
 import { auth, db } from "services/firebase/config";
-import Print from "./print";
+import Print, { sendTableOrder } from "./print";
 import {
   cartState,
   customersState,
@@ -27,6 +27,8 @@ const CheckoutButton = () => {
     buzzCode,
     unitNumber,
     cartNote,
+    activeTableId,
+    activeTableSessionId,
   } = posState.use();
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
@@ -77,6 +79,89 @@ const CheckoutButton = () => {
           }}
         >
           <span style={styles.filledLbl}>Cancel</span>
+        </button>
+      </div>
+    );
+  }
+
+  // Table order — Send to Kitchen + Pay when ready
+  if (activeTableId && activeTableSessionId) {
+    if (cart.length < 1) {
+      return (
+        <div style={styles.btnRow}>
+          <button
+            className="pos-checkout-btn pos-checkout-outlined"
+            style={{ ...styles.checkoutBtn, ...styles.outlinedBtn, width: "100%" }}
+            onClick={() => updatePosState({ tableViewActive: true })}
+          >
+            <span style={styles.outlinedLbl}>Back to Tables</span>
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: "flex", flexDirection: "column", width: "88%", alignSelf: "center", gap: 6, marginBottom: 12 }}>
+        <button
+          className="pos-checkout-btn pos-checkout-filled"
+          style={{ ...styles.checkoutBtn, ...styles.filledBtn, width: "100%" }}
+          onClick={() => {
+            sendTableOrder({ cart, storeDetails, myDeviceDetails, cartNote });
+          }}
+        >
+          <span style={styles.filledLbl}>Send Order</span>
+        </button>
+        <div style={{ ...styles.btnRow, width: "100%", marginBottom: 0 }}>
+          <button
+            className="pos-checkout-btn pos-checkout-outlined"
+            style={{ ...styles.checkoutBtn, ...styles.outlinedBtn }}
+            onClick={() => {
+              updatePosState({ cashModal: true });
+            }}
+          >
+            <span style={styles.outlinedLbl}>Cash</span>
+          </button>
+          <button
+            className="pos-checkout-btn pos-checkout-filled"
+            style={{ ...styles.checkoutBtn, ...styles.filledBtn }}
+            onClick={() => {
+              Print({
+                method: "Card",
+                dontAddToOngoing: false,
+                discountAmount,
+                deliveryChecked: false,
+                changeDue,
+                savedCustomerDetails,
+                name,
+                phone,
+                address,
+                buzzCode,
+                unitNumber,
+                cartNote,
+                customers,
+                cart,
+                storeDetails,
+                myDeviceDetails,
+              });
+            }}
+          >
+            <span style={styles.filledLbl}>Card</span>
+          </button>
+        </div>
+        <button
+          className="pos-checkout-btn"
+          style={{
+            height: 36,
+            backgroundColor: "#f1f5f9",
+            border: "1px solid #e2e8f0",
+            borderRadius: 8,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => updatePosState({ tableViewActive: true })}
+        >
+          <span style={{ fontSize: 13, fontWeight: "600", color: "#475569" }}>Back to Tables</span>
         </button>
       </div>
     );

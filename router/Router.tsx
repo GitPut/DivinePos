@@ -9,6 +9,8 @@ import {
   setIngredientsState,
   setOnlineStoreState,
   setStoreDetailsState,
+  setTablesState,
+  setTableSectionsState,
   setTrialDetailsState,
   setStoreProductsState,
   setWooCommerceState,
@@ -125,8 +127,14 @@ const AppRouter = () => {
             date: doc.data().date,
             method: doc.data().method,
             online: doc.data().online,
-            isInStoreOrder: doc.data().method === "inStoreOrder",
+            isInStoreOrder: doc.data().method === "inStoreOrder" || doc.data().method === "tableOrder",
             transNum: doc.data().transNum || "",
+            tableId: doc.data().tableId,
+            tableName: doc.data().tableName,
+            tableNumber: doc.data().tableNumber,
+            guests: doc.data().guests,
+            server: doc.data().server,
+            seatedAt: doc.data().seatedAt,
           });
           if (
             doc.data().online &&
@@ -276,6 +284,15 @@ const AppRouter = () => {
 
         if (doc.data()?.wooCredentials) {
           setWooCommerceState(doc.data()?.wooCredentials);
+        }
+
+        // ── Load tables config ──────────────────────────────────────────
+        const docData = doc.data();
+        if (docData?.tables) {
+          setTablesState(docData.tables);
+        }
+        if (docData?.tableSections) {
+          setTableSectionsState(docData.tableSections);
         }
 
         // ── Process WooCommerce orders ────────────────────────────────────

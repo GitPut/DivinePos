@@ -5,6 +5,7 @@ import CartAmountRow from "./CartAmountRow";
 import { MdClear } from "react-icons/md";
 import { FiShoppingBag } from "react-icons/fi";
 import CheckoutButton from "./CheckoutButton";
+import TableCartHeader from "../Tables/TableCartHeader";
 import {
   orderDetailsState,
   productBuilderState,
@@ -20,7 +21,7 @@ import { broadcastCartUpdate } from "utils/customerDisplayBroadcast";
 import useWindowSize from "shared/hooks/useWindowSize";
 
 const Cart = () => {
-  const { discountAmount, deliveryChecked, cartSub, cartNote } =
+  const { discountAmount, deliveryChecked, cartSub, cartNote, activeTableId } =
     posState.use();
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
@@ -81,6 +82,7 @@ const Cart = () => {
 
   return (
     <div style={styles.cartContainer}>
+      {activeTableId && <TableCartHeader />}
       <div style={styles.headerRow}>
         <div style={styles.headerLeft}>
           <FiShoppingBag size={18} color="#1e293b" />

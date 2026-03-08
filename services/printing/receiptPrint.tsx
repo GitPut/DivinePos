@@ -286,6 +286,137 @@ function receiptPrint(
       "\x0A",
       "\x1D" + "\x56" + "\x30"
     );
+  } else if (element.method === "tableOrder") {
+    const tableInfo = [];
+    if ((element as any).tableName) tableInfo.push((element as any).tableName);
+    if ((element as any).tableNumber) tableInfo.push(`Table #${(element as any).tableNumber}`);
+    if ((element as any).server) tableInfo.push(`Server: ${(element as any).server}`);
+    if ((element as any).guests) tableInfo.push(`Guests: ${(element as any).guests}`);
+
+    data = [
+      "\x1B" + "\x40", // init
+      "                                                                              ",
+      "\x0A",
+      "\x1B" + "\x61" + "\x31", // center align
+      storeDetails.name,
+      "\x0A",
+      storeDetails.address?.label + "\x0A",
+      storeDetails.website + "\x0A",
+      storeDetails.phoneNumber + "\x0A",
+      date + "\x0A",
+      "\x0A",
+      `Transaction ID ${element.transNum}` + "\x0A",
+      "\x0A",
+      ...tableInfo.map((info) => info + "\x0A"),
+      "\x0A",
+      "\x0A",
+      "\x1B" + "\x61" + "\x30", // left align
+    ];
+
+    element.cart?.map((cartItem) => {
+      data.push(`Name: ${cartItem.name}`);
+      data.push("\x0A");
+
+      if (cartItem.quantity) {
+        if (cartItem.price) {
+          total += parseFloat(cartItem.price) * parseFloat(cartItem.quantity);
+        }
+        data.push(`Quantity: ${cartItem.quantity}`);
+        if (cartItem.price) {
+          data.push("\x0A");
+          data.push(
+            `Price: $${(parseFloat(cartItem.price) * parseFloat(cartItem.quantity)).toFixed(2)}`
+          );
+        }
+      } else {
+        if (cartItem.price) {
+          total += parseFloat(cartItem.price);
+          data.push(`Price: $${parseFloat(cartItem.price).toFixed(2)}`);
+        }
+      }
+
+      if (cartItem.description) {
+        data.push("\x0A");
+        data.push(cartItem.description);
+      }
+
+      if (cartItem.options) {
+        data.push("\x0A");
+        cartItem.options.map((option) => {
+          data.push(option);
+          data.push("\x0A");
+        });
+      }
+
+      if (cartItem.extraDetails) {
+        data.push("Note: " + cartItem.extraDetails);
+        data.push("\x0A");
+      }
+
+      data.push("\x0A" + "\x0A");
+    });
+
+    total =
+      parseFloat(storeDetails.taxRate) >= 0
+        ? total * (1 + parseFloat(storeDetails.taxRate) / 100)
+        : total * 1.13;
+
+    if (element.paymentMethod === "Cash") {
+      data.push(
+        "\x0A",
+        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" + "\x0A",
+        element.cartNote
+          ? "\x0A" + "\x0A" + "Note: " + element.cartNote + "\x0A" + "\x0A"
+          : "\x0A" + "\x0A",
+        "Payment Method: Cash" + "\x0A" + "\x0A",
+        `Total Including (${
+          parseFloat(storeDetails.taxRate) >= 0
+            ? parseFloat(storeDetails.taxRate)
+            : "13"
+        }% Tax): ` +
+          "$" +
+          total.toFixed(2) +
+          "\x0A" +
+          "\x0A",
+        "Change Due: " + "$" + (element.changeDue || "0.00") + "\x0A" + "\x0A",
+        "------------------------------------------" + "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x1D" + "\x56" + "\x30"
+      );
+    } else {
+      data.push(
+        "\x0A",
+        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" + "\x0A",
+        element.cartNote
+          ? "\x0A" + "\x0A" + "Note: " + element.cartNote + "\x0A" + "\x0A"
+          : "\x0A" + "\x0A",
+        "Payment Method: Card" + "\x0A" + "\x0A",
+        `Total Including (${
+          parseFloat(storeDetails.taxRate) >= 0
+            ? parseFloat(storeDetails.taxRate)
+            : "13"
+        }% Tax): ` +
+          "$" +
+          total.toFixed(2) +
+          "\x0A" +
+          "\x0A",
+        "------------------------------------------" + "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x0A",
+        "\x1D" + "\x56" + "\x30"
+      );
+    }
   } else {
     data = [
       "\x1B" + "\x40", // init

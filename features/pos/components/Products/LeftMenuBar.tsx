@@ -1,11 +1,12 @@
 import React from "react";
-import { FiHome, FiClock, FiPhone, FiPercent, FiDollarSign, FiSettings, FiClipboard } from "react-icons/fi";
+import { FiHome, FiClock, FiPhone, FiPercent, FiDollarSign, FiSettings, FiClipboard, FiGrid } from "react-icons/fi";
 import { posState, updatePosState } from "store/posState";
 import { settingsAuthState, storeDetailsState } from "store/appState";
 import { useHistory } from "react-router-dom";
 
 const menuItems = [
   { key: "home", label: "Home", Icon: FiHome },
+  { key: "tables", label: "Tables", Icon: FiGrid },
   { key: "orders", label: "Orders", Icon: FiClipboard },
   { key: "clockin", label: "Clock In", Icon: FiClock },
   { key: "delivery", label: "Delivery", Icon: FiPhone },
@@ -22,6 +23,7 @@ const LeftMenuBar = () => {
     settingsPasswordModalVis,
     customCashModal,
     ongoingListState,
+    tableViewActive,
   } = posState.use();
   const pendingCount = ongoingListState?.length || 0;
   const history = useHistory();
@@ -33,10 +35,13 @@ const LeftMenuBar = () => {
     !deliveryModal &&
     !settingsPasswordModalVis &&
     !discountModal &&
-    !customCashModal;
+    !customCashModal &&
+    !tableViewActive;
 
   const activeKey = isHome
     ? "home"
+    : tableViewActive
+    ? "tables"
     : ongoingOrderListModal
     ? "orders"
     : clockinModal
@@ -57,8 +62,12 @@ const LeftMenuBar = () => {
       deliveryModal: false,
       discountModal: false,
       customCashModal: false,
+      tableViewActive: false,
     });
     switch (key) {
+      case "tables":
+        updatePosState({ tableViewActive: true });
+        break;
       case "orders":
         updatePosState({ ongoingOrderListModal: true });
         break;

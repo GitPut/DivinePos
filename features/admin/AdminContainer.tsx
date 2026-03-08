@@ -176,6 +176,11 @@ function AdminContainer(props: { match: { url: string } }) {
                   active: pathname.includes("woocommerce"),
                 },
                 {
+                  label: "Table Settings",
+                  link: "/authed/settings/tablesettings",
+                  active: pathname.includes("tablesettings"),
+                },
+                {
                   label: "Manage Billing",
                   link: () => Manage(),
                   active: false,

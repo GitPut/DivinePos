@@ -1,7 +1,8 @@
 import { receiptPrint } from "services/printing/receiptPrint";
 import { auth, db } from "services/firebase/config";
-import { resetPosState, updatePosState } from "store/posState";
+import { posState, resetPosState, updatePosState } from "store/posState";
 import { setCartState, setCustomersState } from "store/appState";
+import { updateTransList } from "services/firebase/functions";
 import qz from "qz-tray";
 import {
   AddressType,
@@ -167,6 +168,59 @@ const Print = ({ ...props }: PrintProps) => {
 
     const transNum = Math.random().toString(36).substr(2, 9);
 
+    // Handle table order final payment — process payment, free table
+    const { activeTableSessionId, activeTableId, ongoingListState } = posState.get();
+    if (activeTableSessionId) {
+      const tableSession = ongoingListState.find(
+        (o) => o.id === activeTableSessionId
+      );
+      const today = firebase.firestore.Timestamp.now();
+
+      const element = {
+        cartNote: cartNote,
+        date: tableSession?.date || today,
+        transNum: tableSession?.transNum || transNum,
+        method: "tableOrder" as const,
+        cart: finalCart,
+        customer: {
+          name: name || "",
+          phone: phone || "",
+        },
+        changeDue: changeDue,
+        paymentMethod: method === "Cash" ? "Cash" : "Card",
+        id: tableSession?.transNum || transNum,
+        tableName: tableSession?.tableName,
+        tableNumber: tableSession?.tableNumber,
+        guests: tableSession?.guests,
+        server: tableSession?.server,
+        seatedAt: tableSession?.seatedAt,
+      };
+
+      const data = receiptPrint(element as any, storeDetails);
+      printOrSend(data.data, myDeviceDetails);
+
+      // Delete the pending order
+      db.collection("users")
+        .doc(auth.currentUser?.uid)
+        .collection("pendingOrders")
+        .doc(activeTableSessionId)
+        .delete()
+        .catch(() => {});
+
+      // Add to completed transactions
+      updateTransList({
+        ...element,
+        total: data.total.toFixed(2),
+        date: today as any,
+        dateCompleted: today as any,
+      } as any).catch(() => {});
+
+      setCartState([]);
+      resetPosState();
+      updatePosState({ tableViewActive: true });
+      return;
+    }
+
     if (method === "deliveryOrder") {
       const today = firebase.firestore.Timestamp.now();
 
@@ -317,3 +371,74 @@ const Print = ({ ...props }: PrintProps) => {
 };
 
 export default Print;
+
+/** Send only NEW (unsent) items to the kitchen. Table stays active. */
+export const sendTableOrder = async (props: {
+  cart: CartItemProp[];
+  storeDetails: StoreDetailsProps;
+  myDeviceDetails: MyDeviceDetailsProps;
+  cartNote: string;
+}) => {
+  const { cart, storeDetails, myDeviceDetails, cartNote } = props;
+  const { activeTableSessionId, ongoingListState } = posState.get();
+
+  if (!activeTableSessionId || !auth.currentUser) return;
+
+  const tableSession = ongoingListState.find(
+    (o) => o.id === activeTableSessionId
+  );
+
+  // Find items not yet sent to kitchen
+  const unsentItems = cart.filter((item) => !item.sent);
+  if (unsentItems.length === 0) return;
+
+  // Mark all items as sent
+  const savedCart = cart.map((item) => ({ ...item, sent: true }));
+
+  // Print kitchen ticket with only the new items
+  const element = {
+    cartNote,
+    date: tableSession?.date || firebase.firestore.Timestamp.now(),
+    transNum: tableSession?.transNum || "",
+    method: "tableOrder" as const,
+    cart: unsentItems,
+    customer: { name: "", phone: "" },
+    id: tableSession?.transNum || "",
+    tableName: tableSession?.tableName,
+    tableNumber: tableSession?.tableNumber,
+    server: tableSession?.server,
+    guests: tableSession?.guests,
+  };
+
+  const data = receiptPrint(element as any, storeDetails);
+  printOrSend(data.data, myDeviceDetails);
+
+  // Calculate full cart total for the pending order
+  let fullTotal = 0;
+  for (const item of cart) {
+    if (parseFloat(item.price) < 0) continue; // skip discount items
+    fullTotal += parseFloat(item.price) * parseFloat(item.quantity || "1");
+  }
+
+  // Save cart to pending order — await to ensure write completes before clearing state
+  try {
+    await db
+      .collection("users")
+      .doc(auth.currentUser.uid)
+      .collection("pendingOrders")
+      .doc(activeTableSessionId)
+      .update({
+        cart: savedCart,
+        cartNote,
+        total: fullTotal.toFixed(2),
+      });
+  } catch {
+    alert("Failed to send order.");
+    return;
+  }
+
+  // Clear cart and go back to table view
+  setCartState([]);
+  resetPosState();
+  updatePosState({ tableViewActive: true });
+};

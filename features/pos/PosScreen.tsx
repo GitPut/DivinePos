@@ -29,6 +29,9 @@ import CustomCashModal from "shared/components/modals/CustomCashModal";
 import AuthModal from "shared/components/modals/AuthModal";
 import ProductBuilderModal from "./components/ProductBuilder/ProductBuilderModal";
 import CartMobile from "./components/CartMobile";
+import TableFloorView from "./components/Tables/TableFloorView";
+import OpenTableModal from "./components/Tables/OpenTableModal";
+import TableOrderView from "./components/Tables/TableOrderView";
 import { FiLogOut, FiShoppingCart, FiMenu, FiX, FiSearch } from "react-icons/fi";
 import useWindowSize from "shared/hooks/useWindowSize";
 const CategorySection = React.lazy(
@@ -55,6 +58,7 @@ function PosScreen() {
     saveCustomerModal,
     discountAmount,
     cartSub,
+    tableViewActive,
   } = posState.use();
   const ProductBuilderProps = productBuilderState.use();
   if (!storeDetails) return null;
@@ -122,7 +126,7 @@ function PosScreen() {
         element.style.pointerEvents = "none";
       }
     });
-  }, [section, catalog, searchQuery]);
+  }, [section, catalog, searchQuery, tableViewActive]);
 
   return (
     <div style={styles.container}>
@@ -176,11 +180,15 @@ function PosScreen() {
             </button>
           )}
         </div>
-        {catalog.products.length > 0 && (
-          <>
-            <CategorySection catalog={catalog} section={section} />
-            <ProductsSection catalog={catalog} />
-          </>
+        {tableViewActive ? (
+          <TableFloorView />
+        ) : (
+          catalog.products.length > 0 && (
+            <>
+              <CategorySection catalog={catalog} section={section} />
+              <ProductsSection catalog={catalog} />
+            </>
+          )
         )}
       </div>
       {width > 1000 ? (
@@ -210,6 +218,8 @@ function PosScreen() {
       <CustomCashModal />
       <DiscountModal />
       <AuthModal />
+      <OpenTableModal />
+      <TableOrderView />
       <Modal
         isVisible={mobileMenuOpen}
         onBackdropPress={() => setmobileMenuOpen(false)}
@@ -246,6 +256,7 @@ function PosScreen() {
             <FiX size={22} color="#333" />
           </button>
           {[
+            { label: "Tables", icon: settingsIcon, action: () => { updatePosState({ tableViewActive: true }); setmobileMenuOpen(false); } },
             { label: "Pending Orders", icon: pendingOrderIcon, action: () => { updatePosState({ ongoingOrderListModal: true }); setmobileMenuOpen(false); } },
             { label: "Clock In", icon: clockInIcon, action: () => { updatePosState({ clockinModal: true }); setmobileMenuOpen(false); } },
             { label: "Phone Order", icon: phoneOrderIcon, action: () => { updatePosState({ deliveryModal: true }); setmobileMenuOpen(false); } },

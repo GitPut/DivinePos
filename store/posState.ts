@@ -1,5 +1,5 @@
 import { entity } from "simpler-state";
-import { AddressType, CustomerProp, OngoingListStateProp, TransListStateItem } from "types";
+import { AddressType, CustomerProp, OngoingListStateProp, Table, TransListStateItem } from "types";
 
 interface PosState {
   section: string;
@@ -29,6 +29,13 @@ interface PosState {
   managerAuthorizedStatus: boolean;
   pendingAuthAction: string;
   pendingAuthPermission: string;
+  tableViewActive: boolean;
+  activeTableId: string | null;
+  activeTableSessionId: string | null;
+  openTableModal: boolean;
+  openTableTarget: Table | null;
+  tableOrderViewModal: boolean;
+  tableOrderTarget: TransListStateItem | null;
 }
 
 export const posState = entity<PosState>({
@@ -59,6 +66,13 @@ export const posState = entity<PosState>({
   managerAuthorizedStatus: false,
   pendingAuthAction: "",
   pendingAuthPermission: "",
+  tableViewActive: false,
+  activeTableId: null,
+  activeTableSessionId: null,
+  openTableModal: false,
+  openTableTarget: null,
+  tableOrderViewModal: false,
+  tableOrderTarget: null,
 });
 
 export const setPosState = (val: PosState): void => {
@@ -93,6 +107,13 @@ export const resetPosState = (): void => {
     managerAuthorizedStatus: false,
     pendingAuthAction: "",
     pendingAuthPermission: "",
+    tableViewActive: false,
+    activeTableId: null,
+    activeTableSessionId: null,
+    openTableModal: false,
+    openTableTarget: null,
+    tableOrderViewModal: false,
+    tableOrderTarget: null,
   });
 };
 

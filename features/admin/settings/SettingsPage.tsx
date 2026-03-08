@@ -4,6 +4,7 @@ import GeneralSettings from "./GeneralSettings";
 import DeviceSettings from "./DeviceSettings";
 import OnlineStoreSettings from "./OnlineStoreSettings";
 import WooCommerceSettings from "./WooCommerceSettings";
+import TableSettings from "./TableSettings";
 
 const SettingsPage = ({ match }: { match: { url: string } }) => (
   <Switch>
@@ -19,6 +20,7 @@ const SettingsPage = ({ match }: { match: { url: string } }) => (
       component={OnlineStoreSettings}
     />
     <Route path={`${match.url}/woocommerce`} component={WooCommerceSettings} />
+    <Route path={`${match.url}/tablesettings`} component={TableSettings} />
   </Switch>
 );
 

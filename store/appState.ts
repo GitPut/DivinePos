@@ -9,6 +9,7 @@ import {
   MyDeviceDetailsProps,
   ProductProp,
   StoreDetailsProps,
+  Table,
   TransListStateItem,
   TrialDetailsStateProps,
   UserStoreStateProps,
@@ -330,6 +331,22 @@ export const updateIngredientStock = (
     )
   );
 };
+
+// ─── Tables ──────────────────────────────────────────────────────────────────
+
+export const tablesState = entity<Table[]>([]);
+
+export const setTablesState = (val: Table[]): void => {
+  tablesState.set(val);
+};
+
+export const tableSectionsState = entity<string[]>([]);
+
+export const setTableSectionsState = (val: string[]): void => {
+  tableSectionsState.set(val);
+};
+
+// ─── Ingredients (batch) ─────────────────────────────────────────────────────
 
 export const updateIngredientsBatch = (
   updates: { ingredientId: string; newStock: number }[]

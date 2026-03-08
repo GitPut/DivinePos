@@ -71,6 +71,21 @@ export const updateData = async (categories: string[]) => {
 };
 
 // -------------------
+// 🪑 TABLES
+// -------------------
+export const saveTables = async (tables: import("types").Table[]) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  await db.collection("users").doc(uid).update({ tables });
+};
+
+export const saveTableSections = async (tableSections: string[]) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  await db.collection("users").doc(uid).update({ tableSections });
+};
+
+// -------------------
 // 📊 STATS HELPERS
 // -------------------
 interface ProductCount {

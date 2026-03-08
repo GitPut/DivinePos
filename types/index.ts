@@ -91,6 +91,7 @@ export type CartItemProp = {
   quantityNotChangable?: boolean;
   percent?: string;
   quantity?: string;
+  sent?: boolean;
 };
 
 export type EditableProductObj = {
@@ -166,6 +167,12 @@ export type OngoingListStateProp = {
   index?: string | null;
   date_created?: string;
   dateCompleted?: { seconds: number | string } | Date | string;
+  tableId?: string;
+  tableName?: string;
+  tableNumber?: number;
+  guests?: number;
+  server?: string;
+  seatedAt?: { seconds: number | string } | Date | string;
 };
 
 export type EmployeePermissions = {
@@ -224,6 +231,12 @@ export type TransListStateItem = {
   date_created?: string;
   isInStoreOrder?: boolean;
   dateCompleted?: Timestamp;
+  tableId?: string;
+  tableName?: string;
+  tableNumber?: number;
+  guests?: number;
+  server?: string;
+  seatedAt?: Timestamp;
 };
 
 export type ExcelTransListStateItem = {
@@ -364,4 +377,18 @@ export type IngredientStockHistoryEntry = {
   transactionId?: string;
   createdAt: Timestamp;
   createdBy?: string;
+};
+
+// ─── Tables ──────────────────────────────────────────────────────────────────
+
+export type TableShape = "square" | "round" | "rectangle";
+
+export type Table = {
+  id: string;
+  number: number;
+  name: string;
+  seats: number;
+  section: string;
+  shape: TableShape;
+  isActive: boolean;
 };
