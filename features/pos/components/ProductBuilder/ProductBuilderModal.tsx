@@ -304,111 +304,81 @@ function ProductBuilderModal() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.desktopScrollWrapper}>
-        <div style={styles.desktopInner}>
-          <div style={styles.productBuilderGroup}>
-            <div
-              style={{
-                ...styles.goBackRow,
-                ...(myObj.description
-                  ? { marginBottom: 35 }
-                  : { marginBottom: 50 }),
-              }}
-            >
-              <GoBackButton onPress={goBack} />
-            </div>
-            <div
-              style={{
-                ...styles.groupsContainer,
-                ...(myObj.description?.length > 0 ? { marginTop: 50 } : {}),
-              }}
-            >
-              {/* Left side - product info + notes */}
-              <div style={styles.leftSideGroup}>
-                <div
-                  style={{
-                    ...styles.itemInfoContainer,
-                    height: "60%",
-                  }}
-                >
-                  {imageUrl && (
-                    <ProductImage
-                      source={imageUrl}
-                      style={{
-                        ...styles.itemImg,
-                        ...(myObj.description?.length > 0 && {
-                          width: 300,
-                          height: 150,
-                        }),
-                      }}
-                      alt={myObj.name}
-                    />
-                  )}
-                  <div style={styles.itemInfoTxtGroup}>
-                    <div style={styles.topTxtGroup}>
-                      <span style={styles.productName}>{myObj.name}</span>
-                      {myObj.calorieDetails && (
-                        <span style={styles.calorieDetails}>
-                          {myObj.calorieDetails}
-                        </span>
-                      )}
-                    </div>
-                    {myObj.description && (
-                      <span style={styles.description}>
-                        Description: {myObj.description}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div style={styles.writeNoteContainer}>
-                  <span style={styles.notesLbl}>Notes:</span>
-                  <textarea
-                    style={styles.noteInput}
-                    placeholder="Write any extra info here..."
-                    rows={4}
-                    onChange={(e) => setextraInput(e.target.value)}
-                    value={extraInput}
-                  />
-                </div>
-              </div>
+      {/* Top bar */}
+      <div style={styles.topBar}>
+        <GoBackButton onPress={goBack} />
+      </div>
 
-              {/* Right side - options */}
-              <div style={styles.rightSideGroup}>
-                <div
-                  style={styles.optionsScrollArea}
-                  onScroll={(e) =>
-                    setscrollY((e.target as HTMLDivElement).scrollTop)
-                  }
-                >
-                  {myObjProfile.options.map((option, index) => (
-                    <OptionDisplay
-                      key={index}
-                      e={option}
-                      index={index}
-                      myObjProfile={myObjProfile}
-                      setMyObjProfile={setmyObjProfile}
-                      setopenOptions={setopenOptions}
-                      openOptions={openOptions}
-                      isOnlineOrder={isOnlineOrder}
-                      scrollY={scrollY}
-                    />
-                  ))}
-                </div>
-                <div style={styles.totalLblRow}>
-                  <span style={styles.totalLbl}>
-                    Total: ${total.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div style={styles.addToCartRow}>
-              <AddToCartButton
-                title={isEditing ? "Save" : "Add To Cart"}
-                onPress={AddToCart}
-              />
-            </div>
+      {/* Content */}
+      <div style={styles.contentRow}>
+        {/* Left column - product info */}
+        <div style={styles.leftColumn}>
+          {imageUrl && (
+            <ProductImage
+              source={imageUrl}
+              style={styles.productImg}
+              alt={myObj.name}
+            />
+          )}
+          <span style={styles.productName}>{myObj.name}</span>
+          {myObj.calorieDetails && (
+            <span style={styles.calorieDetails}>{myObj.calorieDetails}</span>
+          )}
+          {myObj.description && (
+            <span style={styles.description}>{myObj.description}</span>
+          )}
+          <span style={styles.price}>${parseFloat(myObj.price).toFixed(2)}</span>
+
+          <div style={styles.spacer} />
+          <span style={styles.sectionLabel}>Special Instructions</span>
+          <textarea
+            style={styles.notesInput}
+            placeholder="Add any special requests..."
+            rows={3}
+            onChange={(e) => setextraInput(e.target.value)}
+            value={extraInput}
+          />
+
+          <div style={styles.spacer} />
+          <div style={styles.itemTotalCard}>
+            <span style={styles.itemTotalLabel}>Item Total</span>
+            <span style={styles.itemTotalPrice}>${total.toFixed(2)}</span>
+            {extrasSummary.map((line, i) => (
+              <span key={i} style={styles.itemTotalExtras}>{line}</span>
+            ))}
           </div>
         </div>
+
+        {/* Right column - options */}
+        <div style={styles.rightColumn}>
+          <div
+            style={styles.optionsScrollArea}
+            onScroll={(e) => setscrollY((e.target as HTMLDivElement).scrollTop)}
+          >
+            {myObjProfile.options.map((option, index) => (
+              <OptionDisplay
+                key={index}
+                e={option}
+                index={index}
+                myObjProfile={myObjProfile}
+                setMyObjProfile={setmyObjProfile}
+                setopenOptions={setopenOptions}
+                openOptions={openOptions}
+                isOnlineOrder={isOnlineOrder}
+                scrollY={scrollY}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom button */}
+      <div style={styles.bottomBar}>
+        <AddToCartButton
+          title={isEditing ? "Save" : "Add to Cart"}
+          total={total}
+          onPress={AddToCart}
+        />
       </div>
     </div>
   );
@@ -416,12 +386,12 @@ function ProductBuilderModal() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#edf2ff",
     width: "100%",
     height: "100%",
+    backgroundColor: "#f8f9fc",
     display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
   },
   // Mobile styles
   mobileScrollArea: {
@@ -446,97 +416,51 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: "1px solid #e2e8f0",
   },
   // Desktop styles
-  desktopScrollWrapper: {
+  topBar: {
+    padding: "16px 24px",
+    flexShrink: 0,
+  },
+  contentRow: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "row",
+    overflow: "hidden",
+    padding: "0 24px",
+    gap: 24,
+  },
+  leftColumn: {
+    width: 240,
+    flexShrink: 0,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    height: "100%",
+    alignItems: "flex-start",
     overflowY: "auto",
-    overflowX: "hidden",
+    paddingBottom: 20,
   },
-  desktopInner: {
-    width: "95%",
-    justifyContent: "center",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    margin: "auto",
-    height: "96%",
-  },
-  productBuilderGroup: {
-    width: "90%",
-    height: "85%",
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  goBackRow: {
-    alignSelf: "stretch",
-  },
-  groupsContainer: {
-    height: "70%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignSelf: "stretch",
-    display: "flex",
-  },
-  leftSideGroup: {
-    width: "35%",
-    height: "100%",
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  itemInfoContainer: {
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,1)",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-    display: "flex",
-    flexDirection: "column",
-  },
-  itemImg: {
-    height: 180,
-    width: 200,
-    objectFit: "contain" as const,
-  },
-  itemInfoTxtGroup: {
-    justifyContent: "space-between",
-    alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
-  },
-  topTxtGroup: {
-    marginTop: 7,
-    marginBottom: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    display: "flex",
-    flexDirection: "column",
+  productImg: {
+    width: 140,
+    height: 140,
+    objectFit: "contain",
+    borderRadius: 12,
+    alignSelf: "center",
+    marginBottom: 16,
   },
   productName: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 30,
-    paddingLeft: "3%",
-    paddingRight: "3%",
-    textAlign: "center",
-    display: "inline-block",
+    color: "#1a1a1a",
+    fontSize: 22,
+    marginBottom: 4,
   },
   calorieDetails: {
-    color: "rgba(131,126,126,1)",
-    marginBottom: 25,
-    display: "inline-block",
+    color: "#94a3b8",
+    fontSize: 13,
+    marginBottom: 4,
   },
   description: {
-    color: "rgba(131,126,126,1)",
-    width: "90%",
-    textAlign: "left",
-    paddingBottom: 50,
-    display: "inline-block",
+    color: "#64748b",
+    fontSize: 13,
+    lineHeight: "1.4",
+    marginBottom: 8,
   },
   price: {
     fontWeight: "700",
@@ -544,29 +468,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 18,
     marginBottom: 8,
   },
-  writeNoteContainer: {
-    height: "35%",
-    justifyContent: "space-between",
-    alignSelf: "stretch",
-    display: "flex",
-    flexDirection: "column",
-  },
-  notesLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    marginBottom: 10,
-    display: "inline-block",
-  },
-  noteInput: {
+  spacer: {
+    height: 16,
     width: "100%",
-    height: "90%",
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 20,
-    padding: 10,
-    boxSizing: "border-box" as const,
-    border: "none",
-    resize: "none" as const,
-    fontFamily: "inherit",
   },
   sectionLabel: {
     fontWeight: "600",
@@ -581,8 +485,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 10,
     border: "1px solid #e2e8f0",
     padding: 12,
-    boxSizing: "border-box" as const,
-    resize: "none" as const,
+    boxSizing: "border-box",
+    resize: "none",
     fontFamily: "inherit",
     fontSize: 13,
     color: "#1a1a1a",
@@ -593,7 +497,7 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: "#1e293b",
     borderRadius: 14,
     padding: 16,
-    boxSizing: "border-box" as const,
+    boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
   },
@@ -613,48 +517,23 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     marginTop: 6,
   },
-  rightSideGroup: {
-    width: "60%",
-    height: "100%",
-    justifyContent: "space-between",
-    backgroundColor: "white",
-    borderRadius: 10,
-    zIndex: 999,
+  rightColumn: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
     display: "flex",
     flexDirection: "column",
+    overflow: "hidden",
+    minHeight: 0,
   },
   optionsScrollArea: {
+    flex: 1,
     overflow: "auto",
-    height: "90%",
-    width: "100%",
-    padding: 20,
-    paddingLeft: 30,
-    paddingRight: 30,
-    boxSizing: "border-box" as const,
+    padding: 24,
   },
-  totalLblRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-    paddingLeft: 30,
-    paddingRight: 30,
-    paddingBottom: 20,
-    paddingTop: 20,
-    display: "flex",
-  },
-  totalLbl: {
-    fontWeight: "700",
-    color: "#00c937",
-    fontSize: 22,
-    marginTop: 0,
-  },
-  addToCartRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-    marginTop: 25,
-    height: 41,
-    display: "flex",
+  bottomBar: {
+    padding: "16px 24px",
+    flexShrink: 0,
   },
 };
 
