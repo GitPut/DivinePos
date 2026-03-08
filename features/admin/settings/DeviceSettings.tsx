@@ -8,7 +8,7 @@ import {
   setDeviceState,
 } from "store/appState";
 import { auth, db } from "services/firebase/config";
-import { createCheckoutSession } from "services/firebase/functions";
+
 import Switch from "shared/components/ui/Switch";
 import { FiChevronLeft, FiChevronRight, FiPlus } from "react-icons/fi";
 import { IoKey } from "react-icons/io5";
@@ -44,16 +44,6 @@ function DeviceSettings() {
   const resetLoader = () => {
     setviewVisible(true);
     fadeIn();
-  };
-
-  const AddNewDevice = async () => {
-    await createCheckoutSession(
-      "price_1Oj9NZCIw3L7DOwI7DKAhIve",
-      window.location.href,
-      window.location.href,
-      (msg) => alertP.error(msg || "An error occured, please try again later."),
-      1
-    );
   };
 
   useEffect(() => {

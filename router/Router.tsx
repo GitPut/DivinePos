@@ -20,7 +20,7 @@ import {
   wooCommerceState,
 } from "store/appState";
 import { updatePosState } from "store/posState";
-import { auth, db, OWNER_OVERRIDE_UID } from "services/firebase/config";
+import { auth, db } from "services/firebase/config";
 import { updateFreeTrial } from "services/firebase/functions";
 import receiptPrint from "services/printing/receiptPrint";
 import WooCommerceAPI from "woocommerce-api";
@@ -232,8 +232,6 @@ const AppRouter = () => {
       try {
         const userRef = db.collection("users").doc(user.uid);
 
-        let extraDevicesPayingFor = 0;
-
         // Preload route chunks in background while Firebase data loads
         import("./NavigationContent");
         import("./AuthRoute");
@@ -326,10 +324,6 @@ const AppRouter = () => {
 
           for (const element of subDocs.docs) {
             const sub = element.data();
-
-            if (sub.role === "Extra Device" && sub.status === "active") {
-              extraDevicesPayingFor += 1;
-            }
 
             // Starter plan (also backward-compat with old "Test Plan" / "Pos Software Plan")
             if (sub.role === "Starter Plan" || sub.role === "Test Plan" || sub.role === "Pos Software Plan") {
@@ -519,11 +513,7 @@ const AppRouter = () => {
             }
           });
 
-          if (user.uid === OWNER_OVERRIDE_UID) {
-            extraDevicesPayingFor = 3;
-          }
-
-          setDeviceTreeState({ devices, extraDevicesPayingFor });
+          setDeviceTreeState({ devices });
         }
 
         // ── All data loaded, dismiss loading screen ───────────────────────

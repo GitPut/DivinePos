@@ -203,11 +203,9 @@ export const setDeviceIdState = (val: string | null): void => {
 
 interface DeviceTreeProps {
   devices: Device[];
-  extraDevicesPayingFor: number;
 }
 
 export const deviceTreeState = entity<DeviceTreeProps>({
-  extraDevicesPayingFor: 0,
   devices: [],
 });
 
