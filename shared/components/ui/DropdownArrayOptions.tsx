@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { MdClear } from "react-icons/md";
-import Modal from "./Modal";
 
 interface DropdownArrayOptionsProps {
   placeholder: string;
@@ -14,43 +13,35 @@ interface DropdownArrayOptionsProps {
   scrollY: number;
 }
 
-// Define function overloads for setValue
 function DropdownArrayOptions(
   props: DropdownArrayOptionsProps
 ): JSX.Element {
   const { placeholder, value, setValue, options, scrollY } = props;
-  const dropdownRef = useRef<HTMLButtonElement>(null); // Reference to the original button
-  const [dropdownLayout, setDropdownLayout] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }>();
+  const dropdownRef = useRef<HTMLButtonElement>(null);
   const [openDropdown, setopenDropdown] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number }>({
+    top: 0,
+    left: 0,
+    width: 190,
+  });
 
   useEffect(() => {
-    // Ensure this code runs in a web environment
-    if (dropdownRef.current && typeof window !== "undefined") {
-      const element = dropdownRef.current;
-      const boundingRect = element.getBoundingClientRect();
-
-      setDropdownLayout({
-        x: boundingRect.left,
-        y: boundingRect.top, // Adjust based on scroll position
-        width: boundingRect.width,
-        height: boundingRect.height,
-      });
+    if (openDropdown && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom, left: rect.left, width: rect.width });
     }
-  }, [scrollY]); // Recalculate when scroll position changes
+  }, [openDropdown, scrollY]);
 
   return (
-    <div style={{ zIndex: 1000 }}>
+    <div>
       <button
         style={styles.dropdown}
         onClick={() => setopenDropdown((prev) => !prev)}
         ref={dropdownRef}
       >
-        <span style={styles.placeholder}>{value ? value : placeholder}</span>
+        <span style={value ? styles.selectedText : styles.placeholder}>
+          {value ? value : placeholder}
+        </span>
         {value ? (
           <button
             onClick={(e) => {
@@ -69,96 +60,67 @@ function DropdownArrayOptions(
           )
         )}
       </button>
-      <Modal
-        isVisible={openDropdown}
-        onBackdropPress={() => setopenDropdown(false)}
-      >
-        {dropdownLayout && (
+      {openDropdown && (
+        <>
           <div
             style={{
-              position: "absolute",
-              top: dropdownLayout.y,
-              left: dropdownLayout.x,
-              width: 190,
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 100000,
+            }}
+            onClick={() => setopenDropdown(false)}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 100001,
+              backgroundColor: "white",
+              borderRadius: 5,
+              border: "1px solid #9e9e9e",
+              maxHeight: 200,
+              overflowY: "auto",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             }}
           >
-            <button
-              style={{
-                ...styles.dropdown,
-                borderBottomLeftRadius: 0,
-                borderBottomRightRadius: 0,
-                borderBottomColor: "black",
-              }}
-              onClick={() => setopenDropdown((prev) => !prev)}
-            >
-              <span style={styles.placeholder}>
-                {value ? value : placeholder}
-              </span>
-              {openDropdown ? (
-                <FiChevronUp style={styles.downIcon} />
-              ) : (
-                <FiChevronDown style={styles.downIcon} />
-              )}
-            </button>
-            {openDropdown && (
-              <div
+            {options.map((option, listIndex) => (
+              <button
+                key={listIndex}
+                onClick={() => {
+                  setValue(option, listIndex);
+                  setopenDropdown(false);
+                }}
                 style={{
-                  width: 190,
-                  position: "absolute",
+                  width: "100%",
+                  height: 42,
                   backgroundColor: "white",
-                  bottom: options.length > 3 ? -50 * 3 : -50 * options.length,
-                  height: options.length > 3 ? 50 * 3 : 50 * options.length,
-                  borderBottomLeftRadius: 5,
-                  borderBottomRightRadius: 5,
-                  border: "1px solid #9e9e9e",
-                  borderTopWidth: 0,
-                  overflow: "auto",
+                  padding: "8px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  ...(listIndex < options.length - 1
+                    ? { borderBottom: "1px solid #e5e5e5" }
+                    : {}),
                 }}
               >
-                {options.map((option, listIndex) => {
-                  return (
-                    <button
-                      key={listIndex}
-                      onClick={() => {
-                        setValue(option, listIndex);
-                        setopenDropdown(false);
-                      }}
-                      style={{
-                        width: "100%",
-                        height: 50,
-                        backgroundColor: "white",
-                        padding: 10,
-                        display: "flex",
-                        justifyContent: "center",
-                        border: "none",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        ...(listIndex < options.length - 1
-                          ? { borderBottom: "1px solid #9e9e9e" }
-                          : {}),
-                      }}
-                    >
-                      <span style={styles.placeholder}>{option.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                <span style={styles.optionText}>{option.label}</span>
+              </button>
+            ))}
           </div>
-        )}
-      </Modal>
+        </>
+      )}
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderRadius: 5,
-    border: "1px solid #9e9e9e",
-  },
   dropdown: {
     width: 190,
     height: 50,
@@ -172,9 +134,18 @@ const styles: Record<string, React.CSSProperties> = {
     paddingLeft: 10,
     paddingRight: 10,
     cursor: "pointer",
+    outline: "none",
   },
   placeholder: {
     color: "grey",
+    fontSize: 14,
+  },
+  selectedText: {
+    color: "#1e293b",
+    fontSize: 14,
+  },
+  optionText: {
+    color: "#1e293b",
     fontSize: 14,
   },
   downIcon: {

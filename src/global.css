@@ -66,6 +66,7 @@ button {
   cursor: pointer;
   font: inherit;
   color: inherit;
+  outline: none;
 }
 
 /* Ensure inputs look consistent */
