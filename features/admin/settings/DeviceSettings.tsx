@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  activePlanState,
   deviceIdState,
   deviceTreeState,
   resetDeviceState,
@@ -27,6 +28,7 @@ interface OtherDeviceOptionsProp {
 function DeviceSettings() {
   const deviceTree = deviceTreeState.use();
   const myDeviceID = deviceIdState.use();
+  const activePlan = activePlanState.use();
   const [fadeOpacity, setFadeOpacity] = useState(0);
   const [viewVisible, setviewVisible] = useState(false);
   const [selectedDevice, setselectedDevice] = useState(0);
@@ -341,43 +343,70 @@ function DeviceSettings() {
               >
                 <FiChevronRight size={40} color="rgba(255,255,255,1)" />
               </button>
-            ) : (
+            ) : activePlan === "professional" ? (
               <button
                 style={styles.nextDeviceBtn}
                 onClick={() => {
-                  if (
-                    deviceTree.devices.length <
-                    1 + deviceTree.extraDevicesPayingFor
-                  ) {
-                    db.collection("users")
-                      .doc(auth?.currentUser?.uid)
-                      .collection("devices")
-                      .add({
-                        name: `Device${deviceTree.devices.length}`,
+                  db.collection("users")
+                    .doc(auth?.currentUser?.uid)
+                    .collection("devices")
+                    .add({
+                      name: `Device${deviceTree.devices.length}`,
+                      id: null,
+                      printToPrinter: null,
+                    })
+                    .then((docRef) => {
+                      const clone = { ...deviceTree };
+                      clone.devices.push({
+                        name: "",
                         id: null,
                         printToPrinter: null,
-                      })
-                      .then((docRef) => {
-                        const clone = { ...deviceTree };
-                        clone.devices.push({
-                          name: "",
-                          id: null,
-                          printToPrinter: null,
-                          sendPrintToUserID: null,
-                          docID: docRef.id,
-                          printOnlineOrders: false,
-                          useDifferentDeviceToPrint: false,
-                        });
-                        setDeviceTreeState(clone);
+                        sendPrintToUserID: null,
+                        docID: docRef.id,
+                        printOnlineOrders: false,
+                        useDifferentDeviceToPrint: false,
                       });
-                  } else {
-                    resetLoader();
-                    AddNewDevice();
-                  }
+                      setDeviceTreeState(clone);
+                    });
                 }}
               >
                 <FiPlus size={40} color="rgba(255,255,255,1)" />
               </button>
+            ) : deviceTree.devices.length < 1 ? (
+              <button
+                style={styles.nextDeviceBtn}
+                onClick={() => {
+                  db.collection("users")
+                    .doc(auth?.currentUser?.uid)
+                    .collection("devices")
+                    .add({
+                      name: `Device${deviceTree.devices.length}`,
+                      id: null,
+                      printToPrinter: null,
+                    })
+                    .then((docRef) => {
+                      const clone = { ...deviceTree };
+                      clone.devices.push({
+                        name: "",
+                        id: null,
+                        printToPrinter: null,
+                        sendPrintToUserID: null,
+                        docID: docRef.id,
+                        printOnlineOrders: false,
+                        useDifferentDeviceToPrint: false,
+                      });
+                      setDeviceTreeState(clone);
+                    });
+                }}
+              >
+                <FiPlus size={40} color="rgba(255,255,255,1)" />
+              </button>
+            ) : (
+              <div style={styles.upgradeMessage}>
+                <span style={{ color: "#94a3b8", fontSize: 12, textAlign: "center" }}>
+                  Upgrade to Professional for unlimited devices
+                </span>
+              </div>
             )}
           </div>
           <div style={styles.downloadRow}>
@@ -673,6 +702,13 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     cursor: "pointer",
     padding: 0,
+  },
+  upgradeMessage: {
+    display: "flex",
+    width: 80,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 8,
   },
   downloadRow: {
     width: "95%",

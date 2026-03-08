@@ -684,3 +684,21 @@ export const createCheckoutSession = async (
     }
   });
 };
+
+// -------------------
+// 💳 STRIPE CUSTOMER PORTAL
+// -------------------
+export const openStripePortal = (onError?: (msg: string) => void) => {
+  firebase
+    .functions()
+    .httpsCallable("ext-firestore-stripe-payments-createPortalLink")({
+      returnUrl: `${window.location.href}`,
+      locale: "auto",
+    })
+    .then((response) => {
+      window.location = response.data.url;
+    })
+    .catch((error) => {
+      onError?.(error?.message || "Unknown error occurred");
+    });
+};

@@ -14,6 +14,7 @@ import {
   setTrialDetailsState,
   setStoreProductsState,
   setWooCommerceState,
+  setActivePlanState,
   storeDetailsState,
   trialDetailsState,
   wooCommerceState,
@@ -330,6 +331,7 @@ const AppRouter = () => {
               if (sub.status === "active") {
                 setisSubscribed(true);
                 setisNewUser(false);
+                setActivePlanState("starter");
                 if (doc.data()?.freeTrial) {
                   setTrialDetailsState({ endDate: null, hasEnded: null });
                   updateFreeTrial(null);
@@ -345,11 +347,12 @@ const AppRouter = () => {
             }
 
             // Professional plan (also backward-compat with old "Premium Plan")
-            // Includes online store access + 1 extra device
+            // Includes online store access + unlimited devices
             if (sub.role === "Professional Plan" || sub.role === "Premium Plan") {
               if (sub.status === "active") {
                 setisSubscribed(true);
                 setisNewUser(false);
+                setActivePlanState("professional");
                 onlineStoreGrantedByPlan = true;
                 setOnlineStoreState({
                   urlEnding: doc.data()?.urlEnding,
@@ -359,7 +362,6 @@ const AppRouter = () => {
                   stripeSecretKey: doc.data()?.stripeSecretKey,
                   paidStatus: "active",
                 });
-                extraDevicesPayingFor += 1;
                 if (doc.data()?.freeTrial) {
                   setTrialDetailsState({ endDate: null, hasEnded: null });
                   updateFreeTrial(null);
@@ -410,6 +412,7 @@ const AppRouter = () => {
         } else if (doc.data()?.freeTrial) {
           setisSubscribed(true);
           setisNewUser(false);
+          setActivePlanState("trial");
         } else {
           setisNewUser(true);
           setisSubscribed(false);

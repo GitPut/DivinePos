@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import DropdownMenuButton from "./components/DropdownMenuButton";
 import { Route, useHistory, useLocation, withRouter } from "react-router-dom";
 import firebase from "firebase/compat/app";
+import { openStripePortal } from "services/firebase/functions";
 import MenuButton from "./components/MenuButton";
 import index from "./index";
 import { useAlert } from "react-alert";
@@ -32,18 +33,7 @@ function AdminContainer(props: { match: { url: string } }) {
 
   const Manage = () => {
     resetLoader();
-    firebase
-      .functions()
-      .httpsCallable("ext-firestore-stripe-payments-createPortalLink")({
-        returnUrl: `${window.location.href}`,
-        locale: "auto",
-      })
-      .then((response) => {
-        window.location = response.data.url;
-      })
-      .catch((error) => {
-        alertP.error("Unknown error has occured: ", error);
-      });
+    openStripePortal((msg) => alertP.error("Unknown error has occured: " + msg));
   };
 
   return (
@@ -181,9 +171,9 @@ function AdminContainer(props: { match: { url: string } }) {
                   active: pathname.includes("tablesettings"),
                 },
                 {
-                  label: "Manage Billing",
-                  link: () => Manage(),
-                  active: false,
+                  label: "Billing",
+                  link: "/authed/settings/billingsettings",
+                  active: pathname.includes("billingsettings"),
                 },
               ]}
             />

@@ -214,6 +214,14 @@ export const setDeviceTreeState = (val: DeviceTreeProps): void => {
   deviceTreeState.set(val);
 };
 
+// ─── Active Plan ──────────────────────────────────────────────────────────────
+
+export type ActivePlan = "none" | "trial" | "starter" | "professional";
+export const activePlanState = entity<ActivePlan>("none");
+export const setActivePlanState = (val: ActivePlan): void => {
+  activePlanState.set(val);
+};
+
 // ─── Transaction List ─────────────────────────────────────────────────────────
 
 export const transListState = entity<TransListStateItem[]>([]);
