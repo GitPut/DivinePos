@@ -2,7 +2,7 @@ import React from "react";
 import { FiHome, FiClock, FiPhone, FiPercent, FiDollarSign, FiSettings, FiClipboard, FiGrid } from "react-icons/fi";
 import { posState, updatePosState } from "store/posState";
 import { shallowEqual } from "simpler-state";
-import { settingsAuthState, storeDetailsState } from "store/appState";
+import { activePlanState, settingsAuthState, storeDetailsState } from "store/appState";
 import { useHistory } from "react-router-dom";
 
 const menuItems = [
@@ -40,6 +40,7 @@ const LeftMenuBar = () => {
   );
   const history = useHistory();
   const storeDetails = storeDetailsState.use();
+  const activePlan = activePlanState.use();
 
   const isHome =
     !ongoingOrderListModal &&
@@ -106,7 +107,7 @@ const LeftMenuBar = () => {
             {storeDetails?.name ? storeDetails.name.charAt(0).toUpperCase() : "D"}
           </span>
         </div>
-        {menuItems.map((item) => {
+        {menuItems.filter((item) => item.key !== "tables" || activePlan === "professional").map((item) => {
           const isActive = activeKey === item.key;
           return (
             <button

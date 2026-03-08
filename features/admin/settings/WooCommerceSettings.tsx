@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import InputField from "./components/InputField";
 import Switch from "shared/components/ui/Switch";
-import { setWooCommerceState, wooCommerceState } from "store/appState";
+import { activePlanState, setWooCommerceState, wooCommerceState } from "store/appState";
 import { auth, db } from "services/firebase/config";
 import { useAlert } from "react-alert";
 
 function WooCommerceSettings() {
+  const activePlan = activePlanState.use();
   const wooCredentials = wooCommerceState.use();
   const [apiUrl, setApiUrl] = useState(wooCredentials.apiUrl ?? "");
   const [ck, setCk] = useState(wooCredentials.ck ?? "");
@@ -36,6 +37,27 @@ function WooCommerceSettings() {
         alertP.error("Failed to save WooCommerce settings");
       });
   };
+
+  if (activePlan !== "professional") {
+    return (
+      <div style={styles.contentContainer}>
+        <div style={styles.inner}>
+          <span style={styles.title}>WooCommerce Integration</span>
+          <div style={{ backgroundColor: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: 24, maxWidth: 480, display: "flex", flexDirection: "column" as const, gap: 16, marginTop: 16 }}>
+            <span style={{ fontSize: 15, color: "#1e40af", lineHeight: "1.5" }}>
+              WooCommerce integration is available on the Professional plan.
+            </span>
+            <button
+              style={{ padding: "12px 28px", backgroundColor: "#1470ef", color: "#fff", fontWeight: "600", fontSize: 15, border: "none", borderRadius: 10, cursor: "pointer", alignSelf: "flex-start" }}
+              onClick={() => window.location.href = "/authed/settings/billingsettings"}
+            >
+              Upgrade to Professional
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.contentContainer}>

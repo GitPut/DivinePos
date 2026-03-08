@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  activePlanState,
   productBuilderState,
   resetProductBuilderState,
   cartState,
@@ -67,6 +68,7 @@ function PosScreen() {
   const catalog = storeProductsState.use();
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
+  const activePlan = activePlanState.use();
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -236,7 +238,7 @@ function PosScreen() {
             <FiX size={22} color="#333" />
           </button>
           {[
-            { label: "Tables", icon: settingsIcon, action: () => { updatePosState({ tableViewActive: true }); setMobileMenuOpen(false); } },
+            ...(activePlan === "professional" ? [{ label: "Tables", icon: settingsIcon, action: () => { updatePosState({ tableViewActive: true }); setMobileMenuOpen(false); } }] : []),
             { label: "Pending Orders", icon: pendingOrderIcon, action: () => { updatePosState({ ongoingOrderListModal: true }); setMobileMenuOpen(false); } },
             { label: "Clock In", icon: clockInIcon, action: () => { updatePosState({ clockinModal: true }); setMobileMenuOpen(false); } },
             { label: "Phone Order", icon: phoneOrderIcon, action: () => { updatePosState({ deliveryModal: true }); setMobileMenuOpen(false); } },

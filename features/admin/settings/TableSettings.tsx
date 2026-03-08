@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { tablesState, tableSectionsState, setTablesState, setTableSectionsState } from "store/appState";
+import { activePlanState, tablesState, tableSectionsState, setTablesState, setTableSectionsState } from "store/appState";
 import { saveTables, saveTableSections } from "services/firebase/functions";
 import { useAlert } from "react-alert";
 import { Table, TableShape } from "types";
 import { FiPlus, FiTrash2, FiX } from "react-icons/fi";
 
 const TableSettings = () => {
+  const activePlan = activePlanState.use();
   const tables = tablesState.use();
   const sections = tableSectionsState.use();
   const alertP = useAlert();
@@ -66,6 +67,27 @@ const TableSettings = () => {
     }
     setSaving(false);
   };
+
+  if (activePlan !== "professional") {
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <span style={styles.title}>Table Settings</span>
+        </div>
+        <div style={{ backgroundColor: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: 24, maxWidth: 480, display: "flex", flexDirection: "column", gap: 16 }}>
+          <span style={{ fontSize: 15, color: "#1e40af", lineHeight: "1.5" }}>
+            Table management is available on the Professional plan.
+          </span>
+          <button
+            style={{ padding: "12px 28px", backgroundColor: "#1470ef", color: "#fff", fontWeight: "600", fontSize: 15, border: "none", borderRadius: 10, cursor: "pointer", alignSelf: "flex-start" }}
+            onClick={() => window.location.href = "/authed/settings/billingsettings"}
+          >
+            Upgrade to Professional
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
