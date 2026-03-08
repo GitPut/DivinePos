@@ -14,6 +14,7 @@ import {
   setTrialDetailsState,
   setStoreProductsState,
   setWooCommerceState,
+  setDeliveryPlatformsState,
   setActivePlanState,
   storeDetailsState,
   trialDetailsState,
@@ -136,6 +137,7 @@ const AppRouter = () => {
             guests: doc.data().guests,
             server: doc.data().server,
             seatedAt: doc.data().seatedAt,
+            deliveryPlatform: doc.data().deliveryPlatform,
           });
           if (
             doc.data().online &&
@@ -285,6 +287,10 @@ const AppRouter = () => {
 
         if (doc.data()?.wooCredentials) {
           setWooCommerceState(doc.data()?.wooCredentials);
+        }
+
+        if (doc.data()?.deliveryPlatforms) {
+          setDeliveryPlatformsState(doc.data()?.deliveryPlatforms);
         }
 
         // ── Load tables config ──────────────────────────────────────────

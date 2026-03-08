@@ -68,12 +68,32 @@ function PendingOrderItem({
       <div style={styles.divider}></div>
       <div style={styles.orderInfoContainer}>
         <div style={styles.orderInfoTextGroup}>
-          {element.online && (
+          {element.deliveryPlatform === "doordash" && (
+            <span style={{ ...styles.orderTypeLabel, color: "#FF3008" }}>
+              DoorDash
+            </span>
+          )}
+          {element.deliveryPlatform === "ubereats" && (
+            <span style={{ ...styles.orderTypeLabel, color: "#06C167" }}>
+              Uber Eats
+            </span>
+          )}
+          {element.deliveryPlatform === "skipthedishes" && (
+            <span style={{ ...styles.orderTypeLabel, color: "#EC6730" }}>
+              Skip The Dishes
+            </span>
+          )}
+          {element.deliveryPlatform === "grubhub" && (
+            <span style={{ ...styles.orderTypeLabel, color: "#F63440" }}>
+              Grubhub
+            </span>
+          )}
+          {!element.deliveryPlatform && element.online && (
             <span style={{ ...styles.orderTypeLabel, color: "#01C550" }}>
               Online Order
             </span>
           )}
-          {!element.online && element.method !== "inStoreOrder" && element.method !== "tableOrder" && (
+          {!element.deliveryPlatform && !element.online && element.method !== "inStoreOrder" && element.method !== "tableOrder" && (
             <span style={{ ...styles.orderTypeLabel, color: "#FF0F00" }}>
               Phone Order
             </span>
@@ -84,7 +104,7 @@ function PendingOrderItem({
               {(element as any).tableName ? ` - ${(element as any).tableName}` : ""}
             </span>
           )}
-          {element.method === "inStoreOrder" && (
+          {!element.deliveryPlatform && element.method === "inStoreOrder" && (
             <span style={styles.orderTypeLabel}>POS Order</span>
           )}
           <span style={styles.orderTime}>

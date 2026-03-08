@@ -5,6 +5,13 @@ import {
 } from "types";
 import { parseDate } from "utils/dateFormatting";
 
+const PLATFORM_LABELS: Record<string, string> = {
+  doordash: "DoorDash Order",
+  ubereats: "Uber Eats Order",
+  skipthedishes: "Skip The Dishes Order",
+  grubhub: "Grubhub Order",
+};
+
 function receiptPrint(
   element: TransListStateItem,
   storeDetails: StoreDetailsProps,
@@ -12,6 +19,12 @@ function receiptPrint(
 ): { data: string[]; total: number } {
   let data: string[] = [];
   let total: number = 0;
+
+  const orderSourceLabel = element.deliveryPlatform
+    ? PLATFORM_LABELS[element.deliveryPlatform]
+    : element.online
+      ? "Online Order"
+      : "";
 
   let date;
 
@@ -44,7 +57,7 @@ function receiptPrint(
           storeDetails.phoneNumber + "\x0A",
           date + "\x0A",
           "\x0A",
-          element.online && "Online Order" + "\x0A",
+          orderSourceLabel && orderSourceLabel + "\x0A",
           `Transaction ID ${element.transNum}` + "\x0A",
           "\x0A",
           `Delivery Order: $${
@@ -179,7 +192,7 @@ function receiptPrint(
           storeDetails.phoneNumber + "\x0A",
           date + "\x0A",
           "\x0A",
-          element.online && "Online Order" + "\x0A",
+          orderSourceLabel && orderSourceLabel + "\x0A",
           `Transaction ID ${element.transNum}` + "\x0A",
           `                                `,
           "\x0A",

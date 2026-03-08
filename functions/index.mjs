@@ -3242,3 +3242,247 @@ const WelcomeEmailHtmlPaid = (name) => {
     </html>
     `;
 };
+
+// ─── Delivery Platform Webhook ─────────────────────────────────────────────
+
+import crypto from "crypto";
+
+const PLATFORM_PREFIXES = {
+  doordash: "DD",
+  ubereats: "UE",
+  skipthedishes: "SK",
+  grubhub: "GH",
+};
+
+const VALID_PLATFORMS = ["doordash", "ubereats", "skipthedishes", "grubhub"];
+
+function verifyWebhookSignature(platform, rawBody, secret, headers) {
+  const signatureHeaders = {
+    doordash: "x-doordash-signature",
+    ubereats: "x-uber-signature",
+    skipthedishes: "x-skip-signature",
+    grubhub: "x-grubhub-signature",
+  };
+  const headerName = signatureHeaders[platform];
+  const providedSignature = headers[headerName];
+  if (!providedSignature || !secret) return false;
+  const computed = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(providedSignature, "hex"), Buffer.from(computed, "hex"));
+  } catch {
+    return false;
+  }
+}
+
+function normalizeDoorDashOrder(payload) {
+  const order = payload.order || payload;
+  const items = (order.items || order.order_items || []).map((item) => ({
+    name: item.name || item.title || "",
+    price: String(item.price || item.unit_price || "0"),
+    quantity: String(item.quantity || "1"),
+    options: (item.modifiers || item.options || []).map((m) => m.name || m.title || String(m)),
+    extraDetails: item.special_instructions || item.instructions || "",
+  }));
+  const customer = order.customer || order.consumer || {};
+  const address = order.delivery_address || order.address || {};
+  return {
+    cart: items,
+    cartNote: order.special_instructions || order.notes || "",
+    customer: {
+      name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || customer.name || "DoorDash Customer",
+      phone: customer.phone_number || customer.phone || "",
+      address: { label: [address.street, address.city, address.state, address.zip_code].filter(Boolean).join(", ") },
+      email: customer.email || "",
+    },
+    total: String(order.total || order.order_total || "0"),
+    platformOrderId: String(order.id || order.order_id || ""),
+  };
+}
+
+function normalizeUberEatsOrder(payload) {
+  const order = payload.order || payload;
+  const cart = order.cart || order.eater_order || {};
+  const items = (cart.items || order.items || []).map((item) => ({
+    name: item.title || item.name || "",
+    price: String(item.price?.amount ? (item.price.amount / 100).toFixed(2) : item.price || "0"),
+    quantity: String(item.quantity || "1"),
+    options: (item.selected_modifier_groups || []).flatMap((g) => (g.selected_items || []).map((m) => m.title || m.name || "")),
+    extraDetails: item.special_instructions || "",
+  }));
+  const eater = order.eater || order.customer || {};
+  const deliveryInfo = order.delivery_info || order.dropoff || {};
+  const location = deliveryInfo.location || deliveryInfo.address || {};
+  return {
+    cart: items,
+    cartNote: order.special_instructions || order.eater_note || "",
+    customer: {
+      name: [eater.first_name, eater.last_name].filter(Boolean).join(" ") || eater.name || "Uber Eats Customer",
+      phone: eater.phone?.number || eater.phone || "",
+      address: { label: location.address || location.formatted_address || [location.street_address, location.city, location.state, location.zip_code].filter(Boolean).join(", ") },
+      email: eater.email || "",
+    },
+    total: String(order.total?.amount ? (order.total.amount / 100).toFixed(2) : order.total || "0"),
+    platformOrderId: String(order.id || order.order_id || ""),
+  };
+}
+
+function normalizeSkipOrder(payload) {
+  const order = payload.order || payload;
+  const items = (order.items || order.order_items || []).map((item) => ({
+    name: item.name || item.product_name || "",
+    price: String(item.price || item.total_price || "0"),
+    quantity: String(item.quantity || "1"),
+    options: (item.modifiers || item.customizations || []).map((m) => m.name || String(m)),
+    extraDetails: item.special_instructions || "",
+  }));
+  const customer = order.customer || {};
+  const address = order.delivery_address || order.address || {};
+  return {
+    cart: items,
+    cartNote: order.notes || order.special_instructions || "",
+    customer: {
+      name: customer.name || [customer.first_name, customer.last_name].filter(Boolean).join(" ") || "Skip Customer",
+      phone: customer.phone || customer.phone_number || "",
+      address: { label: [address.street, address.city, address.province, address.postal_code].filter(Boolean).join(", ") },
+      email: customer.email || "",
+    },
+    total: String(order.total || order.order_total || "0"),
+    platformOrderId: String(order.id || order.order_id || ""),
+  };
+}
+
+function normalizeGrubhubOrder(payload) {
+  const order = payload.order || payload;
+  const items = (order.line_items || order.items || []).map((item) => ({
+    name: item.name || item.menu_item_name || "",
+    price: String(item.price || item.total || "0"),
+    quantity: String(item.quantity || "1"),
+    options: (item.modifiers || item.options || []).map((m) => m.name || m.modifier_name || String(m)),
+    extraDetails: item.special_instructions || "",
+  }));
+  const customer = order.customer || order.diner || {};
+  const address = order.delivery_address || order.address || {};
+  return {
+    cart: items,
+    cartNote: order.special_instructions || order.order_note || "",
+    customer: {
+      name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || customer.name || "Grubhub Customer",
+      phone: customer.phone || "",
+      address: { label: [address.street_address, address.city, address.state, address.zip].filter(Boolean).join(", ") },
+      email: customer.email || "",
+    },
+    total: String(order.total || order.order_total || "0"),
+    platformOrderId: String(order.id || order.order_id || ""),
+  };
+}
+
+const normalizers = {
+  doordash: normalizeDoorDashOrder,
+  ubereats: normalizeUberEatsOrder,
+  skipthedishes: normalizeSkipOrder,
+  grubhub: normalizeGrubhubOrder,
+};
+
+export const deliveryWebhook = onRequest(async (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const pathParts = req.path.split("/").filter(Boolean);
+  let uid, platform;
+  if (pathParts.length >= 3) {
+    uid = pathParts[pathParts.length - 2];
+    platform = pathParts[pathParts.length - 1];
+  } else if (pathParts.length === 2) {
+    uid = pathParts[0];
+    platform = pathParts[1];
+  } else {
+    return res.status(400).json({ error: "Invalid URL format" });
+  }
+
+  if (!VALID_PLATFORMS.includes(platform)) {
+    return res.status(400).json({ error: `Invalid platform: ${platform}` });
+  }
+
+  try {
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const subsSnapshot = await db.collection("users").doc(uid).collection("subscriptions").get();
+    let isProfessional = false;
+    subsSnapshot.forEach((doc) => {
+      const sub = doc.data();
+      if ((sub.role === "Professional Plan" || sub.role === "Premium Plan") && sub.status === "active") {
+        isProfessional = true;
+      }
+    });
+    if (!isProfessional) {
+      return res.status(403).json({ error: "Professional plan required" });
+    }
+
+    const userData = userDoc.data();
+    const platformConfig = userData?.deliveryPlatforms?.[platform];
+    if (!platformConfig?.enabled) {
+      return res.status(403).json({ error: `${platform} integration is not enabled` });
+    }
+
+    const rawBody = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+    if (platformConfig.webhookSecret) {
+      const isValid = verifyWebhookSignature(platform, rawBody, platformConfig.webhookSecret, req.headers);
+      if (!isValid) {
+        console.warn(`Invalid webhook signature for ${platform}, uid: ${uid}`);
+      }
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const normalizer = normalizers[platform];
+    const normalized = normalizer(payload);
+
+    if (!normalized.platformOrderId) {
+      return res.status(400).json({ error: "Could not extract order ID from payload" });
+    }
+
+    const existingOrders = await db
+      .collection("users").doc(uid).collection("deliveryOrders")
+      .where("platformOrderId", "==", normalized.platformOrderId)
+      .where("platform", "==", platform)
+      .limit(1).get();
+
+    if (!existingOrders.empty) {
+      return res.status(200).json({ message: "Order already processed" });
+    }
+
+    const prefix = PLATFORM_PREFIXES[platform] || "DL";
+    const pendingOrder = {
+      cart: normalized.cart,
+      cartNote: normalized.cartNote,
+      customer: normalized.customer,
+      date: admin.firestore.Timestamp.now(),
+      method: "deliveryOrder",
+      online: true,
+      transNum: `${prefix}-${normalized.platformOrderId}`,
+      total: normalized.total,
+      printed: false,
+      paymentMethod: "Prepaid",
+      deliveryPlatform: platform,
+      platformOrderId: normalized.platformOrderId,
+    };
+
+    const pendingRef = await db.collection("users").doc(uid).collection("pendingOrders").add(pendingOrder);
+
+    await db.collection("users").doc(uid).collection("deliveryOrders").add({
+      platformOrderId: normalized.platformOrderId,
+      platform: platform,
+      pendingOrderId: pendingRef.id,
+      receivedAt: admin.firestore.Timestamp.now(),
+      status: "received",
+    });
+
+    return res.status(200).json({ success: true, message: "Order received", orderId: pendingRef.id });
+  } catch (error) {
+    console.error("Delivery webhook error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});

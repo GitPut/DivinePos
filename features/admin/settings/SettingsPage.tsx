@@ -6,6 +6,7 @@ import OnlineStoreSettings from "./OnlineStoreSettings";
 import WooCommerceSettings from "./WooCommerceSettings";
 import TableSettings from "./TableSettings";
 import BillingSettings from "./BillingSettings";
+import DeliveryPlatformsSettings from "./DeliveryPlatformsSettings";
 
 const SettingsPage = ({ match }: { match: { url: string } }) => (
   <Switch>
@@ -22,6 +23,7 @@ const SettingsPage = ({ match }: { match: { url: string } }) => (
     />
     <Route path={`${match.url}/woocommerce`} component={WooCommerceSettings} />
     <Route path={`${match.url}/tablesettings`} component={TableSettings} />
+    <Route path={`${match.url}/deliveryplatforms`} component={DeliveryPlatformsSettings} />
     <Route path={`${match.url}/billingsettings`} component={BillingSettings} />
   </Switch>
 );

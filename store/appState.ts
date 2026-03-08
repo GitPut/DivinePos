@@ -86,6 +86,38 @@ export const setWooCommerceState = (val: WooCommerceStateProps): void => {
   wooCommerceState.set(val);
 };
 
+// ─── Delivery Platforms ───────────────────────────────────────────────────────
+
+export interface DeliveryPlatformConfig {
+  enabled: boolean;
+  webhookSecret: string;
+  storeId: string;
+}
+
+export interface DeliveryPlatformsState {
+  doordash: DeliveryPlatformConfig;
+  ubereats: DeliveryPlatformConfig;
+  skipthedishes: DeliveryPlatformConfig;
+  grubhub: DeliveryPlatformConfig;
+}
+
+const defaultPlatformConfig: DeliveryPlatformConfig = {
+  enabled: false,
+  webhookSecret: "",
+  storeId: "",
+};
+
+export const deliveryPlatformsState = entity<DeliveryPlatformsState>({
+  doordash: { ...defaultPlatformConfig },
+  ubereats: { ...defaultPlatformConfig },
+  skipthedishes: { ...defaultPlatformConfig },
+  grubhub: { ...defaultPlatformConfig },
+});
+
+export const setDeliveryPlatformsState = (val: DeliveryPlatformsState): void => {
+  deliveryPlatformsState.set(val);
+};
+
 // ─── Store Details ────────────────────────────────────────────────────────────
 
 export const storeDetailsState = entity<StoreDetailsProps>({
