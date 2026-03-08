@@ -14,7 +14,6 @@ import {
   setTrialDetailsState,
   setStoreProductsState,
   setWooCommerceState,
-  setDeliveryPlatformsState,
   setActivePlanState,
   storeDetailsState,
   trialDetailsState,
@@ -119,6 +118,9 @@ const AppRouter = () => {
       .collection("pendingOrders")
       .onSnapshot((snapshot) => {
         const list: TransListStateItem[] = [];
+        const printBatch = db.batch();
+        let hasPrintUpdates = false;
+
         snapshot.forEach((doc) => {
           list.push({
             ...doc.data(),
@@ -137,7 +139,6 @@ const AppRouter = () => {
             guests: doc.data().guests,
             server: doc.data().server,
             seatedAt: doc.data().seatedAt,
-            deliveryPlatform: doc.data().deliveryPlatform,
           });
           if (
             doc.data().online &&
@@ -184,13 +185,14 @@ const AppRouter = () => {
                   );
                 }
               });
-            db.collection("users")
-              .doc(auth.currentUser?.uid)
-              .collection("pendingOrders")
-              .doc(doc.id)
-              .update({ printed: true });
+            printBatch.update(doc.ref, { printed: true });
+            hasPrintUpdates = true;
           }
         });
+
+        if (hasPrintUpdates) {
+          printBatch.commit().catch(() => {});
+        }
 
         const sortedArray = list.sort((a, b) => {
           const parsedDateA = parseDate(a.date);
@@ -289,9 +291,6 @@ const AppRouter = () => {
           setWooCommerceState(doc.data()?.wooCredentials);
         }
 
-        if (doc.data()?.deliveryPlatforms) {
-          setDeliveryPlatformsState(doc.data()?.deliveryPlatforms);
-        }
 
         // ── Load tables config ──────────────────────────────────────────
         const docData = doc.data();

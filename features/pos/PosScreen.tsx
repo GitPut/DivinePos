@@ -6,6 +6,7 @@ import {
   storeDetailsState,
   storeProductsState,
 } from "store/appState";
+import { calculateCartTotals } from "utils/cartCalculations";
 import CashPaymentModal from "shared/components/modals/CashPaymentModal";
 import PendingOrderModal from "shared/components/modals/PendingOrdersModal/PendingOrdersModal";
 import SettingsPasswordModal from "shared/components/modals/SettingsPasswordModal";
@@ -25,6 +26,7 @@ import { useHistory } from "react-router-dom";
 import Cart from "./components/Cart/Cart";
 import Modal from "shared/components/ui/Modal";
 import { posState, updatePosState } from "store/posState";
+import { shallowEqual } from "simpler-state";
 import CustomCashModal from "shared/components/modals/CustomCashModal";
 import AuthModal from "shared/components/modals/AuthModal";
 import ProductBuilderModal from "./components/ProductBuilder/ProductBuilderModal";
@@ -41,15 +43,33 @@ const ProductsSection = React.lazy(
   () => import("./components/Products/ProductsSection")
 );
 
+// Isolated clock component — only this re-renders every second
+const Clock = () => {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return (
+    <>
+      <span style={styles.storeTimeTxt}>
+        {time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+      </span>
+      <span style={styles.storeDateTxt}>
+        {time.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+      </span>
+    </>
+  );
+};
+
 function PosScreen() {
   const { height, width } = useWindowSize();
   const catalog = storeProductsState.use();
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
-  const [cartOpen, setcartOpen] = useState(false);
-  const [mobileMenuOpen, setmobileMenuOpen] = useState(false);
-  const [searchQuery, setsearchQuery] = useState("");
-  const [currentTime, setcurrentTime] = useState(new Date());
+  const [cartOpen, setCartOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const history = useHistory();
 
   const {
@@ -59,74 +79,39 @@ function PosScreen() {
     discountAmount,
     cartSub,
     tableViewActive,
-  } = posState.use();
+  } = posState.use(
+    (s) => ({
+      section: s.section,
+      deliveryChecked: s.deliveryChecked,
+      saveCustomerModal: s.saveCustomerModal,
+      discountAmount: s.discountAmount,
+      cartSub: s.cartSub,
+      tableViewActive: s.tableViewActive,
+    }),
+    shallowEqual
+  );
   const ProductBuilderProps = productBuilderState.use();
   if (!storeDetails) return null;
 
   useEffect(() => {
     updatePosState({ section: "__all__" });
-    const timer = setInterval(() => setcurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
     if (cart.length > 0) {
-      let newVal = 0;
-      for (let i = 0; i < cart.length; i++) {
-        try {
-          newVal +=
-            parseFloat(cart[i]?.price ?? 0) *
-            parseFloat(cart[i]?.quantity ?? "1");
-        } catch (error) {
-          // noop
-        }
-      }
-      if (deliveryChecked) {
-        newVal += parseFloat(storeDetails.deliveryPrice);
-      }
-
-      if (discountAmount) {
-        if (discountAmount.includes("%")) {
-          const discount = parseFloat(discountAmount.replace("%", "")) / 100;
-          updatePosState({
-            cartSub: newVal - newVal * discount,
-          });
-        } else {
-          updatePosState({
-            cartSub: newVal - parseFloat(discountAmount),
-          });
-        }
-      } else {
-        updatePosState({ cartSub: newVal });
-      }
+      const totals = calculateCartTotals(
+        cart,
+        storeDetails.taxRate,
+        storeDetails.deliveryPrice,
+        deliveryChecked ?? false,
+        discountAmount
+      );
+      updatePosState({ cartSub: totals.subtotal });
     } else {
       updatePosState({ cartSub: 0 });
     }
   }, [cart, deliveryChecked, discountAmount]);
 
-  useEffect(() => {
-    const query = searchQuery.toLowerCase().trim();
-    catalog.products.map((product) => {
-      const element = document.getElementById(product.id);
-      if (!element) return;
-      const matchesCategory = section === "__all__" || product.category === section;
-      const matchesSearch = !query || product.name.toLowerCase().includes(query);
-      if (matchesCategory && matchesSearch) {
-        element.style.visibility = "visible";
-        element.style.position = "relative";
-        element.style.height = "auto";
-        element.style.overflow = "visible";
-        element.style.pointerEvents = "auto";
-        element.style.animation = "pos-grid-fade 0.25s ease-out";
-      } else {
-        element.style.visibility = "hidden";
-        element.style.position = "absolute";
-        element.style.height = "0";
-        element.style.overflow = "hidden";
-        element.style.pointerEvents = "none";
-      }
-    });
-  }, [section, catalog, searchQuery, tableViewActive]);
 
   return (
     <div style={styles.container}>
@@ -141,7 +126,7 @@ function PosScreen() {
         <div style={styles.topBar}>
           {width < 1250 && (
             <button
-              onClick={() => setmobileMenuOpen(true)}
+              onClick={() => setMobileMenuOpen(true)}
               style={styles.mobileMenuBtn}
             >
               <FiMenu size={18} color="white" />
@@ -153,24 +138,19 @@ function PosScreen() {
               type="text"
               placeholder="Search menu..."
               value={searchQuery}
-              onChange={(e) => setsearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchInput}
             />
           </div>
           {width > 600 && (
             <div style={styles.storeInfoBadge}>
               <span style={styles.storeNameTxt}>{storeDetails.name || "Store"}</span>
-              <span style={styles.storeTimeTxt}>
-                {currentTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-              </span>
-              <span style={styles.storeDateTxt}>
-                {currentTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-              </span>
+              <Clock />
             </div>
           )}
           {width < 1000 && (
             <button
-              onClick={() => setcartOpen(true)}
+              onClick={() => setCartOpen(true)}
               style={styles.mobileCartBtn}
             >
               <FiShoppingCart size={16} color="white" />
@@ -186,7 +166,7 @@ function PosScreen() {
           catalog.products.length > 0 && (
             <>
               <CategorySection catalog={catalog} section={section} />
-              <ProductsSection catalog={catalog} />
+              <ProductsSection catalog={catalog} searchQuery={searchQuery} section={section} />
             </>
           )
         )}
@@ -198,7 +178,7 @@ function PosScreen() {
       ) : (
         <CartMobile
           cartOpen={cartOpen}
-          setcartOpen={setcartOpen}
+          setCartOpen={setCartOpen}
           cartSub={cartSub}
         />
       )}
@@ -222,7 +202,7 @@ function PosScreen() {
       <TableOrderView />
       <Modal
         isVisible={mobileMenuOpen}
-        onBackdropPress={() => setmobileMenuOpen(false)}
+        onBackdropPress={() => setMobileMenuOpen(false)}
         animationIn="slideInLeft"
         animationOut="slideOutLeft"
       >
@@ -242,7 +222,7 @@ function PosScreen() {
           onClick={(e) => e.stopPropagation()}
         >
           <button
-            onClick={() => setmobileMenuOpen(false)}
+            onClick={() => setMobileMenuOpen(false)}
             style={{
               background: "none",
               border: "none",
@@ -256,14 +236,14 @@ function PosScreen() {
             <FiX size={22} color="#333" />
           </button>
           {[
-            { label: "Tables", icon: settingsIcon, action: () => { updatePosState({ tableViewActive: true }); setmobileMenuOpen(false); } },
-            { label: "Pending Orders", icon: pendingOrderIcon, action: () => { updatePosState({ ongoingOrderListModal: true }); setmobileMenuOpen(false); } },
-            { label: "Clock In", icon: clockInIcon, action: () => { updatePosState({ clockinModal: true }); setmobileMenuOpen(false); } },
-            { label: "Phone Order", icon: phoneOrderIcon, action: () => { updatePosState({ deliveryModal: true }); setmobileMenuOpen(false); } },
-            { label: "Discount", icon: percentIcon, action: () => { updatePosState({ discountModal: true }); setmobileMenuOpen(false); } },
-            { label: "Custom Cash", icon: dollarSignIcon, action: () => { updatePosState({ customCashModal: true }); setmobileMenuOpen(false); } },
+            { label: "Tables", icon: settingsIcon, action: () => { updatePosState({ tableViewActive: true }); setMobileMenuOpen(false); } },
+            { label: "Pending Orders", icon: pendingOrderIcon, action: () => { updatePosState({ ongoingOrderListModal: true }); setMobileMenuOpen(false); } },
+            { label: "Clock In", icon: clockInIcon, action: () => { updatePosState({ clockinModal: true }); setMobileMenuOpen(false); } },
+            { label: "Phone Order", icon: phoneOrderIcon, action: () => { updatePosState({ deliveryModal: true }); setMobileMenuOpen(false); } },
+            { label: "Discount", icon: percentIcon, action: () => { updatePosState({ discountModal: true }); setMobileMenuOpen(false); } },
+            { label: "Custom Cash", icon: dollarSignIcon, action: () => { updatePosState({ customCashModal: true }); setMobileMenuOpen(false); } },
             { label: "Settings", icon: settingsIcon, action: () => {
-              setmobileMenuOpen(false);
+              setMobileMenuOpen(false);
               if (storeDetails.settingsPassword?.length > 0) {
                 updatePosState({ settingsPasswordModalVis: true });
               } else {
@@ -296,7 +276,7 @@ function PosScreen() {
         </div>
       </Modal>
       <Modal
-        isVisible={ProductBuilderProps.isOpen ? true : false}
+        isVisible={!!ProductBuilderProps.isOpen}
         onBackdropPress={() => resetProductBuilderState()}
         animationIn="slideInLeft"
         animationOut="slideOutLeft"

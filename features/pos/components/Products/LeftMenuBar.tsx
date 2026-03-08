@@ -1,6 +1,7 @@
 import React from "react";
 import { FiHome, FiClock, FiPhone, FiPercent, FiDollarSign, FiSettings, FiClipboard, FiGrid } from "react-icons/fi";
 import { posState, updatePosState } from "store/posState";
+import { shallowEqual } from "simpler-state";
 import { settingsAuthState, storeDetailsState } from "store/appState";
 import { useHistory } from "react-router-dom";
 
@@ -22,10 +23,21 @@ const LeftMenuBar = () => {
     discountModal,
     settingsPasswordModalVis,
     customCashModal,
-    ongoingListState,
+    pendingCount,
     tableViewActive,
-  } = posState.use();
-  const pendingCount = ongoingListState?.length || 0;
+  } = posState.use(
+    (s) => ({
+      ongoingOrderListModal: s.ongoingOrderListModal,
+      clockinModal: s.clockinModal,
+      deliveryModal: s.deliveryModal,
+      discountModal: s.discountModal,
+      settingsPasswordModalVis: s.settingsPasswordModalVis,
+      customCashModal: s.customCashModal,
+      pendingCount: s.ongoingListState?.length || 0,
+      tableViewActive: s.tableViewActive,
+    }),
+    shallowEqual
+  );
   const history = useHistory();
   const storeDetails = storeDetailsState.use();
 

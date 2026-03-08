@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import GoBackButton from "./GoBackButton";
 import ProductImage from "shared/components/ui/ProductImage";
 import AddToCartButton from "./AddToCartButton";
@@ -22,29 +22,21 @@ function ProductBuilderModal() {
 
   const cart = cartState.use();
   const myObj = product;
-  const [myObjProfile, setmyObjProfile] = useState<ProductProp>(myObj);
-  const [total, settotal] = useState<number>(parseFloat(myObj.price ?? "0"));
-  const isEditing = typeof itemIndex === "number" ? true : false;
+  const [myObjProfile, setMyObjProfile] = useState<ProductProp>(myObj);
+  const [total, setTotal] = useState<number>(parseFloat(myObj.price ?? "0"));
+  const isEditing = typeof itemIndex === "number";
 
-  const [extraInput, setextraInput] = useState<string>(
+  const [extraInput, setExtraInput] = useState<string>(
     myObj.extraDetails ? myObj.extraDetails : ""
   );
-  const [openOptions, setopenOptions] = useState<string | null>(null);
+  const [openOptions, setOpenOptions] = useState<string | null>(null);
   const alertP = useAlert();
-  const [scrollY, setscrollY] = useState<number>(0);
+  const [scrollY, setScrollY] = useState<number>(0);
   const { width } = useWindowSize();
 
-  async function getDeepCopy(obj: ProductProp) {
-    return await structuredClone(obj);
-  }
-
   useEffect(() => {
-    async function loadProduct(productToLoad: ProductProp) {
-      const productCopy = await getDeepCopy(productToLoad);
-      setmyObjProfile(productCopy);
-    }
     if (product !== null) {
-      loadProduct(product);
+      setMyObjProfile(structuredClone(product));
     }
   }, [product]);
 
@@ -52,12 +44,8 @@ function ProductBuilderModal() {
     resetProductBuilderState();
   };
 
-  useEffect(() => {
-    settotal(getPrice());
-  }, [myObjProfile]);
-
-  const getPrice = () => {
-    let total = parseFloat(myObjProfile.price);
+  const price = useMemo(() => {
+    let t = parseFloat(myObjProfile.price);
     myObjProfile.options.forEach((op) => {
       if (op.optionType === "Included Selections") {
         const includedCount = parseFloat(op.includedSelections ?? "0");
@@ -67,14 +55,14 @@ function ProductBuilderModal() {
           totalSelected += parseFloat(item.selectedTimes ?? "0");
         });
         const extraSelections = Math.max(0, totalSelected - includedCount);
-        total += extraSelections * extraPrice;
+        t += extraSelections * extraPrice;
         return;
       }
       op.optionsList
         .filter((f) => f.selected === true)
         .map((e) => {
           const resolved = parseFloat(resolveOptionPrice(e, op, myObjProfile.options));
-          total += resolved || 0;
+          t += resolved || 0;
         });
     });
     myObjProfile.options.forEach((op) => {
@@ -85,15 +73,19 @@ function ProductBuilderModal() {
           const thisItemSelectedTimes = e.selectedTimes ? e.selectedTimes : "0";
           const thisItemCountsAs = e.countsAs ? e.countsAs : "1";
           const resolved = resolveOptionPrice(e, op, myObjProfile.options);
-          total += resolved
+          t += resolved
             ? parseFloat(resolved) *
               parseFloat(thisItemCountsAs) *
               parseFloat(thisItemSelectedTimes)
             : 0;
         });
     });
-    return total;
-  };
+    return t;
+  }, [myObjProfile]);
+
+  useEffect(() => {
+    setTotal(price);
+  }, [price]);
 
   const AddToCart = () => {
     const opsArray: string[] = [];
@@ -193,8 +185,7 @@ function ProductBuilderModal() {
     }
   };
 
-  // Extra pricing summary for included selections
-  const getIncludedExtrasSummary = () => {
+  const extrasSummary = useMemo(() => {
     const extras: string[] = [];
     myObjProfile.options.forEach((op) => {
       if (op.optionType === "Included Selections") {
@@ -213,10 +204,9 @@ function ProductBuilderModal() {
       }
     });
     return extras;
-  };
+  }, [myObjProfile]);
 
   const isMobile = width < 800;
-  const extrasSummary = getIncludedExtrasSummary();
 
   if (isMobile) {
     return (
@@ -257,8 +247,8 @@ function ProductBuilderModal() {
                 e={option}
                 index={index}
                 myObjProfile={myObjProfile}
-                setMyObjProfile={setmyObjProfile}
-                setopenOptions={setopenOptions}
+                setMyObjProfile={setMyObjProfile}
+                setOpenOptions={setOpenOptions}
                 openOptions={openOptions}
                 isOnlineOrder={isOnlineOrder}
                 scrollY={scrollY}
@@ -273,7 +263,7 @@ function ProductBuilderModal() {
               style={styles.notesInput}
               placeholder="Add any special requests..."
               rows={2}
-              onChange={(e) => setextraInput(e.target.value)}
+              onChange={(e) => setExtraInput(e.target.value)}
               value={extraInput}
             />
           </div>
@@ -335,7 +325,7 @@ function ProductBuilderModal() {
             style={styles.notesInput}
             placeholder="Add any special requests..."
             rows={3}
-            onChange={(e) => setextraInput(e.target.value)}
+            onChange={(e) => setExtraInput(e.target.value)}
             value={extraInput}
           />
 
@@ -353,7 +343,7 @@ function ProductBuilderModal() {
         <div style={styles.rightColumn}>
           <div
             style={styles.optionsScrollArea}
-            onScroll={(e) => setscrollY((e.target as HTMLDivElement).scrollTop)}
+            onScroll={(e) => setScrollY((e.target as HTMLDivElement).scrollTop)}
           >
             {myObjProfile.options.map((option, index) => (
               <OptionDisplay
@@ -361,8 +351,8 @@ function ProductBuilderModal() {
                 e={option}
                 index={index}
                 myObjProfile={myObjProfile}
-                setMyObjProfile={setmyObjProfile}
-                setopenOptions={setopenOptions}
+                setMyObjProfile={setMyObjProfile}
+                setOpenOptions={setOpenOptions}
                 openOptions={openOptions}
                 isOnlineOrder={isOnlineOrder}
                 scrollY={scrollY}

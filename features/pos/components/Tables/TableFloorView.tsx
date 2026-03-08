@@ -1,7 +1,8 @@
 import React from "react";
-import { tablesState, tableSectionsState } from "store/appState";
+import { tablesState, tableSectionsState, cartState } from "store/appState";
 import { posState, updatePosState } from "store/posState";
-import { TransListStateItem, Table } from "types";
+import { shallowEqual } from "simpler-state";
+import { TransListStateItem, Table, CartItemProp } from "types";
 import TableCard from "./TableCard";
 import { setCartState } from "store/appState";
 import { auth, db } from "services/firebase/config";
@@ -9,7 +10,10 @@ import { auth, db } from "services/firebase/config";
 const TableFloorView = () => {
   const tables = tablesState.use();
   const sections = tableSectionsState.use();
-  const { ongoingListState, activeTableId } = posState.use();
+  const { ongoingListState, activeTableId } = posState.use(
+    (s) => ({ ongoingListState: s.ongoingListState, activeTableId: s.activeTableId }),
+    shallowEqual
+  );
 
   const activeTables = tables.filter((t) => t.isActive);
 
@@ -25,8 +29,8 @@ const TableFloorView = () => {
       (o) => o.tableId === activeTableId && o.method === "tableOrder"
     );
     if (!currentSession) return;
-    const cart = (window as any).__currentCart;
-    if (!cart || !Array.isArray(cart)) return;
+    const cart = cartState.get();
+    if (!cart || cart.length === 0) return;
 
     db.collection("users")
       .doc(auth.currentUser?.uid)
@@ -34,7 +38,7 @@ const TableFloorView = () => {
       .doc(currentSession.id)
       .update({
         cart,
-        total: cart.reduce((sum: number, item: any) => {
+        total: cart.reduce((sum: number, item: CartItemProp) => {
           return sum + parseFloat(item.price || "0") * parseFloat(item.quantity || "1");
         }, 0).toFixed(2),
       })

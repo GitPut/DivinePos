@@ -2,19 +2,29 @@ import React, { useEffect, useState } from "react";
 import PercentageButton from "./PercentageButton";
 import Modal from "shared/components/ui/Modal";
 import { posState, updatePosState } from "store/posState";
+import { shallowEqual } from "simpler-state";
 import { cartState, storeDetailsState } from "store/appState";
 import { useAlert } from "react-alert";
 import { verifyEmployeePin, logEmployeeActivity } from "utils/employeeAuth";
+import { calculateCartTotals } from "utils/cartCalculations";
 
 const DiscountModal = () => {
   const { discountModal, discountAmount, deliveryChecked, cartSub } =
-    posState.use();
+    posState.use(
+      (s) => ({
+        discountModal: s.discountModal,
+        discountAmount: s.discountAmount,
+        deliveryChecked: s.deliveryChecked,
+        cartSub: s.cartSub,
+      }),
+      shallowEqual
+    );
   const storeDetails = storeDetailsState.use();
   const cart = cartState.use();
 
-  const [code, setcode] = useState("");
-  const [totalWithoutDiscount, settotalWithoutDiscount] = useState(0);
-  const [totalWithNewDiscount, settotalWithNewDiscount] = useState(0);
+  const [code, setCode] = useState("");
+  const [totalWithoutDiscount, setTotalWithoutDiscount] = useState(0);
+  const [totalWithNewDiscount, setTotalWithNewDiscount] = useState(0);
   const [localDiscountAmount, setLocalDiscountAmount] = useState(
     discountAmount ? discountAmount : ""
   );
@@ -50,36 +60,24 @@ const DiscountModal = () => {
   };
 
   useEffect(() => {
-    let newVal = 0;
-    for (let i = 0; i < cart.length; i++) {
-      try {
-        if (cart[i].quantity ?? 0 > 1) {
-          newVal += parseFloat(cart[i].price) * parseFloat(cart[i].quantity ?? '1');
-        } else {
-          newVal += parseFloat(cart[i].price);
-        }
-      } catch (error) {
-        // error handled silently
-      }
-    }
-    if (deliveryChecked) {
-      newVal += parseFloat(storeDetails.deliveryPrice);
-    }
-
-    settotalWithoutDiscount(newVal);
+    const totals = calculateCartTotals(
+      cart,
+      storeDetails.taxRate,
+      storeDetails.deliveryPrice,
+      deliveryChecked ?? false
+    );
+    setTotalWithoutDiscount(totals.subtotal);
   }, [cart, deliveryChecked]);
 
   useEffect(() => {
-    if (localDiscountAmount.includes("%")) {
-      const discount = parseFloat(localDiscountAmount.replace("%", "")) / 100;
-      settotalWithNewDiscount(
-        totalWithoutDiscount - totalWithoutDiscount * discount
-      );
-    } else {
-      settotalWithNewDiscount(
-        totalWithoutDiscount - parseFloat(localDiscountAmount)
-      );
-    }
+    const totals = calculateCartTotals(
+      cart,
+      storeDetails.taxRate,
+      storeDetails.deliveryPrice,
+      deliveryChecked ?? false,
+      localDiscountAmount || null
+    );
+    setTotalWithNewDiscount(totals.subtotal);
   }, [localDiscountAmount]);
 
   return (
@@ -136,7 +134,7 @@ const DiscountModal = () => {
                 </span>
                 <input
                   placeholder="Enter Manager's Code"
-                  onChange={(e) => setcode(e.target.value)}
+                  onChange={(e) => setCode(e.target.value)}
                   style={styles.managerCodeInput}
                   onKeyDown={(e) => handleKeyDown(e)}
                 />

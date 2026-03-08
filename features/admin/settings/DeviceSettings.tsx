@@ -134,32 +134,25 @@ function DeviceSettings() {
                     <button
                       style={styles.setToMyIDBtn}
                       onClick={() => {
-                        if (
-                          deviceTree.devices.filter(
-                            (deviceSearch) => deviceSearch.id === myDeviceID
-                          ).length > 0
-                        ) {
-                          db.collection("users")
-                            .doc(auth?.currentUser?.uid)
-                            .collection("devices")
-                            .doc(
-                              deviceTree.devices.filter(
-                                (deviceSearch) => deviceSearch.id === myDeviceID
-                              )[0].docID
-                            )
-                            .update({ id: null });
-                          const clone = { ...deviceTree };
-                          clone.devices.filter(
-                            (deviceSearch) => deviceSearch.id === myDeviceID
-                          )[0].id = null;
-                          setDeviceTreeState(clone);
+                        const deviceBatch = db.batch();
+                        const oldDevice = deviceTree.devices.find(
+                          (d) => d.id === myDeviceID
+                        );
+                        if (oldDevice) {
+                          deviceBatch.update(
+                            db.collection("users").doc(auth?.currentUser?.uid).collection("devices").doc(oldDevice.docID),
+                            { id: null }
+                          );
                         }
-                        db.collection("users")
-                          .doc(auth?.currentUser?.uid)
-                          .collection("devices")
-                          .doc(deviceTree.devices[selectedDevice].docID)
-                          .update({ id: myDeviceID });
+                        deviceBatch.update(
+                          db.collection("users").doc(auth?.currentUser?.uid).collection("devices").doc(deviceTree.devices[selectedDevice].docID),
+                          { id: myDeviceID }
+                        );
+                        deviceBatch.commit();
                         const clone = { ...deviceTree };
+                        if (oldDevice) {
+                          clone.devices.find((d) => d.id === myDeviceID)!.id = null;
+                        }
                         clone.devices[selectedDevice].id = myDeviceID;
                         setDeviceTreeState(clone);
                         setDeviceState({

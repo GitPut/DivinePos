@@ -18,11 +18,11 @@ import useWindowSize from "shared/hooks/useWindowSize";
 
 interface CartMobileProps {
   cartOpen: boolean;
-  setcartOpen: (arg: boolean) => void;
+  setCartOpen: (arg: boolean) => void;
   cartSub: number;
 }
 
-const CartMobile = ({ cartOpen, setcartOpen, cartSub }: CartMobileProps) => {
+const CartMobile = ({ cartOpen, setCartOpen, cartSub }: CartMobileProps) => {
   const { height, width } = useWindowSize();
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
@@ -65,7 +65,7 @@ const CartMobile = ({ cartOpen, setcartOpen, cartSub }: CartMobileProps) => {
   return (
     <Modal
       isVisible={cartOpen}
-      onBackdropPress={() => setcartOpen(false)}
+      onBackdropPress={() => setCartOpen(false)}
     >
       <div
         style={{
@@ -91,7 +91,7 @@ const CartMobile = ({ cartOpen, setcartOpen, cartSub }: CartMobileProps) => {
         >
           <button
             onClick={() => {
-              setcartOpen(false);
+              setCartOpen(false);
             }}
             style={{ background: "none", border: "none", cursor: "pointer" }}
           >
@@ -250,7 +250,7 @@ const CartMobile = ({ cartOpen, setcartOpen, cartSub }: CartMobileProps) => {
                 cart: cart,
                 page: 5,
               });
-              setcartOpen(false);
+              setCartOpen(false);
             } else {
               setOrderDetailsState({
                 date: today,
@@ -270,7 +270,7 @@ const CartMobile = ({ cartOpen, setcartOpen, cartSub }: CartMobileProps) => {
                 },
                 page: 5,
               });
-              setcartOpen(false);
+              setCartOpen(false);
             }
           }}
         >

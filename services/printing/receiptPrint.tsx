@@ -5,13 +5,6 @@ import {
 } from "types";
 import { parseDate } from "utils/dateFormatting";
 
-const PLATFORM_LABELS: Record<string, string> = {
-  doordash: "DoorDash Order",
-  ubereats: "Uber Eats Order",
-  skipthedishes: "Skip The Dishes Order",
-  grubhub: "Grubhub Order",
-};
-
 function receiptPrint(
   element: TransListStateItem,
   storeDetails: StoreDetailsProps,
@@ -20,11 +13,7 @@ function receiptPrint(
   let data: string[] = [];
   let total: number = 0;
 
-  const orderSourceLabel = element.deliveryPlatform
-    ? PLATFORM_LABELS[element.deliveryPlatform]
-    : element.online
-      ? "Online Order"
-      : "";
+  const orderSourceLabel = element.online ? "Online Order" : "";
 
   let date;
 
@@ -301,10 +290,10 @@ function receiptPrint(
     );
   } else if (element.method === "tableOrder") {
     const tableInfo = [];
-    if ((element as any).tableName) tableInfo.push((element as any).tableName);
-    if ((element as any).tableNumber) tableInfo.push(`Table #${(element as any).tableNumber}`);
-    if ((element as any).server) tableInfo.push(`Server: ${(element as any).server}`);
-    if ((element as any).guests) tableInfo.push(`Guests: ${(element as any).guests}`);
+    if (element.tableName) tableInfo.push(element.tableName);
+    if (element.tableNumber) tableInfo.push(`Table #${element.tableNumber}`);
+    if (element.server) tableInfo.push(`Server: ${element.server}`);
+    if (element.guests) tableInfo.push(`Guests: ${element.guests}`);
 
     data = [
       "\x1B" + "\x40", // init

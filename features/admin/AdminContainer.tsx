@@ -171,11 +171,6 @@ function AdminContainer(props: { match: { url: string } }) {
                   active: pathname.includes("tablesettings"),
                 },
                 {
-                  label: "Delivery Platforms",
-                  link: "/authed/settings/deliveryplatforms",
-                  active: pathname.includes("deliveryplatforms"),
-                },
-                {
                   label: "Billing",
                   link: "/authed/settings/billingsettings",
                   active: pathname.includes("billingsettings"),

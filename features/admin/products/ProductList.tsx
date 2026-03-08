@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import ProductOptionBox from "./components/ProductOptionBox";
 import { FiSearch, FiPlus } from "react-icons/fi";
 import {
@@ -16,15 +16,14 @@ import { ProductProp } from "types";
 function ProductList() {
   const catalog = storeProductsState.use();
   const onlineStoreDetails = onlineStoreState.use();
-  const [searchFilterValue, setsearchFilterValue] = useState<string>("");
-  const [selectedCategory, setselectedCategory] = useState<string | null>();
-  const editMode = true;
-  const [addProductModal, setaddProductModal] = useState<boolean>(false);
-  const [existingProduct, setexistingProduct] = useState<ProductProp | null>(
+  const [searchFilterValue, setSearchFilterValue] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [addProductModal, setAddProductModal] = useState<boolean>(false);
+  const [existingProduct, setExistingProduct] = useState<ProductProp | null>(
     null
   );
-  const [isProductTemplate, setisProductTemplate] = useState<boolean>(false);
-  const [productTemplatesModalVisible, setproductTemplatesModalVisible] =
+  const [isProductTemplate, setIsProductTemplate] = useState<boolean>(false);
+  const [productTemplatesModalVisible, setProductTemplatesModalVisible] =
     useState<boolean>(false);
 
   const confirmText = (ProductID: string) => {
@@ -67,47 +66,14 @@ function ProductList() {
     });
   };
 
-  useEffect(() => {
-    catalog.products.map((product) => {
-      if (
-        product.category === selectedCategory &&
-        product.name
-          .toLowerCase()
-          .includes(searchFilterValue.toLocaleLowerCase())
-      ) {
-        const getItem = document.getElementById(product.id);
-        if (getItem) {
-          getItem.style.display = "flex";
-        }
-      } else if (product.category === selectedCategory && !searchFilterValue) {
-        const getItem = document.getElementById(product.id);
-        if (getItem) {
-          getItem.style.display = "flex";
-        }
-      } else if (
-        searchFilterValue.length > 0 &&
-        product.name
-          .toLowerCase()
-          .includes(searchFilterValue.toLocaleLowerCase()) &&
-        !selectedCategory
-      ) {
-        const getItem = document.getElementById(product.id);
-        if (getItem) {
-          getItem.style.display = "flex";
-        }
-      } else if (!searchFilterValue && !selectedCategory) {
-        const getItem = document.getElementById(product.id);
-        if (getItem) {
-          getItem.style.display = "flex";
-        }
-      } else {
-        const getItem = document.getElementById(product.id);
-        if (getItem) {
-          getItem.style.display = "none";
-        }
-      }
+  const filteredProducts = useMemo(() => {
+    const query = searchFilterValue.toLowerCase().trim();
+    return catalog.products.filter((product) => {
+      const matchesCategory = !selectedCategory || product.category === selectedCategory;
+      const matchesSearch = !query || product.name.toLowerCase().includes(query);
+      return matchesCategory && matchesSearch;
     });
-  }, [searchFilterValue, selectedCategory, catalog]);
+  }, [catalog.products, selectedCategory, searchFilterValue]);
 
   return (
     <div style={styles.container}>
@@ -118,7 +84,7 @@ function ProductList() {
             style={styles.searchProductBox}
             placeholder="Search"
             value={searchFilterValue}
-            onChange={(e) => setsearchFilterValue(e.target.value)}
+            onChange={(e) => setSearchFilterValue(e.target.value)}
           />
           <FiSearch
             style={{
@@ -148,7 +114,7 @@ function ProductList() {
                   : "2px solid grey",
               }}
               onClick={() =>
-                setselectedCategory((prev) =>
+                setSelectedCategory((prev) =>
                   prev === category ? null : category
                 )
               }
@@ -178,7 +144,7 @@ function ProductList() {
             <button
               className="admin-card"
               style={styles.addProductBtn}
-              onClick={() => setaddProductModal(true)}
+              onClick={() => setAddProductModal(true)}
             >
               <FiPlus style={styles.addProductPlusIcon} />
               <span style={styles.addNewItemTxt}>Add New Item</span>
@@ -187,19 +153,19 @@ function ProductList() {
                 style={styles.templateBtn}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setproductTemplatesModalVisible(true);
+                  setProductTemplatesModalVisible(true);
                 }}
               >
                 <span style={styles.templatesBtnLbl}>Choose Template</span>
               </button>
             </button>
-            {catalog.products.map((product) => (
-              <div key={product.id} id={product.id}>
+            {filteredProducts.map((product) => (
+              <div key={product.id}>
                 <ProductOptionBox
                   product={product}
-                  editMode={editMode}
+                  editMode={true}
                   deleteProduct={() => confirmText(product.id)}
-                  setexistingProduct={setexistingProduct}
+                  setexistingProduct={setExistingProduct}
                 />
               </div>
             ))}
@@ -207,10 +173,10 @@ function ProductList() {
         </div>
       </div>
       <Modal
-        isVisible={addProductModal || existingProduct ? true : false}
+        isVisible={!!(addProductModal || existingProduct)}
         onBackdropPress={() => {
-          setaddProductModal(false);
-          setexistingProduct(null);
+          setAddProductModal(false);
+          setExistingProduct(null);
         }}
       >
         <div
@@ -228,17 +194,17 @@ function ProductList() {
         >
           <AddProductModal
             addProductModal={addProductModal}
-            setaddProductModal={setaddProductModal}
+            setaddProductModal={setAddProductModal}
             existingProduct={existingProduct}
-            setexistingProduct={setexistingProduct}
+            setexistingProduct={setExistingProduct}
             isProductTemplate={isProductTemplate}
-            setisProductTemplate={setisProductTemplate}
+            setisProductTemplate={setIsProductTemplate}
           />
         </div>
       </Modal>
       <Modal
-        isVisible={productTemplatesModalVisible ? true : false}
-        onBackdropPress={() => setproductTemplatesModalVisible(false)}
+        isVisible={productTemplatesModalVisible}
+        onBackdropPress={() => setProductTemplatesModalVisible(false)}
       >
         <div
           style={{
@@ -254,9 +220,9 @@ function ProductList() {
           }}
         >
           <ProductTemplatesModal
-            setproductTemplatesModalVisible={setproductTemplatesModalVisible}
-            setexistingProduct={setexistingProduct}
-            setisProductTemplate={setisProductTemplate}
+            setproductTemplatesModalVisible={setProductTemplatesModalVisible}
+            setexistingProduct={setExistingProduct}
+            setisProductTemplate={setIsProductTemplate}
           />
         </div>
       </Modal>

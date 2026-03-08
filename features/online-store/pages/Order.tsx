@@ -25,12 +25,10 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
   const page = orderDetails.page;
   const [cartSub, setCartSub] = useState(0);
   const cart = cartState.use();
-  const [cartOpen, setcartOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const { height, width } = useWindowSize();
   const ProductBuilderProps = productBuilderState.use();
   const { section } = posState.use();
-  const [allLoaded, setallLoaded] = useState<boolean>(false);
-
   useEffect(() => {
     if (page === 4) {
       if (catalog.categories.length > 0) {
@@ -53,26 +51,6 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
     }
   }, [cart]);
 
-  useEffect(() => {
-    catalog.products.map((product) => {
-      const element = document.getElementById(product.id);
-      if (!element) return;
-      if (section === "__all__" || product.category === section) {
-        element.style.visibility = "visible";
-        element.style.position = "relative";
-        element.style.height = "auto";
-        element.style.overflow = "visible";
-        element.style.pointerEvents = "auto";
-      } else {
-        element.style.visibility = "hidden";
-        element.style.position = "absolute";
-        element.style.height = "0";
-        element.style.overflow = "hidden";
-        element.style.pointerEvents = "none";
-      }
-    });
-  }, [section, catalog, allLoaded]);
-
   return (
     <div style={styles.container}>
       {/* Header bar */}
@@ -85,7 +63,7 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
         </button>
         <span style={styles.storeName}>{storeDetails.name || "Menu"}</span>
         {width < 1000 && (
-          <button onClick={() => setcartOpen(true)} style={styles.cartBtn}>
+          <button onClick={() => setCartOpen(true)} style={styles.cartBtn}>
             <FiShoppingCart size={18} color="#fff" />
             {cart.length > 0 && (
               <span style={styles.cartBadge}>{cart.length}</span>
@@ -107,7 +85,7 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
           {catalog.products.length > 0 && (
             <>
               <CategorySection catalog={catalog} section={section} />
-              <ProductsSection catalog={catalog} setallLoaded={setallLoaded} />
+              <ProductsSection catalog={catalog} section={section} />
             </>
           )}
         </div>
@@ -129,7 +107,7 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
       {width < 1000 && (
         <CartMobile
           cartOpen={cartOpen}
-          setcartOpen={setcartOpen}
+          setCartOpen={setCartOpen}
           cartSub={cartSub}
         />
       )}

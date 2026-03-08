@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Modal from "shared/components/ui/Modal";
 import Print from "features/pos/components/Cart/print";
 import { posState, updatePosState } from "store/posState";
+import { shallowEqual } from "simpler-state";
 import {
   cartState,
   customersState,
@@ -24,7 +25,23 @@ const CashPaymentModal = () => {
     cartNote,
     cartSub,
     cashModal,
-  } = posState.use();
+  } = posState.use(
+    (s) => ({
+      deliveryChecked: s.deliveryChecked,
+      discountAmount: s.discountAmount,
+      changeDue: s.changeDue,
+      savedCustomerDetails: s.savedCustomerDetails,
+      name: s.name,
+      phone: s.phone,
+      address: s.address,
+      buzzCode: s.buzzCode,
+      unitNumber: s.unitNumber,
+      cartNote: s.cartNote,
+      cartSub: s.cartSub,
+      cashModal: s.cashModal,
+    }),
+    shallowEqual
+  );
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
   const myDeviceDetails = deviceState.use();

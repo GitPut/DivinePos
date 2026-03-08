@@ -340,16 +340,12 @@ const deductStockForCart = async (
 
   if (productStockUpdates.length === 0 && ingredientDeductions.size === 0) return;
 
-  await batch.commit();
-
-  // Write history entries (non-fatal)
-  if (historyWrites.length > 0) {
-    const histBatch = db.batch();
-    for (const hw of historyWrites) {
-      histBatch.set(hw.ref, hw.data);
-    }
-    await histBatch.commit().catch(() => {});
+  // Merge history writes into the main batch (single commit)
+  for (const hw of historyWrites) {
+    batch.set(hw.ref, hw.data);
   }
+
+  await batch.commit();
 
   // Update local state for products
   if (productStockUpdates.length > 0) {

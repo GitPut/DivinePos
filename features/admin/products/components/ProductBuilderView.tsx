@@ -11,16 +11,16 @@ interface ProductBuilderViewProps {
 
 function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
   const myObj = product;
-  const [myObjProfile, setmyObjProfile] = useState(myObj);
-  const [total, settotal] = useState(myObj.total ? myObj.total : myObj.price);
-  const [openOptions, setopenOptions] = useState<string | null>(null);
+  const [myObjProfile, setMyObjProfile] = useState(myObj);
+  const [total, setTotal] = useState(myObj.total ? myObj.total : myObj.price);
+  const [openOptions, setOpenOptions] = useState<string | null>(null);
 
   useEffect(() => {
-    setmyObjProfile(product);
+    setMyObjProfile(product);
   }, [product]);
 
   useEffect(() => {
-    settotal(getPrice().toString());
+    setTotal(getPrice().toString());
   }, [myObjProfile]);
 
   const getPrice = () => {
@@ -111,8 +111,8 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
                         e={option}
                         index={index}
                         myObjProfile={myObjProfile}
-                        setMyObjProfile={setmyObjProfile}
-                        setopenOptions={setopenOptions}
+                        setMyObjProfile={setMyObjProfile}
+                        setOpenOptions={setOpenOptions}
                         openOptions={openOptions}
                         isOnlineOrder={false}
                         scrollY={0}

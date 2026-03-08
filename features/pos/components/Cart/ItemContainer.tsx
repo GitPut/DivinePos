@@ -1,5 +1,6 @@
 import React from "react";
 import { addCartState, cartState, ingredientsState, setProductBuilderState } from "store/appState";
+import { shallowEqual } from "simpler-state";
 import ProductImage from "shared/components/ui/ProductImage";
 import { FiImage } from "react-icons/fi";
 import { ProductProp } from "types";
@@ -11,7 +12,6 @@ interface ItemContainerProps {
 }
 
 function ItemContainer({ product, onLayout, width }: ItemContainerProps) {
-  const cart = cartState.use();
   const ingredients = ingredientsState.use();
 
   const hasRecipe = product.recipe && product.recipe.length > 0;
@@ -39,7 +39,7 @@ function ItemContainer({ product, onLayout, width }: ItemContainerProps) {
   }
 
   return (
-    <div id={product.id} style={{ visibility: "hidden", position: "absolute", height: 0, overflow: "hidden", pointerEvents: "none" }}>
+    <div>
       <button
         onClick={() => {
           if (isOutOfStock) return;
@@ -69,7 +69,7 @@ function ItemContainer({ product, onLayout, width }: ItemContainerProps) {
                   id: product.id,
                 },
               },
-              cart
+              cartState.get()
             );
           }
         }}
@@ -231,4 +231,4 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default ItemContainer;
+export default React.memo(ItemContainer);

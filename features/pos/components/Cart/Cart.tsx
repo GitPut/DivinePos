@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import noItemsImg from "assets/images/noItemsImg.png";
 import CartItem from "./CartItem";
 import CartAmountRow from "./CartAmountRow";
@@ -15,6 +15,7 @@ import {
   storeDetailsState,
 } from "store/appState";
 import { posState, updatePosState } from "store/posState";
+import { shallowEqual } from "simpler-state";
 import firebase from "firebase/compat/app";
 import { calculateCartTotals } from "utils/cartCalculations";
 import { broadcastCartUpdate } from "utils/customerDisplayBroadcast";
@@ -22,36 +23,34 @@ import useWindowSize from "shared/hooks/useWindowSize";
 
 const Cart = () => {
   const { discountAmount, deliveryChecked, cartSub, cartNote, activeTableId } =
-    posState.use();
+    posState.use(
+      (s) => ({
+        discountAmount: s.discountAmount,
+        deliveryChecked: s.deliveryChecked,
+        cartSub: s.cartSub,
+        cartNote: s.cartNote,
+        activeTableId: s.activeTableId,
+      }),
+      shallowEqual
+    );
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
   const { width, height } = useWindowSize();
-  const [total, settotal] = useState(0);
+  const [total, setTotal] = useState(0);
   const isOnlineOrder = productBuilderState.use().isOnlineOrder;
   const orderDetails = orderDetailsState.use();
 
   useEffect(() => {
     if (isOnlineOrder) {
       if (cart.length > 0) {
-        let newVal = 0;
-        for (let i = 0; i < cart.length; i++) {
-          try {
-            if (cart[i].quantity ?? 0 > 1) {
-              newVal +=
-                parseFloat(cart[i].price ?? "0") *
-                parseFloat(cart[i].quantity ?? "1");
-            } else {
-              newVal += parseFloat(cart[i].price ?? "0");
-            }
-          } catch (error) {
-          }
-        }
-        if (orderDetails.delivery) {
-          newVal += parseFloat(storeDetails.deliveryPrice);
-        }
-
+        const totals = calculateCartTotals(
+          cart,
+          storeDetails.taxRate,
+          storeDetails.deliveryPrice,
+          orderDetails.delivery ?? false
+        );
         updatePosState({
-          cartSub: newVal,
+          cartSub: totals.subtotal,
           deliveryChecked: orderDetails.delivery,
         });
       } else {
@@ -65,20 +64,46 @@ const Cart = () => {
 
   useEffect(() => {
     if (cartSub > 0) {
-      settotal(
-        cartSub *
-          (parseFloat(storeDetails.taxRate) >= 0
-            ? 1 + parseFloat(storeDetails.taxRate) / 100
-            : 1.13)
+      const totals = calculateCartTotals(
+        cart,
+        storeDetails.taxRate,
+        storeDetails.deliveryPrice,
+        deliveryChecked ?? false,
+        discountAmount
       );
+      setTotal(totals.total);
     } else {
-      settotal(0);
+      setTotal(0);
     }
   }, [cart, discountAmount, deliveryChecked, cartSub, cartNote, storeDetails]);
 
   useEffect(() => {
     broadcastCartUpdate({ cart, discountAmount, deliveryChecked, cartSub });
   }, [cart, discountAmount, deliveryChecked, cartSub]);
+
+  const handleRemove = useCallback((index: number) => {
+    const local = structuredClone(cartState.get());
+    local.splice(index, 1);
+    setCartState(local);
+  }, []);
+
+  const handleDecrease = useCallback((index: number) => {
+    const local = structuredClone(cartState.get());
+    const quantity = local[index].quantity ?? false;
+    if (quantity && parseFloat(quantity) > 1) {
+      local[index].quantity = (parseFloat(quantity) - 1).toString();
+    } else {
+      local[index].quantity = "1";
+    }
+    setCartState(local);
+  }, []);
+
+  const handleIncrease = useCallback((index: number) => {
+    const local = structuredClone(cartState.get());
+    const quantity = local[index].quantity ?? false;
+    local[index].quantity = (quantity ? parseFloat(quantity) + 1 : 2).toString();
+    setCartState(local);
+  }, []);
 
   return (
     <div style={styles.cartContainer}>
@@ -112,31 +137,9 @@ const Cart = () => {
                 key={index}
                 cartItem={cartItem}
                 index={index}
-                removeAction={() => {
-                  const local = structuredClone(cart);
-                  local.splice(index, 1);
-                  setCartState(local);
-                }}
-                decreaseAction={() => {
-                  const local = structuredClone(cart);
-                  const quantity = local[index].quantity ?? false;
-                  if (quantity && parseFloat(quantity) > 1) {
-                    local[index].quantity = (
-                      parseFloat(quantity) - 1
-                    ).toString();
-                  } else {
-                    local[index].quantity = "1";
-                  }
-                  setCartState(local);
-                }}
-                increaseAction={() => {
-                  const local = structuredClone(cart);
-                  const quantity = local[index].quantity ?? false;
-                  local[index].quantity = (
-                    quantity ? parseFloat(quantity) + 1 : 2
-                  ).toString();
-                  setCartState(local);
-                }}
+                removeAction={() => handleRemove(index)}
+                decreaseAction={() => handleDecrease(index)}
+                increaseAction={() => handleIncrease(index)}
               />
             ))}
           </div>
@@ -235,12 +238,7 @@ const Cart = () => {
             style={styles.subtotalRow}
           />
           <CartAmountRow
-            amountValue={`$${(
-              cartSub *
-              (parseFloat(storeDetails.taxRate) >= 0
-                ? parseFloat(storeDetails.taxRate) / 100
-                : 0.13)
-            ).toFixed(2)}`}
+            amountValue={`$${(total > 0 ? (total - cartSub) : 0).toFixed(2)}`}
             amountLbl={`Tax (${
               parseFloat(storeDetails.taxRate) >= 0
                 ? parseFloat(storeDetails.taxRate)
@@ -281,12 +279,7 @@ const Cart = () => {
               setOrderDetailsState({
                 date: today,
                 transNum: transNum,
-                total: (
-                  cartSub *
-                  (storeDetails.taxRate
-                    ? 1 + parseFloat(storeDetails.taxRate) / 100
-                    : 1.13)
-                ).toFixed(2),
+                total: total.toFixed(2),
                 method: "deliveryOrder",
                 online: true,
                 cart: cart,
@@ -296,12 +289,7 @@ const Cart = () => {
               setOrderDetailsState({
                 date: today,
                 transNum: transNum,
-                total: (
-                  cartSub *
-                  (storeDetails.taxRate
-                    ? 1 + parseFloat(storeDetails.taxRate) / 100
-                    : 1.13)
-                ).toFixed(2),
+                total: total.toFixed(2),
                 method: "pickupOrder",
                 online: true,
                 cart: cart,

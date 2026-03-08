@@ -1,19 +1,25 @@
-import React, { useEffect } from "react";
+import React, { useMemo } from "react";
 import ItemContainer from "../Cart/ItemContainer";
 import useWindowSize from "shared/hooks/useWindowSize";
 import { UserStoreStateProps } from "types";
 
 interface ProductsSectionProps {
   catalog: UserStoreStateProps;
-  setallLoaded?: (val: boolean) => void;
+  searchQuery?: string;
+  section?: string;
 }
 
-const ProductsSection = ({ catalog, setallLoaded }: ProductsSectionProps) => {
+const ProductsSection = ({ catalog, searchQuery = "", section = "__all__" }: ProductsSectionProps) => {
   const { width } = useWindowSize();
 
-  useEffect(() => {
-    if (setallLoaded) setallLoaded(true);
-  }, [catalog]);
+  const filteredProducts = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    return catalog.products.filter((product) => {
+      const matchesCategory = section === "__all__" || product.category === section;
+      const matchesSearch = !query || product.name.toLowerCase().includes(query);
+      return matchesCategory && matchesSearch;
+    });
+  }, [catalog.products, section, searchQuery]);
 
   const styles = {
     scrollAreaProducts: {
@@ -39,11 +45,9 @@ const ProductsSection = ({ catalog, setallLoaded }: ProductsSectionProps) => {
     <div style={styles.scrollAreaProducts}>
       <div style={{ overflowY: "auto", height: "100%" }}>
         <div style={styles.gridContainer}>
-          {catalog.products.map((product, index) => {
-            return (
-              <ItemContainer product={product} key={index} width={width} />
-            );
-          })}
+          {filteredProducts.map((product, index) => (
+            <ItemContainer product={product} key={index} width={width} />
+          ))}
         </div>
       </div>
     </div>

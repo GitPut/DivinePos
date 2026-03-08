@@ -3,6 +3,7 @@ import { auth, db } from "services/firebase/config";
 import { posState, resetPosState, updatePosState } from "store/posState";
 import { setCartState, setCustomersState } from "store/appState";
 import { updateTransList } from "services/firebase/functions";
+import { calculateCartTotals } from "utils/cartCalculations";
 import qz from "qz-tray";
 import {
   AddressType,
@@ -11,6 +12,7 @@ import {
   CustomersOrdersProp,
   MyDeviceDetailsProps,
   StoreDetailsProps,
+  TransListStateItem,
 } from "types";
 import firebase from "firebase/compat/app";
 
@@ -53,7 +55,7 @@ const handleQzError = (err: Error) => {
 };
 
 const printOrSend = (
-  printData: any[],
+  printData: string[],
   myDeviceDetails: MyDeviceDetailsProps
 ) => {
   if (
@@ -104,26 +106,21 @@ const Print = ({ ...props }: PrintProps) => {
   } = props;
 
   try {
-    let newVal = 0;
+    const totals = calculateCartTotals(
+      cart,
+      storeDetails.taxRate,
+      storeDetails.deliveryPrice,
+      deliveryChecked
+    );
+
     const finalCart = cart;
-    for (let i = 0; i < cart.length; i++) {
-      const element = cart[i];
-      const quantity = parseFloat(element.quantity ?? "1");
-      try {
-        newVal += parseFloat(cart[i].price) * quantity;
-      } catch (error) {
-      }
-    }
-    if (deliveryChecked) {
-      newVal += parseFloat(storeDetails.deliveryPrice);
-    }
 
     if (discountAmount) {
       if (discountAmount.includes("%")) {
         const discount = parseFloat(discountAmount.replace("%", "")) / 100;
         finalCart.push({
           name: "Cart Discount: " + discount * 100 + "%",
-          price: (-(newVal * discount)).toString(),
+          price: (-(totals.itemsSubtotal * discount)).toString(),
           description: "Discount Applied to Cart",
           options: [],
           extraDetails: null,
@@ -176,11 +173,11 @@ const Print = ({ ...props }: PrintProps) => {
       );
       const today = firebase.firestore.Timestamp.now();
 
-      const element = {
+      const element: TransListStateItem = {
         cartNote: cartNote,
         date: tableSession?.date || today,
         transNum: tableSession?.transNum || transNum,
-        method: "tableOrder" as const,
+        method: "tableOrder",
         cart: finalCart,
         customer: {
           name: name || "",
@@ -196,7 +193,7 @@ const Print = ({ ...props }: PrintProps) => {
         seatedAt: tableSession?.seatedAt,
       };
 
-      const data = receiptPrint(element as any, storeDetails);
+      const data = receiptPrint(element, storeDetails);
       printOrSend(data.data, myDeviceDetails);
 
       // Delete the pending order
@@ -211,9 +208,9 @@ const Print = ({ ...props }: PrintProps) => {
       updateTransList({
         ...element,
         total: data.total.toFixed(2),
-        date: today as any,
-        dateCompleted: today as any,
-      } as any).catch(() => {});
+        date: today,
+        dateCompleted: today,
+      }).catch(() => {});
 
       setCartState([]);
       resetPosState();
@@ -396,11 +393,11 @@ export const sendTableOrder = async (props: {
   const savedCart = cart.map((item) => ({ ...item, sent: true }));
 
   // Print kitchen ticket with only the new items
-  const element = {
+  const element: TransListStateItem = {
     cartNote,
     date: tableSession?.date || firebase.firestore.Timestamp.now(),
     transNum: tableSession?.transNum || "",
-    method: "tableOrder" as const,
+    method: "tableOrder",
     cart: unsentItems,
     customer: { name: "", phone: "" },
     id: tableSession?.transNum || "",
@@ -410,15 +407,11 @@ export const sendTableOrder = async (props: {
     guests: tableSession?.guests,
   };
 
-  const data = receiptPrint(element as any, storeDetails);
+  const data = receiptPrint(element, storeDetails);
   printOrSend(data.data, myDeviceDetails);
 
   // Calculate full cart total for the pending order
-  let fullTotal = 0;
-  for (const item of cart) {
-    if (parseFloat(item.price) < 0) continue; // skip discount items
-    fullTotal += parseFloat(item.price) * parseFloat(item.quantity || "1");
-  }
+  const totals = calculateCartTotals(cart, storeDetails.taxRate, storeDetails.deliveryPrice, false);
 
   // Save cart to pending order — await to ensure write completes before clearing state
   try {
@@ -430,7 +423,7 @@ export const sendTableOrder = async (props: {
       .update({
         cart: savedCart,
         cartNote,
-        total: fullTotal.toFixed(2),
+        total: totals.itemsSubtotal.toFixed(2),
       });
   } catch {
     alert("Failed to send order.");

@@ -173,7 +173,6 @@ export type OngoingListStateProp = {
   guests?: number;
   server?: string;
   seatedAt?: { seconds: number | string } | Date | string;
-  deliveryPlatform?: "doordash" | "ubereats" | "skipthedishes" | "grubhub";
 };
 
 export type EmployeePermissions = {
@@ -238,7 +237,6 @@ export type TransListStateItem = {
   guests?: number;
   server?: string;
   seatedAt?: Timestamp;
-  deliveryPlatform?: "doordash" | "ubereats" | "skipthedishes" | "grubhub";
 };
 
 export type ExcelTransListStateItem = {

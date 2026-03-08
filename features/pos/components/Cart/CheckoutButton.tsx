@@ -12,6 +12,7 @@ import {
   resetPosState,
   updatePosState,
 } from "store/posState";
+import { shallowEqual } from "simpler-state";
 
 const CheckoutButton = () => {
   const {
@@ -29,7 +30,25 @@ const CheckoutButton = () => {
     cartNote,
     activeTableId,
     activeTableSessionId,
-  } = posState.use();
+  } = posState.use(
+    (s) => ({
+      deliveryChecked: s.deliveryChecked,
+      ongoingDelivery: s.ongoingDelivery,
+      updatingOrder: s.updatingOrder,
+      discountAmount: s.discountAmount,
+      changeDue: s.changeDue,
+      savedCustomerDetails: s.savedCustomerDetails,
+      name: s.name,
+      phone: s.phone,
+      address: s.address,
+      buzzCode: s.buzzCode,
+      unitNumber: s.unitNumber,
+      cartNote: s.cartNote,
+      activeTableId: s.activeTableId,
+      activeTableSessionId: s.activeTableSessionId,
+    }),
+    shallowEqual
+  );
   const cart = cartState.use();
   const storeDetails = storeDetailsState.use();
   const myDeviceDetails = deviceState.use();

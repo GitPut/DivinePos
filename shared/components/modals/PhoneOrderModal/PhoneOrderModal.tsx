@@ -13,6 +13,7 @@ import Switch from "shared/components/ui/Switch";
 import { GooglePlacesStyles } from "utils/googlePlacesStyles";
 import Modal from "shared/components/ui/Modal";
 import { posState, updatePosState } from "store/posState";
+import { shallowEqual } from "simpler-state";
 import { useAlert } from "react-alert";
 import { AddressType } from "types";
 
@@ -34,7 +35,21 @@ const PhoneOrderModal = () => {
     savedCustomerDetails,
     deliveryModal,
     updatingOrder,
-  } = posState.use();
+  } = posState.use(
+    (s) => ({
+      name: s.name,
+      phone: s.phone,
+      address: s.address,
+      deliveryChecked: s.deliveryChecked,
+      ongoingDelivery: s.ongoingDelivery,
+      buzzCode: s.buzzCode,
+      unitNumber: s.unitNumber,
+      savedCustomerDetails: s.savedCustomerDetails,
+      deliveryModal: s.deliveryModal,
+      updatingOrder: s.updatingOrder,
+    }),
+    shallowEqual
+  );
   const alertP = useAlert();
 
   function calculateDistance(

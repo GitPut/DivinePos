@@ -13,7 +13,7 @@ interface OptionDisplayProps {
   setMyObjProfile: (
     val: ((prev: ProductProp) => ProductProp) | ProductProp
   ) => void;
-  setopenOptions: (val: string | null) => void;
+  setOpenOptions: (val: string | null) => void;
   openOptions: string | null;
   scrollY: number;
   isOnlineOrder?: boolean | null;
@@ -24,7 +24,7 @@ const OptionDisplay = ({
   index,
   myObjProfile,
   setMyObjProfile,
-  setopenOptions,
+  setOpenOptions,
   openOptions,
   scrollY,
   isOnlineOrder,
@@ -168,7 +168,7 @@ const OptionDisplay = ({
         return (
           <DropdownOption
             id={index.toString()}
-            setopenDropdown={setopenOptions}
+            setopenDropdown={setOpenOptions}
             openDropdown={openOptions}
             label={e.label ?? ""}
             isRequired={e.isRequired ? true : false}
@@ -200,7 +200,7 @@ const OptionDisplay = ({
             myObjProfile={myObjProfile}
             setmyObjProfile={setMyObjProfile}
             id={index.toString()}
-            setopenDropdown={setopenOptions}
+            setopenDropdown={setOpenOptions}
             openDropdown={openOptions}
             label={e.label ?? ""}
             isRequired={e.isRequired ? true : false}
@@ -273,7 +273,7 @@ const OptionDisplay = ({
                 myObjProfile={myObjProfile}
                 setmyObjProfile={setMyObjProfile}
                 id={index.toString()}
-                setopenDropdown={setopenOptions}
+                setopenDropdown={setOpenOptions}
                 openDropdown={openOptions}
                 label={e.label ?? ""}
                 isRequired={e.isRequired ? true : false}

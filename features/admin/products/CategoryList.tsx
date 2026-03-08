@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FiSearch, FiPlus } from "react-icons/fi";
 import {
   onlineStoreState,
@@ -13,13 +13,12 @@ import Modal from "shared/components/ui/Modal";
 
 function CategoryList() {
   const catalog = storeProductsState.use();
-  const [searchFilterValue, setsearchFilterValue] = useState<string>("");
+  const [searchFilterValue, setSearchFilterValue] = useState<string>("");
   const onlineStoreDetails = onlineStoreState.use();
-  const editMode = true;
-  const [addCategoryModal, setaddCategoryModal] = useState<
+  const [addCategoryModal, setAddCategoryModal] = useState<
     boolean | string | null
   >(false);
-  const [editCategoryModal, seteditCategoryModal] = useState<string | null>(
+  const [editCategoryModal, setEditCategoryModal] = useState<string | null>(
     null
   );
 
@@ -61,26 +60,13 @@ function CategoryList() {
     });
   };
 
-  useEffect(() => {
-    catalog.categories.map((category: string, index: number) => {
-      if (
-        category
-          .toLowerCase()
-          .includes(searchFilterValue.toLocaleLowerCase()) ||
-        !searchFilterValue
-      ) {
-        const getItem = document.getElementById(index.toString());
-        if (getItem) {
-          getItem.style.display = "flex";
-        }
-      } else {
-        const getItem = document.getElementById(index.toString());
-        if (getItem) {
-          getItem.style.display = "none";
-        }
-      }
-    });
-  }, [searchFilterValue]);
+  const filteredCategories = useMemo(() => {
+    if (!searchFilterValue) return catalog.categories;
+    const query = searchFilterValue.toLowerCase().trim();
+    return catalog.categories.filter((category) =>
+      category.toLowerCase().includes(query)
+    );
+  }, [catalog.categories, searchFilterValue]);
 
   return (
     <div style={styles.container}>
@@ -91,7 +77,7 @@ function CategoryList() {
             style={styles.searchProductBox}
             placeholder="Search"
             value={searchFilterValue}
-            onChange={(e) => setsearchFilterValue(e.target.value)}
+            onChange={(e) => setSearchFilterValue(e.target.value)}
           />
           <FiSearch
             style={{
@@ -118,18 +104,18 @@ function CategoryList() {
             <button
               className="admin-card"
               style={styles.addProductBtn}
-              onClick={() => setaddCategoryModal(true)}
+              onClick={() => setAddCategoryModal(true)}
             >
               <FiPlus style={styles.addProductPlusIcon} />
               <span style={styles.addNewItemTxt}>Add New Category</span>
             </button>
-            {catalog.categories.map((category) => (
-              <div key={category} id={category}>
+            {filteredCategories.map((category) => (
+              <div key={category}>
                 <CategoryOptionBox
                   category={category}
-                  editMode={editMode}
+                  editMode={true}
                   deleteCategory={() => confirmText(category)}
-                  seteditCategoryModal={seteditCategoryModal}
+                  seteditCategoryModal={setEditCategoryModal}
                 />
               </div>
             ))}
@@ -137,8 +123,8 @@ function CategoryList() {
         </div>
       </div>
       <Modal
-        isVisible={addCategoryModal ? true : false}
-        onBackdropPress={() => setaddCategoryModal(false)}
+        isVisible={!!addCategoryModal}
+        onBackdropPress={() => setAddCategoryModal(false)}
       >
         <div
           style={{
@@ -154,14 +140,14 @@ function CategoryList() {
           }}
         >
           <AddCategoryModal
-            setaddCategoryModal={setaddCategoryModal}
+            setaddCategoryModal={setAddCategoryModal}
             index={catalog.categories.length}
           />
         </div>
       </Modal>
       <Modal
-        isVisible={editCategoryModal ? true : false}
-        onBackdropPress={() => seteditCategoryModal(null)}
+        isVisible={!!editCategoryModal}
+        onBackdropPress={() => setEditCategoryModal(null)}
       >
         <div
           style={{
@@ -179,9 +165,9 @@ function CategoryList() {
           <AddCategoryModal
             setaddCategoryModal={(val) => {
               if (typeof val === "boolean" && !val) {
-                seteditCategoryModal(null);
+                setEditCategoryModal(null);
               } else {
-                setaddCategoryModal(val);
+                setAddCategoryModal(val);
               }
             }}
             index={catalog.categories.findIndex((e) => e === editCategoryModal)}

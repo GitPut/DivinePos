@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { posState, updatePosState } from "store/posState";
+import { shallowEqual } from "simpler-state";
 import { tablesState } from "store/appState";
 import { FiArrowLeft, FiUsers, FiClock } from "react-icons/fi";
 import { parseDate } from "utils/dateFormatting";
@@ -8,7 +9,14 @@ import { auth, db } from "services/firebase/config";
 import { cartState } from "store/appState";
 
 const TableCartHeader = () => {
-  const { activeTableId, activeTableSessionId, ongoingListState } = posState.use();
+  const { activeTableId, activeTableSessionId, ongoingListState } = posState.use(
+    (s) => ({
+      activeTableId: s.activeTableId,
+      activeTableSessionId: s.activeTableSessionId,
+      ongoingListState: s.ongoingListState,
+    }),
+    shallowEqual
+  );
   const tables = tablesState.use();
   const cart = cartState.use();
   const [elapsed, setElapsed] = useState("");
@@ -40,9 +48,6 @@ const TableCartHeader = () => {
   // Auto-save cart to pending order when cart changes
   useEffect(() => {
     if (!activeTableSessionId || !auth.currentUser) return;
-    // Store on window for TableFloorView to access when switching
-    (window as any).__currentCart = cart;
-
     const timeout = setTimeout(() => {
       const total = cart.reduce((sum, item) => {
         return sum + parseFloat(item.price || "0") * parseFloat(item.quantity || "1");
@@ -57,7 +62,7 @@ const TableCartHeader = () => {
           total: total.toFixed(2),
         })
         .catch(() => {});
-    }, 500);
+    }, 2000);
 
     return () => clearTimeout(timeout);
   }, [cart, activeTableSessionId]);

@@ -98,7 +98,6 @@ function AddProductModal({
       setnewProduct(existingProduct);
       setnewProductOptions(existingProduct.options);
       setcurrentImgUrl(existingProduct.imageUrl);
-      (window as any).__productData = existingProduct;
     }
   }, [addProductModal, existingProduct]);
 
@@ -173,18 +172,18 @@ function AddProductModal({
                   categories: catalog.categories,
                   products: copy.sort(customSort),
                 });
-                db.collection("users")
-                  .doc(auth.currentUser?.uid)
-                  .collection("products")
-                  .doc(newProductUseRef.id.toString())
-                  .set(newProductUseRef);
+                const imgBatch = db.batch();
+                imgBatch.set(
+                  db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()),
+                  newProductUseRef
+                );
                 if (onlineStoreDetails.onlineStoreSetUp) {
-                  db.collection("public")
-                    .doc(auth.currentUser?.uid)
-                    .collection("products")
-                    .doc(newProductUseRef.id.toString())
-                    .set(newProductUseRef);
+                  imgBatch.set(
+                    db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()),
+                    newProductUseRef
+                  );
                 }
+                imgBatch.commit();
               });
           });
       } else {
@@ -203,18 +202,18 @@ function AddProductModal({
           categories: catalog.categories,
           products: copy.sort(customSort),
         });
-        db.collection("users")
-          .doc(auth.currentUser?.uid)
-          .collection("products")
-          .doc(newProductUseRef.id.toString())
-          .set(newProductUseRef);
+        const updateBatch = db.batch();
+        updateBatch.set(
+          db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()),
+          newProductUseRef
+        );
         if (onlineStoreDetails.onlineStoreSetUp) {
-          db.collection("public")
-            .doc(auth.currentUser?.uid)
-            .collection("products")
-            .doc(newProductUseRef.id.toString())
-            .set(newProductUseRef);
+          updateBatch.set(
+            db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()),
+            newProductUseRef
+          );
         }
+        updateBatch.commit();
       }
     } else {
       newProduct.isTemplate = false;
@@ -229,18 +228,18 @@ function AddProductModal({
               .then((url) => {
                 newProduct.hasImage = true;
                 newProduct.imageUrl = url;
-                db.collection("users")
-                  .doc(auth.currentUser?.uid)
-                  .collection("products")
-                  .doc(newProduct.id?.toString())
-                  .set(newProduct);
+                const newImgBatch = db.batch();
+                newImgBatch.set(
+                  db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""),
+                  newProduct
+                );
                 if (onlineStoreDetails.onlineStoreSetUp) {
-                  db.collection("public")
-                    .doc(auth.currentUser?.uid)
-                    .collection("products")
-                    .doc(newProduct.id?.toString())
-                    .set(newProduct);
+                  newImgBatch.set(
+                    db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""),
+                    newProduct
+                  );
                 }
+                newImgBatch.commit();
                 setStoreProductsState({
                   categories: catalog.categories,
                   products: [...catalog.products, newProduct].sort(customSort),
@@ -248,18 +247,18 @@ function AddProductModal({
               });
           });
       } else {
-        db.collection("users")
-          .doc(auth.currentUser?.uid)
-          .collection("products")
-          .doc(newProduct.id?.toString())
-          .set(newProduct);
+        const newBatch = db.batch();
+        newBatch.set(
+          db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""),
+          newProduct
+        );
         if (onlineStoreDetails.onlineStoreSetUp) {
-          db.collection("public")
-            .doc(auth.currentUser?.uid)
-            .collection("products")
-            .doc(newProduct.id?.toString())
-            .set(newProduct);
+          newBatch.set(
+            db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""),
+            newProduct
+          );
         }
+        newBatch.commit();
         setStoreProductsState({
           categories: catalog.categories,
           products: [...catalog.products, newProduct].sort(customSort),
@@ -341,18 +340,18 @@ function AddProductModal({
                       copy.imageUrl = "";
                       copy.hasImage = false;
                       copy.id = Math.random().toString(36).substr(2, 9);
-                      db.collection("users")
-                        .doc(auth.currentUser?.uid)
-                        .collection("products")
-                        .doc(copy.id.toString())
-                        .set(copy);
+                      const dupBatch = db.batch();
+                      dupBatch.set(
+                        db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(copy.id.toString()),
+                        copy
+                      );
                       if (onlineStoreDetails.onlineStoreSetUp) {
-                        db.collection("public")
-                          .doc(auth.currentUser?.uid)
-                          .collection("products")
-                          .doc(copy.id.toString())
-                          .set(copy);
+                        dupBatch.set(
+                          db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(copy.id.toString()),
+                          copy
+                        );
                       }
+                      dupBatch.commit();
                       setStoreProductsState({
                         categories: catalog.categories,
                         products: [...catalog.products, copy],
