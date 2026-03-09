@@ -687,6 +687,26 @@ export const createCheckoutSession = async (
 // -------------------
 // 💳 STRIPE CUSTOMER PORTAL
 // -------------------
+// -------------------
+// 🗑️ SUPERADMIN: DELETE ACCOUNT
+// -------------------
+export const setUserAccountPlan = async (
+  uid: string,
+  plan: "trial" | "starter" | "professional"
+): Promise<void> => {
+  const result = await firebase.functions().httpsCallable("setAccountPlan")({ uid, plan });
+  if (!result.data?.success) {
+    throw new Error("Plan switch failed");
+  }
+};
+
+export const deleteUserAccount = async (uid: string): Promise<void> => {
+  const result = await firebase.functions().httpsCallable("deleteAccount")({ uid });
+  if (!result.data?.success) {
+    throw new Error("Deletion failed");
+  }
+};
+
 export const openStripePortal = (onError?: (msg: string) => void) => {
   firebase
     .functions()

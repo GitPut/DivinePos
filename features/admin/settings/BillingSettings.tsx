@@ -3,7 +3,7 @@ import { activePlanState, trialDetailsState } from "store/appState";
 import { createCheckoutSession, openStripePortal } from "services/firebase/functions";
 import { useAlert } from "react-alert";
 import { IoCheckmark } from "react-icons/io5";
-import loadingGif from "assets/loading.gif";
+import { parseDate } from "utils/dateFormatting";
 
 const STARTER_PRICE_ID = "price_1T8TIlCIw3L7DOwIDUpngIcI";
 const PROFESSIONAL_PRICE_ID = "price_1T8TJBCIw3L7DOwIlItWv4xo";
@@ -45,12 +45,11 @@ function BillingSettings() {
           ? "Free Trial"
           : "No Plan";
 
-  const trialEndDate = trialDetails.endDate
-    ? trialDetails.endDate.toLocaleDateString()
-    : null;
+  const parsedTrialEnd = trialDetails.endDate ? parseDate(trialDetails.endDate as any) : null;
+  const trialEndDate = parsedTrialEnd ? parsedTrialEnd.toLocaleDateString() : null;
 
   return (
-    <div style={{ height: "100%", width: "100%", overflow: "auto" }}>
+    <div style={styles.container}>
       <span style={styles.pageLbl}>Billing</span>
 
       {/* Current plan badge */}
@@ -94,15 +93,20 @@ function BillingSettings() {
           </div>
           {activePlan === "professional" && (
             <button
-              style={styles.switchPlanBtn}
+              style={{ ...styles.switchPlanBtn, opacity: loading ? 0.5 : 1 }}
               onClick={() => handleChangePlan("starter")}
               disabled={loading}
             >
-              {loading ? (
-                <img src={loadingGif} alt="loading" style={{ width: 18, height: 18 }} />
-              ) : (
-                "Switch to Starter"
-              )}
+              Switch to Starter
+            </button>
+          )}
+          {activePlan === "trial" && (
+            <button
+              style={{ ...styles.upgradePlanBtn, opacity: loading ? 0.5 : 1 }}
+              onClick={() => handleChangePlan("starter")}
+              disabled={loading}
+            >
+              Upgrade to Starter
             </button>
           )}
         </div>
@@ -137,15 +141,11 @@ function BillingSettings() {
           </div>
           {(activePlan === "starter" || activePlan === "trial") && (
             <button
-              style={styles.upgradePlanBtn}
+              style={{ ...styles.upgradePlanBtn, opacity: loading ? 0.5 : 1 }}
               onClick={() => handleChangePlan("professional")}
               disabled={loading}
             >
-              {loading ? (
-                <img src={loadingGif} alt="loading" style={{ width: 18, height: 18 }} />
-              ) : (
-                "Upgrade to Professional"
-              )}
+              Upgrade to Professional
             </button>
           )}
         </div>
@@ -153,12 +153,8 @@ function BillingSettings() {
 
       {/* Manage billing link */}
       <div style={styles.buttonsRow}>
-        <button style={styles.manageBillingBtn} onClick={handleOpenPortal} disabled={loading}>
-          {loading ? (
-            <img src={loadingGif} alt="loading" style={{ width: 20, height: 20 }} />
-          ) : (
-            "Manage Billing"
-          )}
+        <button style={{ ...styles.manageBillingBtn, opacity: loading ? 0.5 : 1 }} onClick={handleOpenPortal} disabled={loading}>
+          Manage Billing
         </button>
       </div>
 
@@ -184,19 +180,28 @@ function BillingSettings() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
+  container: {
+    height: "100%",
+    width: "100%",
+    overflow: "auto",
+    padding: 30,
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+  },
   pageLbl: {
     fontWeight: "700",
     fontSize: 24,
     color: "#1a1a1a",
     display: "block",
-    marginBottom: 24,
+    marginBottom: 8,
   },
   currentPlanRow: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 28,
   },
   currentPlanLabel: {
     fontSize: 15,
@@ -204,11 +209,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "500",
   },
   currentPlanBadge: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
     color: "#1e293b",
     backgroundColor: "#e2e8f0",
-    padding: "4px 14px",
+    padding: "5px 16px",
     borderRadius: 20,
   },
   trialDate: {
@@ -218,12 +223,13 @@ const styles: Record<string, React.CSSProperties> = {
   cardsRow: {
     display: "flex",
     flexDirection: "row",
-    gap: 20,
-    marginBottom: 28,
+    gap: 24,
+    marginBottom: 32,
   },
   planCard: {
-    width: 260,
-    padding: 24,
+    flex: 1,
+    maxWidth: 320,
+    padding: 28,
     borderRadius: 16,
     border: "2px solid #e2e8f0",
     backgroundColor: "#fff",
@@ -237,14 +243,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   activeBadge: {
     position: "absolute" as const,
-    top: 12,
-    right: 12,
+    top: 14,
+    right: 14,
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     backgroundColor: "#0891b2",
-    padding: "3px 10px",
+    padding: "4px 12px",
     borderRadius: 12,
   },
   activeBadgeText: {
@@ -262,7 +268,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "baseline",
     gap: 2,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   planPrice: {
     fontWeight: "700",
@@ -274,7 +280,8 @@ const styles: Record<string, React.CSSProperties> = {
   featuresContainer: {
     display: "flex",
     flexDirection: "column",
-    gap: 10,
+    gap: 12,
+    flex: 1,
   },
   featureRow: {
     display: "flex",
@@ -287,8 +294,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "500",
   },
   switchPlanBtn: {
-    marginTop: 20,
-    padding: "10px 20px",
+    marginTop: 24,
+    padding: "11px 20px",
     backgroundColor: "#f1f5f9",
     color: "#334155",
     fontWeight: "600",
@@ -298,8 +305,8 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   upgradePlanBtn: {
-    marginTop: 20,
-    padding: "10px 20px",
+    marginTop: 24,
+    padding: "11px 20px",
     backgroundColor: "#1470ef",
     color: "#fff",
     fontWeight: "600",
@@ -312,7 +319,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "row",
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   manageBillingBtn: {
     padding: "12px 28px",

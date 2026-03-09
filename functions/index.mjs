@@ -54,6 +54,94 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   }
 });
 
+// ─── Superadmin: Delete a user account and all their data ───
+const SUPERADMIN_UID = "0IV6GKQazUcp8hqoTsDG9dXIqrA3";
+
+export const deleteAccount = functions.https.onCall(async (data, context) => {
+  // Verify caller is superadmin
+  if (!context.auth || context.auth.uid !== SUPERADMIN_UID) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const targetUid = data.uid;
+  if (!targetUid || typeof targetUid !== "string") {
+    throw new functions.https.HttpsError("invalid-argument", "Missing uid");
+  }
+
+  // Prevent self-deletion
+  if (targetUid === context.auth.uid) {
+    throw new functions.https.HttpsError("invalid-argument", "Cannot delete own account");
+  }
+
+  try {
+    // Delete all user data (doc + all subcollections recursively)
+    await admin.firestore().recursiveDelete(db.collection("users").doc(targetUid));
+
+    // Delete public store data
+    await admin.firestore().recursiveDelete(db.collection("public").doc(targetUid));
+
+    // Delete Firebase Auth account
+    await admin.auth().deleteUser(targetUid);
+
+    return { success: true };
+  } catch (err) {
+    console.error("deleteAccount failed:", err);
+    throw new functions.https.HttpsError("internal", err.message || "Deletion failed");
+  }
+});
+
+// ─── Superadmin: Switch a user's account plan ───
+export const setAccountPlan = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.uid !== SUPERADMIN_UID) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const { uid, plan } = data;
+  if (!uid || !["trial", "starter", "professional"].includes(plan)) {
+    throw new functions.https.HttpsError("invalid-argument", "Invalid uid or plan");
+  }
+
+  try {
+    const userRef = db.collection("users").doc(uid);
+
+    // Cancel all existing subscriptions
+    const subsSnap = await userRef.collection("subscriptions").get();
+    const batch = db.batch();
+    subsSnap.forEach((doc) => {
+      batch.update(doc.ref, { status: "canceled" });
+    });
+    await batch.commit();
+
+    if (plan === "trial") {
+      // Set free trial for 31 days
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 31);
+      await userRef.update({
+        freeTrial: admin.firestore.Timestamp.fromDate(trialEnd),
+      });
+    } else {
+      // Remove free trial if exists
+      await userRef.update({
+        freeTrial: admin.firestore.FieldValue.delete(),
+      });
+
+      // Create active subscription doc
+      const role = plan === "starter" ? "Starter Plan" : "Professional Plan";
+      await userRef.collection("subscriptions").add({
+        role,
+        status: "active",
+        created: admin.firestore.FieldValue.serverTimestamp(),
+        metadata: { source: "superadmin" },
+      });
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("setAccountPlan failed:", err);
+    throw new functions.https.HttpsError("internal", err.message || "Plan switch failed");
+  }
+});
+
 export const sendCustomEmail = functions.https.onRequest((req, res) => {
   //for testing purposes
   // console.log(

@@ -114,6 +114,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 16,
   },
   searchContainer: {
+    display: "flex",
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
@@ -137,6 +138,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
   },
   tableHeader: {
+    display: "flex",
     flexDirection: "row",
     padding: "12px 16px",
     borderBottom: "1px solid #eee",
@@ -150,13 +152,17 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: 0.5,
   },
   tableRow: {
+    display: "flex",
     flexDirection: "row",
     alignItems: "center",
     padding: "14px 16px",
-    borderBottom: "1px solid #f0f0f0",
     cursor: "pointer",
     transition: "background-color 0.15s",
     textAlign: "left",
+    width: "100%",
+    background: "none",
+    border: "none",
+    borderBottom: "1px solid #f0f0f0",
   },
   cell: {
     fontSize: 14,

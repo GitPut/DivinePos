@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory } from "react-router-dom";
 import { db } from "services/firebase/config";
-import { FiArrowLeft } from "react-icons/fi";
+import { deleteUserAccount, setUserAccountPlan } from "services/firebase/functions";
+import { FiArrowLeft, FiTrash2 } from "react-icons/fi";
 import { TransListStateItem } from "types";
 import { parseDate } from "utils/dateFormatting";
+import Modal from "shared/components/ui/Modal";
 
 interface AccountData {
   ownerName: string;
@@ -30,6 +32,10 @@ const AccountDetail: React.FC<RouteComponentProps<{ uid: string }>> = ({
   const history = useHistory();
   const [data, setData] = useState<AccountData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [switchingPlan, setSwitchingPlan] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -185,6 +191,37 @@ const AccountDetail: React.FC<RouteComponentProps<{ uid: string }>> = ({
             label="Free Trial"
             value={data.hasFreeTrial ? "Active" : "No"}
           />
+          <div style={styles.planSwitchRow}>
+            {(["trial", "starter", "professional"] as const).map((plan) => {
+              const labels = { trial: "Trial", starter: "Starter", professional: "Professional" };
+              const isCurrent =
+                (plan === "trial" && data.hasFreeTrial && data.subscriptionStatus !== "Active") ||
+                (plan === "starter" && data.subscriptionRole === "Starter Plan" && data.subscriptionStatus === "Active") ||
+                (plan === "professional" && data.subscriptionRole === "Professional Plan" && data.subscriptionStatus === "Active");
+              return (
+                <button
+                  key={plan}
+                  style={{
+                    ...styles.planBtn,
+                    ...(isCurrent ? styles.planBtnActive : {}),
+                  }}
+                  disabled={isCurrent || switchingPlan !== null}
+                  onClick={async () => {
+                    setSwitchingPlan(plan);
+                    try {
+                      await setUserAccountPlan(uid, plan);
+                      window.location.reload();
+                    } catch (e: any) {
+                      alert(e?.message || "Failed to switch plan");
+                      setSwitchingPlan(null);
+                    }
+                  }}
+                >
+                  {switchingPlan === plan ? "..." : labels[plan]}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Stats */}
@@ -252,6 +289,77 @@ const AccountDetail: React.FC<RouteComponentProps<{ uid: string }>> = ({
           </div>
         )}
       </div>
+
+      {/* Delete Account */}
+      <div style={{ ...styles.card, marginTop: 20, borderTop: "2px solid #ff3b30" }}>
+        <span style={{ ...styles.cardTitle, color: "#ff3b30" }}>Danger Zone</span>
+        <span style={{ fontSize: 13, color: "#666", marginBottom: 12 }}>
+          Permanently delete this account and all associated data. This action cannot be undone.
+        </span>
+        <button
+          style={styles.deleteBtn}
+          onClick={() => setShowDeleteModal(true)}
+        >
+          <FiTrash2 size={16} />
+          <span style={{ marginLeft: 8 }}>Delete Account</span>
+        </button>
+      </div>
+
+      <Modal
+        isVisible={showDeleteModal}
+        onBackdropPress={() => {
+          setShowDeleteModal(false);
+          setDeleteConfirmText("");
+        }}
+      >
+        <div style={styles.modalContent}>
+          <span style={styles.modalTitle}>Delete Account</span>
+          <span style={styles.modalDesc}>
+            This will permanently delete <strong>{data.storeName}</strong> and all
+            their data including products, customers, transactions, and their
+            Firebase Auth account.
+          </span>
+          <span style={styles.modalDesc}>
+            Type <strong>{data.storeName}</strong> to confirm:
+          </span>
+          <input
+            style={styles.modalInput}
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder={data.storeName}
+          />
+          <div style={styles.modalBtnRow}>
+            <button
+              style={styles.modalCancelBtn}
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteConfirmText("");
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              style={{
+                ...styles.modalDeleteBtn,
+                opacity: deleteConfirmText === data.storeName && !deleting ? 1 : 0.4,
+              }}
+              disabled={deleteConfirmText !== data.storeName || deleting}
+              onClick={async () => {
+                setDeleting(true);
+                try {
+                  await deleteUserAccount(uid);
+                  history.push("/superadmin/accounts");
+                } catch (e: any) {
+                  alert(e?.message || "Failed to delete account");
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? "Deleting..." : "Delete Forever"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -349,6 +457,96 @@ const styles: Record<string, React.CSSProperties> = {
   transCell: {
     fontSize: 13,
     color: "#333",
+  },
+  planSwitchRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  planBtn: {
+    padding: "6px 14px",
+    borderRadius: 6,
+    border: "1px solid #ddd",
+    backgroundColor: "#f5f5f5",
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#555",
+    cursor: "pointer",
+  },
+  planBtnActive: {
+    backgroundColor: "#1c294e",
+    color: "#fff",
+    borderColor: "#1c294e",
+    cursor: "default",
+  },
+  deleteBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "10px 20px",
+    backgroundColor: "#ff3b30",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
+    width: "fit-content",
+  },
+  modalContent: {
+    padding: 24,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    maxWidth: 420,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#ff3b30",
+  },
+  modalDesc: {
+    fontSize: 14,
+    color: "#555",
+    lineHeight: "1.5",
+  },
+  modalInput: {
+    padding: "10px 12px",
+    border: "1px solid #ddd",
+    borderRadius: 8,
+    fontSize: 14,
+  },
+  modalBtnRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+    justifyContent: "flex-end",
+  },
+  modalCancelBtn: {
+    padding: "10px 20px",
+    backgroundColor: "#f0f0f0",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
+    color: "#333",
+  },
+  modalDeleteBtn: {
+    padding: "10px 20px",
+    backgroundColor: "#ff3b30",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
   },
   loadingContainer: {
     alignItems: "center",
