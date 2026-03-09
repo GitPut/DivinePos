@@ -53,12 +53,7 @@ function Signup() {
       }}
       key={"background"}
     >
-      <div
-        style={{
-          ...styles.scrollContainer,
-          overflow: "auto",
-        }}
-      >
+      <div style={styles.scrollContainer}>
         <div
           style={{
             ...styles.headerContainer,
@@ -202,21 +197,21 @@ function Signup() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
-    height: "100%",
+    minHeight: "100%",
     width: "100%",
     display: "flex",
     flexDirection: "column",
+    overflow: "auto",
   },
   scrollContainer: {
-    height: "100%",
     width: "100%",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
+    flex: 1,
   },
   mainPageContainer: {
     width: "100%",
@@ -266,7 +261,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   logInContainer: {
     width: 423,
-    height: 408,
     justifyContent: "space-between",
     alignItems: "center",
     display: "flex",

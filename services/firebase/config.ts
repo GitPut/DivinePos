@@ -30,7 +30,7 @@ export const storage = firebase.storage();
 
 // This account receives a fixed 3 extra devices for internal use.
 // To change this, update the user's Firestore document instead.
-export const OWNER_OVERRIDE_UID = "J6rAf2opwnSKAhefbOZW6HJdx1h2";
+export const OWNER_OVERRIDE_UID = "0IV6GKQazUcp8hqoTsDG9dXIqrA3";
 
 export const STRIPE_PUBLIC_KEY =
   "pk_live_51MHqrvCIw3L7DOwI0ol9CTCSH7mQXTLKpxTWKzmwOY1MdKwaYwhdJq6WTpkWdBeql3sS44JmybynlRnaO2nSa1FK001dHiEOZO";

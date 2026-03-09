@@ -32,6 +32,7 @@ import { CustomerProp, Device, Employee, Ingredient, ProductProp, TransListState
 import useInterval from "shared/hooks/useInterval";
 import { prefetchImage } from "shared/components/ui/ProductImage";
 import { parseDate } from "utils/dateFormatting";
+import { logSystemEvent } from "services/firebase/systemLogging";
 import Loader from "shared/components/ui/Loader";
 const NavigationContent = React.lazy(() => import("./NavigationContent"));
 const PublicRoute = React.lazy(() => import("./PublicRoute"));
@@ -228,6 +229,12 @@ const AppRouter = () => {
       }
 
       localStorage.setItem("savedUserState", "true");
+
+      // Log login event (once per browser session to avoid duplicates on refresh)
+      if (!sessionStorage.getItem("loginLogged")) {
+        logSystemEvent("login");
+        sessionStorage.setItem("loginLogged", "true");
+      }
 
       try {
         const userRef = db.collection("users").doc(user.uid);

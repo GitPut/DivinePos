@@ -33,6 +33,27 @@ let transporter = nodemailer.createTransport({
   },
 });
 
+// ─── Auth Trigger: Log new user signups ───
+export const onUserCreated = functions.auth.user().onCreate(async (user) => {
+  try {
+    await db.collection("systemLogs").add({
+      type: "signup",
+      uid: user.uid,
+      email: user.email || null,
+      displayName: user.displayName || null,
+      metadata: {
+        phoneNumber: user.phoneNumber || null,
+        provider: user.providerData?.[0]?.providerId || "email",
+      },
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      userAgent: "server-trigger",
+      url: "server-trigger",
+    });
+  } catch (err) {
+    console.error("onUserCreated: failed to log signup", err);
+  }
+});
+
 export const sendCustomEmail = functions.https.onRequest((req, res) => {
   //for testing purposes
   // console.log(

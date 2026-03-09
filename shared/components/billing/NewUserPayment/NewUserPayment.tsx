@@ -65,13 +65,12 @@ const NewUserPayment = () => {
     });
 
     if (planType === "freeTrial") {
-      // Get today's date
       const tomorrow = new Date();
-      // Change the date by adding 1 to it (tomorrow + 1 = tomorrow)
       tomorrow.setDate(tomorrow.getDate() + 31);
-      // return yyyy-mm-dd format
-      updateFreeTrial(tomorrow);
+      await updateFreeTrial(tomorrow);
       SendEmail();
+      // Full reload so Router re-bootstraps and sees the freeTrial field
+      window.location.href = "/pos";
     } else {
       let priceId;
       if (planType === "starter") {

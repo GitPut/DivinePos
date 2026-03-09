@@ -9,6 +9,7 @@ import {
   TransListStateItem,
 } from "types";
 import { auth, db, STRIPE_PUBLIC_KEY } from "./config";
+import { logSystemEvent } from "./systemLogging";
 import { loadStripe } from "@stripe/stripe-js";
 import firebase from "firebase/compat/app";
 import { Timestamp } from "firebase/firestore";
@@ -609,8 +610,10 @@ export const updateFreeTrial = async (endDate: Date | null) => {
 // 🚪 LOGOUT
 // -------------------
 export const logout = async () => {
+  await logSystemEvent("logout");
   localStorage.removeItem("isAuthedBackend");
   localStorage.removeItem("savedUserState");
+  sessionStorage.removeItem("loginLogged");
   await auth.signOut();
   window.location.href = "https://divinepos.com";
 };
