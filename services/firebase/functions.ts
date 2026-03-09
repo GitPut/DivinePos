@@ -220,10 +220,15 @@ export const updateTransList = async (receipt: Partial<TransListStateItem>) => {
     .doc(userId)
     .collection("transList");
 
-  const newReceipt = {
+  const newReceipt: Record<string, any> = {
     ...receipt,
     dateCompleted: firebase.firestore.Timestamp.now(),
   };
+
+  // Firestore does not allow undefined values
+  Object.keys(newReceipt).forEach((key) => {
+    if (newReceipt[key] === undefined) delete newReceipt[key];
+  });
 
   const docRef = await transListRef.add(newReceipt);
   await updateStats(userId, newReceipt);
