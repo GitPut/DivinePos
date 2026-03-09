@@ -1,6 +1,7 @@
 import React from "react";
 import { Route } from "react-router-dom";
 import { TrialDetailsStateProps } from "types";
+import { auth, OWNER_OVERRIDE_UID } from "services/firebase/config";
 
 const PaymentUpdateNotification = React.lazy(
   () => import("shared/components/billing/PaymentUpdateNotification")
@@ -26,6 +27,13 @@ const NavigationContent = ({
   isSubscribed,
   trialDetails,
 }: NavigationContentProps) => {
+  const isSuperAdmin = auth.currentUser?.uid === OWNER_OVERRIDE_UID;
+
+  // Superadmin bypasses all billing gates
+  if (isSuperAdmin) {
+    return <Route path="/" component={AuthRoute} />;
+  }
+
   if (trialDetails.hasEnded && !isSubscribed && !isNewUser) {
     return <TrialEnded />;
   } else if (isNewUser) {

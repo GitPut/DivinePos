@@ -5,6 +5,7 @@ import Logo from "assets/dpos-logo-black.png";
 import { SlLogout } from "react-icons/sl";
 import { logout, createCheckoutSession } from "services/firebase/functions";
 import { useAlert } from "react-alert";
+import { FiPhone, FiMail } from "react-icons/fi";
 
 interface PaymentUpdateNotificationProps {
   isCanceled: boolean;
@@ -43,88 +44,95 @@ const PaymentUpdateNotification = ({
   if (isCanceled) {
     return (
       <div style={styles.container}>
-        <div style={styles.headerContainer}>
-          <div style={{ flexDirection: "row", display: "flex", alignItems: "center" }}>
-            <button
-              style={{
-                height: 50,
-                width: 50,
-                borderRadius: 25,
-                justifyContent: "center",
-                alignItems: "center",
-                display: "flex",
-                backgroundColor: "#F5F5F5",
-                marginRight: 20,
-                border: "none",
-                cursor: "pointer",
-              }}
-              onClick={logout}
-            >
-              <SlLogout size={32} color="black" />
-            </button>
-            <img
-              src={Logo}
-              alt=""
-              style={styles.logo}
-              key={"logo"}
-            />
+        <div style={styles.topBar}>
+          <img src={Logo} alt="Divine POS" style={styles.logo} />
+          <button style={styles.logoutBtn} onClick={logout}>
+            <SlLogout size={18} color="#64748b" />
+            <span style={styles.logoutText}>Log Out</span>
+          </button>
+        </div>
+
+        <div style={styles.content}>
+          <div style={styles.badge}>
+            <span style={styles.badgeText}>Subscription Canceled</span>
           </div>
-          <div style={styles.attentionWrapper}>
-            <span style={styles.attentionNeeded}>ATTENTION NEEDED</span>
+
+          <span style={styles.heading}>We hate to see you go</span>
+          <span style={styles.subheading}>
+            If there's a feature that's missing or something you'd like improved,
+            let us know — we'd love to make it right.
+          </span>
+
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>Resubscribe to Divine POS</span>
+            <span style={styles.cardDesc}>
+              Get full access to your store again with plans starting at just
+              $29/month.
+            </span>
+            <button style={styles.resubscribeBtn} onClick={sendToCheckout}>
+              Resubscribe for $29/month
+            </button>
+          </div>
+
+          <div style={styles.contactSection}>
+            <span style={styles.contactTitle}>Need help? We're here for you.</span>
+            <div style={styles.contactRow}>
+              <div style={styles.contactItem}>
+                <FiPhone size={16} color="#64748b" />
+                <span style={styles.contactText}>(226) 600-5925</span>
+              </div>
+              <div style={styles.contactItem}>
+                <FiMail size={16} color="#64748b" />
+                <span style={styles.contactText}>Support@DivinePos.com</span>
+              </div>
+            </div>
           </div>
         </div>
-        <span style={styles.txt1}>We&apos;re sad to see you go :(</span>
-        <span style={styles.txt2}>
-          Please let us make this right! If theres a feature that missing or
-          something you dont like about the software, we can change that.
-        </span>
-        <span style={styles.txt3}>
-          Resubscribe to have access of your store again starting at $49/month.
-        </span>
-        <button
-          style={{ ...styles.updateBtn, width: 450 }}
-          onClick={sendToCheckout}
-        >
-          <span style={styles.updateBilling}>Resubscribe for $49/month</span>
-        </button>
-        <span style={styles.txt4}>
-          Please call (226) 600-5925 or email us at Support@DivinePos.com so
-          that we can solve the problem you had
-        </span>
       </div>
     );
   } else {
     return (
       <div style={styles.container}>
-        <div style={styles.headerContainer}>
-          <img
-            src={Logo}
-            alt=""
-            style={styles.logo}
-            key={"logo"}
-          />
-          <div style={styles.attentionWrapper}>
-            <span style={styles.attentionNeeded}>ATTENTION NEEDED</span>
+        <div style={styles.topBar}>
+          <img src={Logo} alt="Divine POS" style={styles.logo} />
+        </div>
+
+        <div style={styles.content}>
+          <div style={{ ...styles.badge, backgroundColor: "#fef2f2", borderColor: "#fecaca" }}>
+            <span style={{ ...styles.badgeText, color: "#dc2626" }}>Payment Issue</span>
+          </div>
+
+          <span style={styles.heading}>There was an issue with your payment</span>
+          <span style={styles.subheading}>
+            This can happen if your billing details don't match the card on file.
+            Please check with your bank or update your payment method below.
+          </span>
+
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>Update your billing details</span>
+            <span style={styles.cardDesc}>
+              We don't want your store to have any downtime — please update your
+              payment details so we can keep things running smoothly.
+            </span>
+            <button style={styles.resubscribeBtn} onClick={Manage}>
+              Update Billing
+            </button>
+          </div>
+
+          <div style={styles.contactSection}>
+            <span style={styles.contactTitle}>Need help? We're here for you.</span>
+            <div style={styles.contactRow}>
+              <div style={styles.contactItem}>
+                <FiPhone size={16} color="#64748b" />
+                <span style={styles.contactText}>(226) 600-5925</span>
+              </div>
+              <div style={styles.contactItem}>
+                <FiMail size={16} color="#64748b" />
+                <span style={styles.contactText}>Support@DivinePos.com</span>
+              </div>
+            </div>
           </div>
         </div>
-        <span style={styles.txt1}>
-          Unfortunualy there was issue with your payment
-        </span>
-        <span style={styles.txt2}>
-          This can occur for multiple reasons; if your billing details dont
-          match the card attached. Have a look with your credit/debit provider
-        </span>
-        <span style={styles.txt3}>
-          We dont your store to have any down time so please have a look at
-          updating the details.
-        </span>
-        <button style={styles.updateBtn} onClick={Manage}>
-          <span style={styles.updateBilling}>UPDATE BILLING</span>
-        </button>
-        <span style={styles.txt4}>
-          If. you have any questions or need help please call (226) 600-5925 or
-          email us at Support@DivinePos.com
-        </span>
       </div>
     );
   }
@@ -134,86 +142,140 @@ export default PaymentUpdateNotification;
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    alignItems: "center",
-    justifyContent: "space-around",
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
     width: "100%",
     height: "100%",
-    paddingBottom: 50,
+    backgroundColor: "#f8fafc",
+    overflow: "auto",
   },
-  headerContainer: {
-    width: "90%",
-    height: 90,
-    borderBottom: "1px solid rgba(170,164,164,1)",
-    flexDirection: "row",
+  topBar: {
+    width: "100%",
+    maxWidth: 640,
     display: "flex",
+    flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingBottom: 25,
+    padding: "28px 0 20px",
+    borderBottom: "1px solid #e2e8f0",
   },
   logo: {
-    width: 220,
-    height: 85,
+    height: 44,
     objectFit: "contain",
   },
-  attentionWrapper: {
-    width: 248,
-    height: 64,
-    backgroundColor: "#ffed95",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+  logoutBtn: {
     display: "flex",
-  },
-  attentionNeeded: {
-    fontWeight: "700",
-    color: "#c2a61f",
-    fontSize: 22,
-  },
-  txt1: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 25,
-    width: 792,
-    height: 29,
-    display: "block",
-  },
-  txt2: {
-    color: "#121212",
-    fontSize: 22,
-    width: 792,
-    height: 73,
-    display: "block",
-  },
-  updateBtn: {
-    width: 326,
-    height: 90,
-    backgroundColor: "#7c2bfe",
-    borderRadius: 10,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    display: "flex",
-    border: "none",
+    gap: 8,
+    padding: "8px 16px",
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
     cursor: "pointer",
   },
-  updateBilling: {
+  logoutText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#64748b",
+  },
+  content: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    width: "100%",
+    maxWidth: 640,
+    padding: "48px 0 60px",
+    gap: 20,
+  },
+  badge: {
+    backgroundColor: "#fffbeb",
+    border: "1px solid #fde68a",
+    borderRadius: 20,
+    padding: "6px 18px",
+    marginBottom: 4,
+  },
+  badgeText: {
+    fontSize: 13,
     fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 25,
+    color: "#b45309",
+    letterSpacing: 0.3,
   },
-  txt3: {
-    color: "#121212",
-    fontSize: 22,
-    width: 792,
-    height: 73,
-    display: "block",
+  heading: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#0f172a",
+    textAlign: "center",
   },
-  txt4: {
-    color: "#121212",
-    fontSize: 22,
-    width: 792,
-    height: 73,
-    display: "block",
+  subheading: {
+    fontSize: 16,
+    color: "#64748b",
+    textAlign: "center",
+    lineHeight: "1.6",
+    maxWidth: 500,
+  },
+  card: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    border: "1px solid #e2e8f0",
+    padding: "32px 28px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 14,
+    marginTop: 12,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  cardDesc: {
+    fontSize: 15,
+    color: "#64748b",
+    textAlign: "center",
+    lineHeight: "1.5",
+    maxWidth: 440,
+  },
+  resubscribeBtn: {
+    marginTop: 8,
+    padding: "14px 36px",
+    backgroundColor: "#1470ef",
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+    border: "none",
+    borderRadius: 12,
+    cursor: "pointer",
+  },
+  contactSection: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 16,
+  },
+  contactTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#94a3b8",
+  },
+  contactRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 24,
+  },
+  contactItem: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  contactText: {
+    fontSize: 14,
+    color: "#64748b",
+    fontWeight: "500",
   },
 };
