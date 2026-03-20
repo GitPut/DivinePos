@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import ProductOptionBox from "./components/ProductOptionBox";
-import { FiSearch, FiPlus } from "react-icons/fi";
+import { FiSearch, FiPlus, FiLayers } from "react-icons/fi";
 import {
   onlineStoreState,
   updateStoreProductsState,
@@ -31,7 +31,7 @@ function ProductList() {
       title: "Are you sure?",
       text: "You won't be able to revert this!",
       showCancelButton: true,
-      confirmButtonColor: "#2b3659",
+      confirmButtonColor: "#1470ef",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     }).then(function (t) {
@@ -39,7 +39,7 @@ function ProductList() {
         Swal.fire({
           title: "Deleted!",
           text: "Your product has been deleted.",
-          confirmButtonColor: "#2b3659",
+          confirmButtonColor: "#1470ef",
         });
         const localCatalog = structuredClone(catalog);
         if (localCatalog.products.length > 1) {
@@ -69,49 +69,83 @@ function ProductList() {
   const filteredProducts = useMemo(() => {
     const query = searchFilterValue.toLowerCase().trim();
     return catalog.products.filter((product) => {
-      const matchesCategory = !selectedCategory || product.category === selectedCategory;
-      const matchesSearch = !query || product.name.toLowerCase().includes(query);
+      const matchesCategory =
+        !selectedCategory || product.category === selectedCategory;
+      const matchesSearch =
+        !query || product.name.toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
     });
   }, [catalog.products, selectedCategory, searchFilterValue]);
 
   return (
     <div style={styles.container}>
-      <div style={styles.topRow}>
-        <span style={styles.productManagementTxt}>Product Management</span>
-        <div style={{ width: "60%", position: "relative" }}>
-          <input
-            style={styles.searchProductBox}
-            placeholder="Search"
-            value={searchFilterValue}
-            onChange={(e) => setSearchFilterValue(e.target.value)}
-          />
-          <FiSearch
-            style={{
-              color: "grey",
-              fontSize: 20,
-              position: "absolute",
-              top: 5,
-              right: 5,
-            }}
-          />
+      {/* Header */}
+      <div style={styles.headerRow}>
+        <div>
+          <span style={styles.title}>Product Management</span>
+          <span style={styles.subtitle}>
+            {catalog.products.length} product
+            {catalog.products.length !== 1 ? "s" : ""} in your menu
+          </span>
         </div>
-        <div style={{ width: 181 }} />
+        <div style={styles.headerActions}>
+          <div style={styles.searchWrap}>
+            <FiSearch size={16} color="#94a3b8" style={styles.searchIcon} />
+            <input
+              style={styles.searchInput}
+              placeholder="Search products..."
+              value={searchFilterValue}
+              onChange={(e) => setSearchFilterValue(e.target.value)}
+            />
+          </div>
+          <button
+            style={styles.templateBtn}
+            onClick={() => setProductTemplatesModalVisible(true)}
+          >
+            <FiLayers size={15} color="#475569" />
+            <span style={styles.templateBtnTxt}>Templates</span>
+          </button>
+          <button
+            style={styles.addBtn}
+            onClick={() => setAddProductModal(true)}
+          >
+            <FiPlus size={16} color="#fff" />
+            <span style={styles.addBtnTxt}>Add Product</span>
+          </button>
+        </div>
       </div>
-      <div style={styles.categoriesScrollView}>
-        <div style={{ display: "flex", flexDirection: "row", overflow: "auto", width: "100%" }}>
-          {catalog.categories.map((category, index) => (
-            <button
-              key={index}
+
+      {/* Category Filter */}
+      {catalog.categories.length > 0 && (
+        <div style={styles.categoryRow}>
+          <button
+            style={{
+              ...styles.categoryPill,
+              ...(selectedCategory === null
+                ? styles.categoryPillActive
+                : {}),
+            }}
+            onClick={() => setSelectedCategory(null)}
+          >
+            <span
               style={{
-                marginRight: 35,
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                borderBottom: selectedCategory === category
-                  ? "2px solid black"
-                  : "2px solid grey",
+                ...styles.categoryPillTxt,
+                ...(selectedCategory === null
+                  ? styles.categoryPillTxtActive
+                  : {}),
+              }}
+            >
+              All
+            </span>
+          </button>
+          {catalog.categories.map((category) => (
+            <button
+              key={category}
+              style={{
+                ...styles.categoryPill,
+                ...(selectedCategory === category
+                  ? styles.categoryPillActive
+                  : {}),
               }}
               onClick={() =>
                 setSelectedCategory((prev) =>
@@ -121,8 +155,10 @@ function ProductList() {
             >
               <span
                 style={{
-                  ...styles.categoryOpt1Txt,
-                  color: selectedCategory === category ? "black" : "grey",
+                  ...styles.categoryPillTxt,
+                  ...(selectedCategory === category
+                    ? styles.categoryPillTxtActive
+                    : {}),
                 }}
               >
                 {category}
@@ -130,48 +166,48 @@ function ProductList() {
             </button>
           ))}
         </div>
-      </div>
+      )}
+
+      {/* Product Grid */}
       <div style={styles.scrollArea}>
-        <div style={{ padding: "0 0 20px 0" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
-              gap: 20,
-              width: "100%",
-            }}
-          >
-            <button
-              className="admin-card"
-              style={styles.addProductBtn}
-              onClick={() => setAddProductModal(true)}
-            >
-              <FiPlus style={styles.addProductPlusIcon} />
-              <span style={styles.addNewItemTxt}>Add New Item</span>
-              <span style={{ color: "#999", fontSize: 13 }}>or</span>
-              <button
-                style={styles.templateBtn}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setProductTemplatesModalVisible(true);
-                }}
-              >
-                <span style={styles.templatesBtnLbl}>Choose Template</span>
-              </button>
-            </button>
+        {filteredProducts.length > 0 ? (
+          <div style={styles.grid}>
             {filteredProducts.map((product) => (
-              <div key={product.id}>
-                <ProductOptionBox
-                  product={product}
-                  editMode={true}
-                  deleteProduct={() => confirmText(product.id)}
-                  setexistingProduct={setExistingProduct}
-                />
-              </div>
+              <ProductOptionBox
+                key={product.id}
+                product={product}
+                editMode={true}
+                deleteProduct={() => confirmText(product.id)}
+                setexistingProduct={setExistingProduct}
+              />
             ))}
           </div>
-        </div>
+        ) : (
+          <div style={styles.emptyState}>
+            <span style={styles.emptyTitle}>
+              {searchFilterValue || selectedCategory
+                ? "No products found"
+                : "No products yet"}
+            </span>
+            <span style={styles.emptySubtitle}>
+              {searchFilterValue || selectedCategory
+                ? "Try a different search or category"
+                : "Add your first product to get started"}
+            </span>
+            {!searchFilterValue && !selectedCategory && (
+              <button
+                style={styles.emptyAddBtn}
+                onClick={() => setAddProductModal(true)}
+              >
+                <FiPlus size={16} color="#fff" />
+                <span style={styles.addBtnTxt}>Add Product</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Add/Edit Product Modal */}
       <Modal
         isVisible={!!(addProductModal || existingProduct)}
         onBackdropPress={() => {
@@ -179,19 +215,7 @@ function ProductList() {
           setExistingProduct(null);
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            height: "100%",
-            width: "100%",
-            position: "absolute",
-            left: 0,
-            top: 0,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <div style={styles.modalWrap}>
           <AddProductModal
             addProductModal={addProductModal}
             setaddProductModal={setAddProductModal}
@@ -202,23 +226,13 @@ function ProductList() {
           />
         </div>
       </Modal>
+
+      {/* Templates Modal */}
       <Modal
         isVisible={productTemplatesModalVisible}
         onBackdropPress={() => setProductTemplatesModalVisible(false)}
       >
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            height: "100%",
-            width: "100%",
-            position: "absolute",
-            left: 0,
-            top: 0,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <div style={styles.modalWrap}>
           <ProductTemplatesModal
             setproductTemplatesModalVisible={setProductTemplatesModalVisible}
             setexistingProduct={setExistingProduct}
@@ -234,92 +248,181 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "column",
-    flex: 1,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    width: "100%",
+    height: "100%",
+    padding: 30,
+    boxSizing: "border-box",
     overflow: "hidden",
-    minHeight: 0,
   },
-  topRow: {
-    width: "95%",
+  headerRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 20,
+    flexShrink: 0,
+    flexWrap: "wrap",
+    gap: 16,
+  },
+  title: {
+    fontWeight: "700",
+    fontSize: 24,
+    color: "#0f172a",
+    display: "block",
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 4,
+    display: "block",
+  },
+  headerActions: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 25,
-    marginBottom: 25,
+    gap: 10,
   },
-  scrollArea: {
-    flex: 1,
-    width: "95%",
-    overflow: "auto",
-    minHeight: 0,
-  },
-  productManagementTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 16,
-  },
-  searchProductBox: {
-    width: "100%",
-    height: 34,
-    backgroundColor: "#f6f6fb",
-    border: "1px solid #000000",
-    borderRadius: 10,
-    paddingLeft: 10,
-    boxSizing: "border-box" as const,
-  },
-  categoriesScrollView: {
-    width: "85%",
-    marginBottom: 30,
-  },
-  categoryOpt1Txt: {
-    color: "grey",
-    padding: 10,
-    display: "inline-block",
-  },
-  addProductBtn: {
-    border: "2px dashed #ccc",
-    borderRadius: 12,
-    backgroundColor: "#fafafa",
+  searchWrap: {
+    position: "relative",
     display: "flex",
-    flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    padding: "24px 16px",
-    gap: 6,
-    minHeight: 200,
+    height: 40,
   },
-  addProductPlusIcon: {
-    color: "#888",
-    fontSize: 28,
+  searchIcon: {
+    position: "absolute",
+    left: 12,
+    top: "50%",
+    transform: "translateY(-50%)",
+    pointerEvents: "none" as const,
   },
-  addNewItemTxt: {
-    color: "#555",
-    fontSize: 14,
-    fontWeight: "600",
-    display: "inline-block",
+  searchInput: {
+    height: 40,
+    width: 220,
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    paddingLeft: 36,
+    paddingRight: 12,
+    fontSize: 13,
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
+    lineHeight: "40px",
   },
   templateBtn: {
-    width: 150,
-    height: 38,
-    backgroundColor: "#1c294e",
+    height: 40,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
     borderRadius: 8,
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    border: "none",
+    gap: 6,
+    paddingLeft: 14,
+    paddingRight: 14,
     cursor: "pointer",
   },
-  templatesBtnLbl: {
-    fontWeight: "600",
+  templateBtnTxt: {
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  addBtn: {
+    height: 40,
+    backgroundColor: "#1470ef",
+    border: "none",
+    borderRadius: 8,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingLeft: 16,
+    paddingRight: 16,
+    cursor: "pointer",
+  },
+  addBtnTxt: {
     color: "#fff",
     fontSize: 13,
+    fontWeight: "600",
+  },
+  categoryRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+    marginBottom: 20,
+    flexShrink: 0,
+  },
+  categoryPill: {
+    padding: "6px 14px",
+    borderRadius: 20,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+  },
+  categoryPillActive: {
+    backgroundColor: "#0f172a",
+    borderColor: "#0f172a",
+  },
+  categoryPillTxt: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#64748b",
+  },
+  categoryPillTxtActive: {
+    color: "#fff",
+  },
+  scrollArea: {
+    flex: 1,
+    overflow: "auto",
+    paddingBottom: 20,
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+    gap: 16,
+    width: "100%",
+  },
+  emptyState: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "80px 20px",
+    gap: 6,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    marginBottom: 12,
+  },
+  emptyAddBtn: {
+    height: 40,
+    backgroundColor: "#1470ef",
+    border: "none",
+    borderRadius: 8,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingLeft: 16,
+    paddingRight: 16,
+    cursor: "pointer",
+  },
+  modalWrap: {
+    display: "flex",
+    flex: 1,
+    height: "100%",
+    width: "100%",
+    position: "absolute",
+    left: 0,
+    top: 0,
+    justifyContent: "center",
+    alignItems: "center",
   },
 };
 

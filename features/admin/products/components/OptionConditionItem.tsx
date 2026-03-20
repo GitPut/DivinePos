@@ -1,5 +1,5 @@
 import React from "react";
-import { MdDragHandle, MdDeleteOutline } from "react-icons/md";
+import { FiTrash2 } from "react-icons/fi";
 import { Option, ProductProp } from "types";
 import DropdownStringOptions from "shared/components/ui/DropdownStringOptions";
 
@@ -23,7 +23,6 @@ interface OptionConditionItemProps {
 }
 
 function OptionConditionItem({
-  style,
   ifStatement,
   indexOfIf,
   scrollY,
@@ -46,9 +45,9 @@ function OptionConditionItem({
   }
 
   return (
-    <div style={{ ...styles.container, ...style }}>
-      <div style={styles.optionSelectionNameInputGroup}>
-        <span style={styles.selectionNameInputLbl}>If Option</span>
+    <div style={styles.container}>
+      <div style={styles.fieldGroup}>
+        <span style={styles.fieldLabel}>If Option</span>
         <DropdownStringOptions
           placeholder="Choose Option"
           value={ifStatement.selectedCaseKey}
@@ -73,13 +72,13 @@ function OptionConditionItem({
           scrollY={scrollY}
         />
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <MdDragHandle color="black" size={30} />
+      <div style={styles.equalsIcon}>
+        <span style={styles.equalsText}>=</span>
       </div>
-      <div style={styles.selectionPriceIncreaseInputGroup}>
-        <span style={styles.selectionPriceIncreaseLbl}>Value Of Option</span>
+      <div style={styles.fieldGroup}>
+        <span style={styles.fieldLabel}>Value Of Option</span>
         <DropdownStringOptions
-          placeholder="Choose Option"
+          placeholder="Choose Value"
           value={ifStatement?.selectedCaseValue}
           setValue={(val) => {
             let clone: Option[] = [];
@@ -114,8 +113,9 @@ function OptionConditionItem({
             selectedCaseList: clone[index].selectedCaseList,
           }));
         }}
+        title="Remove condition"
       >
-        <MdDeleteOutline style={styles.deleteIcon} />
+        <FiTrash2 size={14} color="#ef4444" />
       </button>
     </div>
   );
@@ -125,45 +125,48 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-end",
-    marginBottom: 20,
+    gap: 10,
+    padding: "10px 0",
+    borderBottom: "1px solid #f1f5f9",
   },
-  optionSelectionNameInputGroup: {
-    height: 84,
+  fieldGroup: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
+    gap: 6,
+    flex: 1,
+    minWidth: 0,
   },
-  selectionNameInputLbl: {
-    color: "#121212",
-    fontSize: 17,
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
   },
-  selectionPriceIncreaseInputGroup: {
-    width: 199,
-    height: 84,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  selectionPriceIncreaseLbl: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  deleteBtn: {
-    width: 50,
-    height: 50,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
+  equalsIcon: {
+    width: 30,
+    height: 38,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
+    flexShrink: 0,
   },
-  deleteIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 27,
+  equalsText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#94a3b8",
+  },
+  deleteBtn: {
+    width: 30,
+    height: 30,
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fee2e2",
+    borderRadius: 6,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+    flexShrink: 0,
   },
 };
 

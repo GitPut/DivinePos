@@ -1,7 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FiChevronDown } from "react-icons/fi";
 
-function PeriodDropdown({ value, setValue }: { value: string; setValue: (val: string) => void }) {
+function PeriodDropdown({
+  value,
+  setValue,
+}: {
+  value: string;
+  setValue: (val: string) => void;
+}) {
   const dropdownRef = useRef<HTMLButtonElement>(null);
   const [dropdownLayout, setDropdownLayout] = useState<{
     x: number;
@@ -10,7 +16,13 @@ function PeriodDropdown({ value, setValue }: { value: string; setValue: (val: st
     height: number;
   }>();
   const [openDropdown, setopenDropdown] = useState<boolean>(false);
-  const options = ["Today", "This Week", "This Month", "This Year", "All Time"];
+  const options = [
+    "Today",
+    "This Week",
+    "This Month",
+    "This Year",
+    "All Time",
+  ];
 
   useEffect(() => {
     if (dropdownRef.current) {
@@ -29,16 +41,15 @@ function PeriodDropdown({ value, setValue }: { value: string; setValue: (val: st
       <button
         style={{
           ...styles.container,
-          ...(openDropdown ? {
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
-          } : {}),
+          ...(openDropdown
+            ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }
+            : {}),
         }}
         onClick={() => setopenDropdown((prev) => !prev)}
         ref={dropdownRef}
       >
-        <span style={styles.dropdownPeriodLbl}>{value}</span>
-        <FiChevronDown style={styles.chevronDownIcon} />
+        <span style={styles.label}>{value}</span>
+        <FiChevronDown size={14} color="#64748b" />
       </button>
       {openDropdown && (
         <>
@@ -59,7 +70,7 @@ function PeriodDropdown({ value, setValue }: { value: string; setValue: (val: st
                 position: "fixed",
                 top: dropdownLayout.y,
                 left: dropdownLayout.x,
-                width: 110,
+                width: 120,
                 zIndex: 9999,
               }}
             >
@@ -68,33 +79,24 @@ function PeriodDropdown({ value, setValue }: { value: string; setValue: (val: st
                   ...styles.container,
                   borderBottomLeftRadius: 0,
                   borderBottomRightRadius: 0,
-                  borderBottomColor: "black",
+                  borderBottomColor: "#1470ef",
                 }}
                 onClick={() => setopenDropdown((prev) => !prev)}
               >
-                <span style={styles.dropdownPeriodLbl}>{value}</span>
-                <FiChevronDown style={styles.chevronDownIcon} />
+                <span style={styles.label}>{value}</span>
+                <FiChevronDown size={14} color="#64748b" />
               </button>
-              <div
-                style={{
-                  width: 110,
-                  position: "absolute",
-                  backgroundColor: "white",
-                  top: 30,
-                  border: "1px solid #9e9e9e",
-                  borderTop: "none",
-                }}
-              >
+              <div style={styles.optionsList}>
                 {options.map((option, listIndex) => (
                   <button
                     style={{
-                      ...styles.container,
-                      justifyContent: "flex-start",
-                      paddingLeft: 5,
-                      borderRadius: 0,
-                      ...(listIndex < options.length - 1 ? {
-                        borderBottom: "1px solid #9e9e9e",
-                      } : {}),
+                      ...styles.option,
+                      ...(option === value
+                        ? { backgroundColor: "#eff6ff", color: "#1470ef" }
+                        : {}),
+                      ...(listIndex < options.length - 1
+                        ? { borderBottom: "1px solid #f1f5f9" }
+                        : {}),
                     }}
                     key={listIndex}
                     onClick={() => {
@@ -102,7 +104,7 @@ function PeriodDropdown({ value, setValue }: { value: string; setValue: (val: st
                       setopenDropdown(false);
                     }}
                   >
-                    <span style={styles.dropdownPeriodLbl}>{option}</span>
+                    <span style={{ fontSize: 12 }}>{option}</span>
                   </button>
                 ))}
               </div>
@@ -121,21 +123,41 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "space-between",
     borderRadius: 8,
-    border: "1px solid #9f9f9f",
-    height: 30,
-    width: 110,
-    padding: 5,
+    border: "1px solid #e2e8f0",
+    height: 32,
+    width: 120,
+    padding: "0 10px",
     background: "white",
     cursor: "pointer",
+    boxSizing: "border-box",
   },
-  dropdownPeriodLbl: {
-    color: "#81838b",
-    fontSize: 13,
-    marginRight: 0,
+  label: {
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "500",
   },
-  chevronDownIcon: {
-    color: "#808080",
-    fontSize: 25,
+  optionsList: {
+    width: 120,
+    position: "absolute",
+    backgroundColor: "white",
+    top: 32,
+    border: "1px solid #e2e8f0",
+    borderTop: "none",
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    overflow: "hidden",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  },
+  option: {
+    display: "flex",
+    alignItems: "center",
+    width: "100%",
+    padding: "8px 10px",
+    border: "none",
+    background: "white",
+    cursor: "pointer",
+    color: "#475569",
+    boxSizing: "border-box",
   },
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FiChevronLeft } from "react-icons/fi";
+import { FiChevronLeft, FiTrash2 } from "react-icons/fi";
 import HoursItem from "./components/HoursItem";
 import { employeesState, setEmployeesState } from "store/appState";
 import { useHistory, useParams } from "react-router-dom";
@@ -8,11 +8,9 @@ import { useAlert } from "react-alert";
 import { Employee, HourItem } from "types";
 import { parseDate } from "utils/dateFormatting";
 import firebase from "firebase/compat/app";
-import useWindowSize from "shared/hooks/useWindowSize";
 import Switch from "shared/components/ui/Switch";
 
 function EditEmployee() {
-  const { height } = useWindowSize();
   const { employeeId } = useParams<{ employeeId: string }>();
   const employees = employeesState.use();
   const [employee, setemployee] = useState<Employee>(
@@ -93,301 +91,269 @@ function EditEmployee() {
     setEmployeesState(newEmployeesList);
   }
 
+  const unpaidHours = allHours.filter((h) => !h.paid);
+  const paidHours = allHours.filter((h) => h.paid);
+
   return (
     <div style={styles.container}>
-      <div style={{ ...styles.headerContainer, height: height * 0.12 }}>
+      {/* Header */}
+      <div style={styles.headerRow}>
         <button
-          style={{ display: "flex", flexDirection: "row", border: "none", background: "none", cursor: "pointer", padding: 0, alignItems: "flex-start" }}
+          style={styles.backBtn}
           onClick={() => history.push("/authed/report/employeesreport")}
         >
-          <FiChevronLeft style={styles.chevronLeftIcon} />
-          <div style={styles.topHeaderGroup}>
-            <span style={styles.employeeReportHeaderTxt}>Employee Report</span>
-            <span style={styles.employeeName}>{employee?.name}</span>
-          </div>
+          <FiChevronLeft size={20} color="#64748b" />
+          <span style={styles.backText}>Employees</span>
         </button>
+        <span style={styles.title}>{employee?.name}</span>
       </div>
+
       {employee && (
-        <div style={{ height: height * 0.709 }}>
-          <div
-            style={styles.userEmployeeReport}
-          >
-            <div style={{ overflow: "auto", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 50 }}>
-              <div style={styles.topInputDetailsRow}>
-                <div style={styles.inputGroup}>
-                  <div style={styles.employeeNameInputGroup}>
-                    <span style={styles.employeeNameTxt}>Employee Name</span>
-                    <input
-                      style={styles.employeeNameInput}
-                      placeholder="Enter Name"
-                      value={employee?.name}
-                      onChange={(e) =>
-                        setemployee((prevState) => ({
-                          ...prevState,
-                          name: e.target.value,
-                        }))
-                      }
-                      onBlur={handleDataUpdate}
-                    />
-                  </div>
-                  <div style={styles.employeePinInputGroup}>
-                    <span style={styles.employeePinTxt}>Employee PIN</span>
-                    <input
-                      style={styles.employeePinInput}
-                      placeholder="Enter PIN"
-                      value={employee?.pin}
-                      onChange={(e) =>
-                        setemployee((prevState) => ({
-                          ...prevState,
-                          pin: e.target.value,
-                        }))
-                      }
-                      onBlur={handleDataUpdate}
-                    />
-                  </div>
-                  <div style={styles.employeeRoleInputGroup}>
-                    <span style={styles.employeeRole}>Employee Role</span>
-                    <input
-                      style={styles.employeeRoleInput}
-                      placeholder="Enter Role"
-                      value={employee?.role}
-                      onChange={(e) =>
-                        setemployee((prevState) => ({
-                          ...prevState,
-                          role: e.target.value,
-                        }))
-                      }
-                      onBlur={handleDataUpdate}
-                    />
-                  </div>
-                </div>
-                <button
-                  style={styles.removeEmployeeBtn}
-                  onClick={() => {
-                    db.collection("users")
-                      .doc(auth?.currentUser?.uid)
-                      .collection("employees")
-                      .doc(employee.id.toString())
-                      .delete();
-                    const newEmployeesList = [...employees];
-                    const filteredEmployeesList = newEmployeesList.filter(
-                      (e) => e.id !== employee.id
-                    );
-                    setEmployeesState(filteredEmployeesList);
-                    history.push("/authed/report/employeesreport");
-                  }}
-                >
-                  <span style={styles.removeEmployeeTxt}>Remove Employee</span>
-                </button>
+        <div style={styles.scrollArea}>
+          {/* Details card */}
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>Employee Details</span>
+            <div style={styles.fieldsRow}>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Name</span>
+                <input
+                  style={styles.fieldInput}
+                  placeholder="Enter Name"
+                  value={employee?.name}
+                  onChange={(e) =>
+                    setemployee((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  onBlur={handleDataUpdate}
+                />
               </div>
-              <div style={styles.permissionsContainer}>
-                <span style={styles.permissionsHeader}>Permissions</span>
-                <div style={styles.permissionsGrid}>
-                  <div style={styles.permissionRow}>
-                    <span style={styles.permissionLabel}>Access Backend</span>
-                    <Switch
-                      isActive={!!employee?.permissions?.accessBackend}
-                      toggleSwitch={() => togglePermission("accessBackend")}
-                    />
-                  </div>
-                  <div style={styles.permissionRow}>
-                    <span style={styles.permissionLabel}>Apply Discounts</span>
-                    <Switch
-                      isActive={!!employee?.permissions?.discount}
-                      toggleSwitch={() => togglePermission("discount")}
-                    />
-                  </div>
-                  <div style={styles.permissionRow}>
-                    <span style={styles.permissionLabel}>Custom Payment</span>
-                    <Switch
-                      isActive={!!employee?.permissions?.customPayment}
-                      toggleSwitch={() => togglePermission("customPayment")}
-                    />
-                  </div>
-                  <div style={styles.permissionRow}>
-                    <span style={styles.permissionLabel}>Manage Orders</span>
-                    <Switch
-                      isActive={!!employee?.permissions?.manageOrders}
-                      toggleSwitch={() => togglePermission("manageOrders")}
-                    />
-                  </div>
-                </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>PIN</span>
+                <input
+                  style={styles.fieldInput}
+                  placeholder="Enter PIN"
+                  value={employee?.pin}
+                  onChange={(e) =>
+                    setemployee((prev) => ({ ...prev, pin: e.target.value }))
+                  }
+                  onBlur={handleDataUpdate}
+                />
               </div>
-              <div style={styles.addHoursContainer}>
-                <span style={styles.addHoursSectionHeader}>Add hours</span>
-                <div style={styles.addHoursRow}>
-                  <div style={styles.addHoursLeftGroup}>
-                    <div style={styles.dateInputGroup}>
-                      <span style={styles.dateTxt}>Date:</span>
-                      <div>
-                        <input
-                          id="dateSelected"
-                          aria-label="Date"
-                          type="date"
-                          onChange={(event) => {
-                            const date = new Date(event.target.value);
-                            date.setHours(0, 0, 0, 0);
-                            date.setMinutes(0, 0);
-                            date.setTime(date.getTime() + 60000 * 60 * 24);
-                            setdateSelected(date);
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div style={styles.startTimeInputGroup}>
-                      <span style={styles.startTimeTxt}>Start Time:</span>
-                      <div>
-                        <input
-                          id="startTime"
-                          aria-label="Time"
-                          type="time"
-                          onChange={(event) => {
-                            setstartTime(event.target.value);
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div style={styles.endTimeInputGroup}>
-                      <span style={styles.endTimeTxt}>End Time:</span>
-                      <div>
-                        <input
-                          id="endTime"
-                          aria-label="Time"
-                          type="time"
-                          onChange={(event) => setendTime(event.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    style={styles.addBtn}
-                    onClick={() => {
-                      if (!dateSelected || !startTime || !endTime)
-                        return alertP.error("Please fill out all fields");
-                      db.collection("users")
-                        .doc(auth?.currentUser?.uid)
-                        .collection("employees")
-                        .doc(employee.id.toString())
-                        .collection("hours")
-                        .add({
-                          date: firebase.firestore.Timestamp.fromDate(
-                            dateSelected
-                          ),
-                          startTime: startTime,
-                          endTime: endTime,
-                          paid: false,
-                        })
-                        .then((docRef) => {
-                          setallHours([
-                            ...allHours,
-                            {
-                              date: firebase.firestore.Timestamp.fromDate(
-                                dateSelected
-                              ),
-                              startTime: startTime,
-                              endTime: endTime,
-                              id: docRef.id,
-                              paid: false,
-                            },
-                          ]);
-                        });
-                      setdateSelected(null);
-                      setstartTime(null);
-                      setendTime(null);
-                      const dateSelectedElement: HTMLInputElement | null =
-                        document.getElementById(
-                          "dateSelected"
-                        ) as HTMLInputElement;
-                      const endTimeElement: HTMLInputElement | null =
-                        document.getElementById("endTime") as HTMLInputElement;
-                      const startTimeElement: HTMLInputElement | null =
-                        document.getElementById("startTime") as HTMLInputElement;
-                      if (dateSelectedElement) dateSelectedElement.value = "";
-                      if (startTimeElement) startTimeElement.value = "";
-                      if (endTimeElement) endTimeElement.value = "";
-                    }}
-                  >
-                    <span style={styles.addBtnTxt}>Add</span>
-                  </button>
-                </div>
-              </div>
-              <div style={styles.unpaidAndPaidDetails}>
-                <div style={styles.unpaidGroup}>
-                  <div style={styles.unpaidHeader}>
-                    <div style={styles.labelsRowInner}>
-                      <span style={styles.unpaidLbl}>Unpaid</span>
-                      <span style={styles.unpaidDateLbl}>Date</span>
-                      <span style={styles.unpaidClockInLbl}>Clock In</span>
-                      <span style={styles.unpaidClockOutLbl}>Clock Out</span>
-                    </div>
-                  </div>
-                  {allHours.length > 0 &&
-                    allHours.map((hour, index) => {
-                      if (hour.paid) return;
-
-                      const date = parseDate(hour.date);
-                      if (!date) return;
-
-                      const ref = document.getElementById(
-                        `unpaidSelected${index}`
-                      );
-
-                      if (ref) {
-                      }
-
-                      return (
-                        <HoursItem
-                          key={index}
-                          style={styles.hoursItem}
-                          date={date}
-                          hour={hour}
-                          employee={employee}
-                          allHours={allHours}
-                          setallHours={setallHours}
-                          index={index}
-                          isPaid={false}
-                        />
-                      );
-                    })}
-                </div>
-                <div style={styles.paidGroup}>
-                  <div style={styles.paidHeader}>
-                    <div style={styles.paidLabelsRowInner}>
-                      <span style={styles.paidLbl}>Paid</span>
-                      <span style={styles.paidDateLbl}>Date</span>
-                      <span style={styles.paidClockInLbl}>Clock In</span>
-                      <span style={styles.paidClockOutLbl}>Clock Out</span>
-                    </div>
-                  </div>
-                  {allHours.length > 0 &&
-                    allHours.map((hour, index) => {
-                      if (!hour.paid) return;
-
-                      const date = parseDate(hour.date);
-                      if (!date) return;
-
-                      const ref = document.getElementById(`paidSelected${index}`);
-
-                      if (ref) {
-                      }
-
-                      return (
-                        <HoursItem
-                          key={index}
-                          style={styles.hoursItem}
-                          date={date}
-                          hour={hour}
-                          employee={employee}
-                          allHours={allHours}
-                          setallHours={setallHours}
-                          index={index}
-                          isPaid={true}
-                        />
-                      );
-                    })}
-                </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Role</span>
+                <input
+                  style={styles.fieldInput}
+                  placeholder="Enter Role"
+                  value={employee?.role}
+                  onChange={(e) =>
+                    setemployee((prev) => ({ ...prev, role: e.target.value }))
+                  }
+                  onBlur={handleDataUpdate}
+                />
               </div>
             </div>
+          </div>
+
+          {/* Permissions card */}
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>Permissions</span>
+            <div style={styles.permissionsGrid}>
+              {([
+                { key: "accessBackend" as const, label: "Access Backend" },
+                { key: "discount" as const, label: "Apply Discounts" },
+                { key: "customPayment" as const, label: "Custom Payment" },
+                { key: "manageOrders" as const, label: "Manage Orders" },
+              ]).map((perm) => (
+                <div key={perm.key} style={styles.permissionRow}>
+                  <Switch
+                    isActive={!!employee?.permissions?.[perm.key]}
+                    toggleSwitch={() => togglePermission(perm.key)}
+                  />
+                  <span style={styles.permissionLabel}>{perm.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Add Hours card */}
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>Add Hours</span>
+            <div style={styles.addHoursRow}>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Date</span>
+                <input
+                  id="dateSelected"
+                  type="date"
+                  style={styles.fieldInput}
+                  onChange={(event) => {
+                    const date = new Date(event.target.value);
+                    date.setHours(0, 0, 0, 0);
+                    date.setMinutes(0, 0);
+                    date.setTime(date.getTime() + 60000 * 60 * 24);
+                    setdateSelected(date);
+                  }}
+                />
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Start Time</span>
+                <input
+                  id="startTime"
+                  type="time"
+                  style={styles.fieldInput}
+                  onChange={(event) => setstartTime(event.target.value)}
+                />
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>End Time</span>
+                <input
+                  id="endTime"
+                  type="time"
+                  style={styles.fieldInput}
+                  onChange={(event) => setendTime(event.target.value)}
+                />
+              </div>
+              <button
+                style={styles.addHoursBtn}
+                onClick={() => {
+                  if (!dateSelected || !startTime || !endTime)
+                    return alertP.error("Please fill out all fields");
+                  db.collection("users")
+                    .doc(auth?.currentUser?.uid)
+                    .collection("employees")
+                    .doc(employee.id.toString())
+                    .collection("hours")
+                    .add({
+                      date: firebase.firestore.Timestamp.fromDate(dateSelected),
+                      startTime: startTime,
+                      endTime: endTime,
+                      paid: false,
+                    })
+                    .then((docRef) => {
+                      setallHours([
+                        ...allHours,
+                        {
+                          date: firebase.firestore.Timestamp.fromDate(dateSelected),
+                          startTime: startTime,
+                          endTime: endTime,
+                          id: docRef.id,
+                          paid: false,
+                        },
+                      ]);
+                    });
+                  setdateSelected(null);
+                  setstartTime(null);
+                  setendTime(null);
+                  const dateEl = document.getElementById("dateSelected") as HTMLInputElement;
+                  const startEl = document.getElementById("startTime") as HTMLInputElement;
+                  const endEl = document.getElementById("endTime") as HTMLInputElement;
+                  if (dateEl) dateEl.value = "";
+                  if (startEl) startEl.value = "";
+                  if (endEl) endEl.value = "";
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          {/* Unpaid hours */}
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>
+              Unpaid Hours
+              {unpaidHours.length > 0 && (
+                <span style={styles.countBadge}>{unpaidHours.length}</span>
+              )}
+            </span>
+            {unpaidHours.length > 0 ? (
+              <div style={styles.hoursTable}>
+                <div style={styles.hoursHeader}>
+                  <span style={{ ...styles.hoursHeaderCell, flex: 1.5 }}>Date</span>
+                  <span style={{ ...styles.hoursHeaderCell, flex: 1 }}>Clock In</span>
+                  <span style={{ ...styles.hoursHeaderCell, flex: 1 }}>Clock Out</span>
+                  <span style={{ ...styles.hoursHeaderCell, flex: 1, textAlign: "right" }}>Actions</span>
+                </div>
+                {unpaidHours.map((hour) => {
+                  const date = parseDate(hour.date);
+                  if (!date) return null;
+                  const idx = allHours.indexOf(hour);
+                  return (
+                    <HoursItem
+                      key={hour.id}
+                      date={date}
+                      hour={hour}
+                      employee={employee}
+                      allHours={allHours}
+                      setallHours={setallHours}
+                      index={idx}
+                      isPaid={false}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <span style={styles.emptyText}>No unpaid hours.</span>
+            )}
+          </div>
+
+          {/* Paid hours */}
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>
+              Paid Hours
+              {paidHours.length > 0 && (
+                <span style={{ ...styles.countBadge, backgroundColor: "#d1fae5", color: "#065f46" }}>
+                  {paidHours.length}
+                </span>
+              )}
+            </span>
+            {paidHours.length > 0 ? (
+              <div style={styles.hoursTable}>
+                <div style={styles.hoursHeader}>
+                  <span style={{ ...styles.hoursHeaderCell, flex: 1.5 }}>Date</span>
+                  <span style={{ ...styles.hoursHeaderCell, flex: 1 }}>Clock In</span>
+                  <span style={{ ...styles.hoursHeaderCell, flex: 1 }}>Clock Out</span>
+                  <span style={{ ...styles.hoursHeaderCell, flex: 1, textAlign: "right" }}>Actions</span>
+                </div>
+                {paidHours.map((hour) => {
+                  const date = parseDate(hour.date);
+                  if (!date) return null;
+                  const idx = allHours.indexOf(hour);
+                  return (
+                    <HoursItem
+                      key={hour.id}
+                      date={date}
+                      hour={hour}
+                      employee={employee}
+                      allHours={allHours}
+                      setallHours={setallHours}
+                      index={idx}
+                      isPaid={true}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <span style={styles.emptyText}>No paid hours.</span>
+            )}
+          </div>
+
+          {/* Danger zone */}
+          <div style={{ ...styles.card, borderTop: "2px solid #fca5a5" }}>
+            <span style={{ ...styles.cardTitle, color: "#dc2626" }}>Danger Zone</span>
+            <button
+              style={styles.removeBtn}
+              onClick={() => {
+                db.collection("users")
+                  .doc(auth?.currentUser?.uid)
+                  .collection("employees")
+                  .doc(employee.id.toString())
+                  .delete();
+                const filteredList = employees.filter((e) => e.id !== employee.id);
+                setEmployeesState(filteredList);
+                history.push("/authed/report/employeesreport");
+              }}
+            >
+              <FiTrash2 size={16} color="#fff" />
+              <span style={styles.removeBtnText}>Remove Employee</span>
+            </button>
           </div>
         </div>
       )}
@@ -399,389 +365,174 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    width: 1049,
+    height: "100%",
+    padding: 30,
+    boxSizing: "border-box",
+    overflow: "hidden",
+  },
+  headerRow: {
+    marginBottom: 20,
+  },
+  backBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    border: "none",
+    background: "none",
+    cursor: "pointer",
+    padding: 0,
+    marginBottom: 8,
+  },
+  backText: {
+    fontSize: 14,
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  title: {
+    fontWeight: "700",
+    fontSize: 24,
+    color: "#0f172a",
+    display: "block",
+  },
+  scrollArea: {
     flex: 1,
-  },
-  headerContainer: {
-    width: 1049,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-  },
-  chevronLeftIcon: {
-    color: "rgba(128,128,128,1)",
-    fontSize: 27,
-    marginLeft: 12,
-    marginRight: 15,
-  },
-  topHeaderGroup: {
-    width: 437,
-    height: 48,
+    overflow: "auto",
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    marginTop: 8,
+    gap: 16,
+    paddingBottom: 40,
   },
-  employeeReportHeaderTxt: {
-    fontSize: 14,
-  },
-  employeeName: {
-    fontSize: 18,
-  },
-  userEmployeeReport: {
-    width: "100%",
-    backgroundColor: "#ffffff",
-    border: "1px solid #bdc1cb",
-    boxShadow: "3px 3px 30px rgba(198, 200, 211, 0.53)",
-    height: "100%",
-  },
-  topInputDetailsRow: {
-    width: 985,
-    height: 87,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 30,
-  },
-  inputGroup: {
-    display: "flex",
-    flexDirection: "row",
-    width: 709,
-    height: 87,
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  employeeNameInputGroup: {
-    width: 195,
-    height: 84,
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    padding: "20px 24px",
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
+    gap: 16,
   },
-  employeeNameTxt: {
+  cardTitle: {
     fontWeight: "700",
-    color: "#61656f",
-  },
-  employeeNameInput: {
-    width: 195,
-    height: 50,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    padding: 10,
-    boxSizing: "border-box",
-  },
-  employeePinInputGroup: {
-    width: 195,
-    height: 87,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  employeePinTxt: {
-    fontWeight: "700",
-    color: "#61656f",
-  },
-  employeePinInput: {
-    width: 195,
-    height: 50,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    padding: 10,
-    boxSizing: "border-box",
-  },
-  employeeRoleInputGroup: {
-    width: 195,
-    height: 87,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  employeeRole: {
-    fontWeight: "700",
-    color: "#61656f",
-  },
-  employeeRoleInput: {
-    width: 195,
-    height: 50,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    padding: 10,
-    boxSizing: "border-box",
-  },
-  removeEmployeeBtn: {
-    width: 162,
-    height: 39,
-    backgroundColor: "#eb1f1e",
-    borderRadius: 10,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    margin: 0,
-    padding: 0,
-    border: "none",
-    cursor: "pointer",
-  },
-  removeEmployeeTxt: {
-    fontWeight: "700",
-    color: "#ffffff",
-    fontSize: 14,
-    margin: 0,
-    padding: 0,
-  },
-  addHoursContainer: {
-    width: 985,
-    height: 87,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    marginTop: 40,
-  },
-  addHoursSectionHeader: {
-    fontWeight: "700",
-    color: "#121212",
-  },
-  addHoursRow: {
-    width: 985,
-    height: 58,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-  },
-  addHoursLeftGroup: {
-    width: 581,
-    height: 55,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  dateInputGroup: {
-    width: 195,
-    height: 55,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  dateTxt: {
-    fontWeight: "700",
-    color: "#61656f",
-  },
-  dateInput: {
-    width: 195,
-    height: 34,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    padding: 10,
-  },
-  startTimeInputGroup: {
-    width: 138,
-    height: 55,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  startTimeTxt: {
-    fontWeight: "700",
-    color: "#61656f",
-  },
-  startTimeInput: {
-    width: 138,
-    height: 34,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-  },
-  endTimeInputGroup: {
-    width: 138,
-    height: 55,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  endTimeTxt: {
-    fontWeight: "700",
-    color: "#61656f",
-  },
-  endTimeInput: {
-    width: 138,
-    height: 34,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-  },
-  addBtn: {
-    width: 80,
-    height: 41,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    border: "none",
-    cursor: "pointer",
-  },
-  addBtnTxt: {
-    color: "#ffffff",
-    fontSize: 14,
-  },
-  unpaidAndPaidDetails: {
-    width: 992,
-    marginTop: 60,
-  },
-  unpaidAndPaidDetails_contentContainerStyle: {
-    height: "100%",
-    width: 992,
-  },
-  unpaidGroup: {
-    width: 986,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    marginBottom: 55,
-  },
-  unpaidHeader: {
-    width: 986,
-    height: 39,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    borderBottom: "1px solid #e6e7ee",
-    marginBottom: 15,
-  },
-  labelsRowInner: {
-    width: 750,
-    height: 17,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  unpaidLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    width: 230,
-    height: 17,
-    display: "inline-block",
-  },
-  unpaidDateLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    width: 210,
-    height: 17,
-    display: "inline-block",
-  },
-  unpaidClockInLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    width: 210,
-    display: "inline-block",
-  },
-  unpaidClockOutLbl: {
-    fontWeight: "700",
-    color: "#121212",
-  },
-  hoursItem: {
-    height: 41,
-    width: 986,
-    marginTop: 0,
-    marginBottom: 30,
-  },
-  hoursItem1: {
-    height: 41,
-    width: 986,
-    marginBottom: 30,
-  },
-  paidGroup: {
-    width: 986,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "flex-start",
-  },
-  paidHeader: {
-    width: 986,
-    height: 39,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    borderBottom: "1px solid #e6e7ee",
-    marginBottom: 15,
-  },
-  paidLabelsRowInner: {
-    width: 750,
-    height: 17,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  paidLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    width: 230,
-    height: 17,
-    display: "inline-block",
-  },
-  paidDateLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    width: 210,
-    height: 17,
-    display: "inline-block",
-  },
-  paidClockInLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    width: 210,
-    display: "inline-block",
-  },
-  paidClockOutLbl: {
-    fontWeight: "700",
-    color: "#121212",
-  },
-  hoursItem2: {
-    height: 41,
-    width: 986,
-    marginTop: 0,
-    marginBottom: 30,
-  },
-  hoursItem3: {
-    height: 41,
-    width: 986,
-    marginBottom: 30,
-  },
-  permissionsContainer: {
-    width: 985,
-    marginTop: 30,
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  permissionsHeader: {
-    fontWeight: "700",
-    color: "#121212",
     fontSize: 16,
+    color: "#0f172a",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  countBadge: {
+    fontSize: 12,
+    fontWeight: "600",
+    backgroundColor: "#fef3c7",
+    color: "#92400e",
+    padding: "2px 8px",
+    borderRadius: 10,
+  },
+  fieldsRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 16,
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: 1,
+    maxWidth: 220,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  fieldInput: {
+    padding: "10px 12px",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    fontSize: 14,
+    color: "#334155",
+    backgroundColor: "#f8fafc",
+    boxSizing: "border-box",
   },
   permissionsGrid: {
     display: "flex",
     flexDirection: "row",
-    gap: 40,
+    flexWrap: "wrap",
+    gap: 20,
   },
   permissionRow: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    minWidth: 180,
   },
   permissionLabel: {
     fontSize: 14,
-    color: "#333",
+    color: "#334155",
+    fontWeight: "500",
+  },
+  addHoursRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 16,
+  },
+  addHoursBtn: {
+    padding: "10px 20px",
+    backgroundColor: "#1470ef",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
+    height: 40,
+  },
+  hoursTable: {
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    overflow: "hidden",
+  },
+  hoursHeader: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: "10px 16px",
+    backgroundColor: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+  },
+  hoursHeaderCell: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#94a3b8",
+  },
+  removeBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: "10px 20px",
+    backgroundColor: "#ef4444",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
+    width: "fit-content",
+  },
+  removeBtnText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
 };
 

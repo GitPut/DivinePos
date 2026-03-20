@@ -1,5 +1,4 @@
 import React from "react";
-import { FiChevronRight } from "react-icons/fi";
 import { useHistory } from "react-router-dom";
 
 interface DropdownOptionProps {
@@ -15,7 +14,12 @@ function DropdownOption({ option }: DropdownOptionProps) {
 
   return (
     <button
-      style={styles.container}
+      style={{
+        ...styles.container,
+        ...(option.active
+          ? { color: "#1470ef", fontWeight: "600" }
+          : {}),
+      }}
       onClick={() => {
         if (typeof option.link === "string" && option.link.length > 0) {
           history.push(option.link);
@@ -24,8 +28,19 @@ function DropdownOption({ option }: DropdownOptionProps) {
         }
       }}
     >
-      <FiChevronRight style={styles.chevronRight1} />
-      <span style={{ ...styles.label, ...(option.active ? { color: "#121212" } : {}) }}>
+      <div
+        style={{
+          ...styles.dot,
+          backgroundColor: option.active ? "#1470ef" : "#cbd5e1",
+        }}
+      />
+      <span
+        style={{
+          ...styles.label,
+          color: option.active ? "#0f172a" : "#64748b",
+          fontWeight: option.active ? "600" : "500",
+        }}
+      >
         {option.label}
       </span>
     </button>
@@ -36,26 +51,22 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between",
-    width: 179,
-    marginBottom: 10,
     alignItems: "center",
+    gap: 8,
     border: "none",
     background: "transparent",
     cursor: "pointer",
-    padding: 0,
+    padding: "6px 0",
+    textAlign: "left",
   },
-  chevronRight1: {
-    color: "rgba(128,128,128,1)",
-    fontSize: 20,
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    flexShrink: 0,
   },
   label: {
-    fontWeight: "700",
-    color: "rgba(105,114,142,1)",
-    fontSize: 15,
-    width: 146,
-    textAlign: "left",
-    display: "inline-block",
+    fontSize: 13,
   },
 };
 

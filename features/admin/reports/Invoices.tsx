@@ -354,81 +354,117 @@ const Invoices = () => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
-        <span style={styles.title}>Invoices Report</span>
+      {/* Header */}
+      <div style={styles.headerRow}>
+        <div>
+          <span style={styles.title}>Invoices</span>
+          <span style={styles.subtitle}>
+            {listToRender.length} transaction{listToRender.length !== 1 ? "s" : ""}
+            {selectedRows.length > 0 && ` \u00B7 ${selectedRows.length} selected`}
+          </span>
+        </div>
+        <div style={styles.actionBtns}>
+          <button style={styles.actionBtn} onClick={handleExcelDownload} title="Export to Excel">
+            <FiDownload size={18} color="#475569" />
+            <span style={styles.actionBtnText}>Export</span>
+          </button>
+          <button style={styles.actionBtn} onClick={handlePrint} title="Print selected">
+            <FiPrinter size={18} color="#475569" />
+            <span style={styles.actionBtnText}>Print</span>
+          </button>
+          <button
+            style={styles.actionBtn}
+            onClick={() => {
+              const yesterday = new Date();
+              yesterday.setDate(yesterday.getDate() - 1);
+              printTotals(yesterday, "Yesterday");
+            }}
+          >
+            <span style={styles.actionBtnText}>Print Yesterday</span>
+          </button>
+          <button
+            style={styles.actionBtn}
+            onClick={() => printTotals(new Date(), "Today")}
+          >
+            <span style={styles.actionBtnText}>Print Today</span>
+          </button>
+        </div>
       </div>
 
-      <div style={styles.filters}>
-        <input
-          style={styles.searchInput}
-          placeholder="Search invoices..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-        />
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-        />
-
-        <button style={styles.searchBtn} onClick={filterByDate}>
-          <IoSearch size={20} color="#fff" />
-        </button>
-        <button
-          style={styles.resetBtn}
-          onClick={() => { setFilteredInvoices([]); setIsDateFiltered(false); }}
-        >
-          <IoClose size={20} color="#fff" />
-        </button>
-
-        <button style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }} onClick={handleExcelDownload}>
-          <FiDownload size={22} />
-        </button>
-        <button style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }} onClick={handlePrint}>
-          <FiPrinter size={22} />
-        </button>
-        <button
-          style={styles.printTotalsBtn}
-          onClick={() => {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            printTotals(yesterday, "Yesterday");
-          }}
-        >
-          <span>Print Yesterday</span>
-        </button>
-        <button
-          style={styles.printTotalsBtn}
-          onClick={() => {
-            const today = new Date();
-            printTotals(today, "Today");
-          }}
-        >
-          <span>Print Today</span>
-        </button>
-      </div>
-
-      <div style={{ overflow: "auto", flex: 1, width: "100%", minHeight: 0 }} onScroll={handleScroll}>
-        {listToRender.map((item) => (
-          <InvoiceItem
-            key={item.id}
-            item={item}
-            setbaseSelectedRows={setSelectedRows}
-            baseSelectedRows={selectedRows}
-            deleteTransaction={() => handleDelete(item)}
+      {/* Filters */}
+      <div style={styles.filtersRow}>
+        <div style={styles.searchBox}>
+          <IoSearch size={16} color="#94a3b8" />
+          <input
+            style={styles.searchInput}
+            placeholder="Search by ID, customer, or type..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
-        ))}
-        {loading && initialLoad && (
-          <div style={{ padding: 20, textAlign: "center", width: "100%" }}>
-            <span style={{ color: "#888", fontSize: 14 }}>Loading more...</span>
-          </div>
-        )}
+        </div>
+        <div style={styles.dateFilters}>
+          <input
+            type="date"
+            style={styles.dateInput}
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <span style={styles.dateSeparator}>to</span>
+          <input
+            type="date"
+            style={styles.dateInput}
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+          <button style={styles.filterBtn} onClick={filterByDate}>
+            Filter
+          </button>
+          {isDateFiltered && (
+            <button
+              style={styles.clearFilterBtn}
+              onClick={() => { setFilteredInvoices([]); setIsDateFiltered(false); }}
+            >
+              <IoClose size={16} color="#64748b" />
+              <span style={{ fontSize: 13, color: "#64748b" }}>Clear</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={styles.tableWrapper}>
+        <div style={styles.tableHeader}>
+          <div style={{ width: 40 }} />
+          <span style={{ ...styles.headerCell, flex: 1.2 }}>Order ID</span>
+          <span style={{ ...styles.headerCell, flex: 1.5 }}>Customer</span>
+          <span style={{ ...styles.headerCell, flex: 1.8 }}>Date</span>
+          <span style={{ ...styles.headerCell, flex: 0.8 }}>Total</span>
+          <span style={{ ...styles.headerCell, flex: 0.7 }}>System</span>
+          <span style={{ ...styles.headerCell, flex: 0.8 }}>Type</span>
+          <div style={{ width: 40 }} />
+        </div>
+
+        <div style={styles.tableBody} onScroll={handleScroll}>
+          {listToRender.map((item) => (
+            <InvoiceItem
+              key={item.id}
+              item={item}
+              setbaseSelectedRows={setSelectedRows}
+              baseSelectedRows={selectedRows}
+              deleteTransaction={() => handleDelete(item)}
+            />
+          ))}
+          {loading && initialLoad && (
+            <div style={{ padding: 20, textAlign: "center", width: "100%" }}>
+              <span style={{ color: "#94a3b8", fontSize: 13 }}>Loading more...</span>
+            </div>
+          )}
+          {initialLoad && listToRender.length === 0 && (
+            <div style={{ padding: 48, textAlign: "center", width: "100%" }}>
+              <span style={{ color: "#94a3b8", fontSize: 14 }}>No invoices found.</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {!initialLoad && <ComponentLoader />}
@@ -437,44 +473,154 @@ const Invoices = () => {
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { display: "flex", flex: 1, backgroundColor: "#fff", alignItems: "center", flexDirection: "column", overflow: "hidden", height: "100%" },
-  header: { marginTop: 20, marginBottom: 20, width: "95%" },
-  title: { fontWeight: "700", fontSize: 16, color: "#121212" },
-  filters: {
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100%",
+    overflow: "hidden",
+    padding: 30,
+    boxSizing: "border-box",
+  },
+  headerRow: {
     display: "flex",
     flexDirection: "row",
-    width: "95%",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 20,
+  },
+  title: {
+    fontWeight: "700",
+    fontSize: 24,
+    color: "#0f172a",
+    display: "block",
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 4,
+    display: "block",
+  },
+  actionBtns: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  actionBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 14px",
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#475569",
+  },
+  actionBtnText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#475569",
+  },
+  filtersRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 16,
+  },
+  searchBox: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    padding: "8px 12px",
+    flex: 1,
+    maxWidth: 320,
   },
   searchInput: {
-    width: 200,
-    height: 34,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingLeft: 10,
-    paddingRight: 10,
-    borderStyle: "solid",
-  },
-  searchBtn: {
-    backgroundColor: "green",
-    padding: 8,
-    borderRadius: 8,
+    flex: 1,
     border: "none",
+    backgroundColor: "transparent",
+    fontSize: 14,
+    color: "#334155",
+    outline: "none",
+  },
+  dateFilters: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dateInput: {
+    padding: "8px 12px",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    fontSize: 13,
+    color: "#334155",
+    backgroundColor: "#f8fafc",
+  },
+  dateSeparator: {
+    fontSize: 13,
+    color: "#94a3b8",
+  },
+  filterBtn: {
+    padding: "8px 16px",
+    backgroundColor: "#1470ef",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: "600",
     cursor: "pointer",
   },
-  resetBtn: {
-    backgroundColor: "red",
-    padding: 8,
-    borderRadius: 8,
+  clearFilterBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    padding: "8px 12px",
+    backgroundColor: "#f1f5f9",
     border: "none",
+    borderRadius: 8,
     cursor: "pointer",
   },
-  printTotalsBtn: {
-    border: "none",
-    background: "none",
-    cursor: "pointer",
+  tableWrapper: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    overflow: "hidden",
+    minHeight: 0,
+  },
+  tableHeader: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: "0 16px",
+    height: 42,
+    backgroundColor: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+  },
+  headerCell: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  tableBody: {
+    flex: 1,
+    overflow: "auto",
   },
 };
 

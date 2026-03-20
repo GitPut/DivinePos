@@ -1,40 +1,26 @@
 import React, { useState } from "react";
 import DropdownMenuButton from "./components/DropdownMenuButton";
 import { Route, useHistory, useLocation, withRouter } from "react-router-dom";
-import firebase from "firebase/compat/app";
-import { openStripePortal } from "services/firebase/functions";
 import MenuButton from "./components/MenuButton";
 import index from "./index";
-import { useAlert } from "react-alert";
 import Header from "shared/components/header/Header";
 import useWindowSize from "shared/hooks/useWindowSize";
-import dashboardLblImg from "assets/images/dashboardLbl.png";
-import menuLblImg from "assets/images/menuLbl.png";
-import reportsLblImg from "assets/images/reportsLbl.png";
-import storeSettingsLblImg from "assets/images/storeSettingsLbl.png";
-import helpLblImg from "assets/images/helpLbl.png";
-import loadingGif from "assets/loading.gif";
+import {
+  FiBarChart2,
+  FiBook,
+  FiPackage,
+  FiFileText,
+  FiSettings,
+  FiHelpCircle,
+} from "react-icons/fi";
 
 function AdminContainer(props: { match: { url: string } }) {
   const { match } = props;
   const [isSideMenu, setSideMenu] = useState("");
   const history = useHistory();
-  const [fadeVisible, setFadeVisible] = useState(false);
-  const [viewVisible, setviewVisible] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
-  const { height, width } = useWindowSize();
-  const alertP = useAlert();
-
-  const resetLoader = () => {
-    setviewVisible(true);
-    setTimeout(() => setFadeVisible(true), 10);
-  };
-
-  const Manage = () => {
-    resetLoader();
-    openStripePortal((msg) => alertP.error("Unknown error has occured: " + msg));
-  };
+  const { height } = useWindowSize();
 
   return (
     <div style={styles.container}>
@@ -45,15 +31,12 @@ function AdminContainer(props: { match: { url: string } }) {
         }}
         isPosHeader={true}
       />
-      <div style={{ ...styles.bottom, height: height - 75, paddingTop: 50 }}>
+      <div style={{ ...styles.bottom, height: height - 75 }}>
         <div style={styles.leftMenu}>
-          <div style={{ ...styles.menuOptionsContainer, height: "100%" }}>
+          <div style={styles.menuOptionsContainer}>
             <MenuButton
-              labelImg={dashboardLblImg}
-              labelImgStyle={{
-                height: 18,
-                width: 107,
-              }}
+              labelIcon={<FiBarChart2 size={18} />}
+              labelText="Dashboard"
               active={pathname.includes("dashboard")}
               onPress={() => {
                 history.push("/authed/dashboard");
@@ -66,11 +49,8 @@ function AdminContainer(props: { match: { url: string } }) {
               toggleDropdown={() =>
                 setSideMenu((prev) => (prev === "product" ? "" : "product"))
               }
-              labelImg={menuLblImg}
-              labelImgStyle={{
-                height: 18,
-                width: 70,
-              }}
+              labelIcon={<FiBook size={18} />}
+              labelText="Menu"
               options={[
                 {
                   label: "Category Management",
@@ -90,6 +70,7 @@ function AdminContainer(props: { match: { url: string } }) {
               toggleDropdown={() =>
                 setSideMenu((prev) => (prev === "inventory" ? "" : "inventory"))
               }
+              labelIcon={<FiPackage size={18} />}
               labelText="Inventory"
               options={[
                 {
@@ -110,11 +91,8 @@ function AdminContainer(props: { match: { url: string } }) {
               toggleDropdown={() =>
                 setSideMenu((prev) => (prev === "report" ? "" : "report"))
               }
-              labelImg={reportsLblImg}
-              labelImgStyle={{
-                height: 18,
-                width: 87,
-              }}
+              labelIcon={<FiFileText size={18} />}
+              labelText="Reports"
               options={[
                 {
                   label: "Invoice Report",
@@ -139,11 +117,8 @@ function AdminContainer(props: { match: { url: string } }) {
               toggleDropdown={() =>
                 setSideMenu((prev) => (prev === "settings" ? "" : "settings"))
               }
-              labelImg={storeSettingsLblImg}
-              labelImgStyle={{
-                height: 18,
-                width: 132,
-              }}
+              labelIcon={<FiSettings size={18} />}
+              labelText="Store Settings"
               options={[
                 {
                   label: "General Settings",
@@ -178,11 +153,8 @@ function AdminContainer(props: { match: { url: string } }) {
               ]}
             />
             <DropdownMenuButton
-              labelImg={helpLblImg}
-              labelImgStyle={{
-                height: 18,
-                width: 63,
-              }}
+              labelIcon={<FiHelpCircle size={18} />}
+              labelText="Help"
               active={pathname.includes("help")}
               dropDownOpen={isSideMenu === "help"}
               toggleDropdown={() =>
@@ -218,31 +190,9 @@ function AdminContainer(props: { match: { url: string } }) {
             />
           </div>
         </div>
-        <div
-          style={{
-            ...styles.rightSide,
-            ...(pathname.includes("dashboard") ? {
-              width: width < 1300 ? "73%" : "80%",
-              backgroundColor: "grey",
-            } : {}),
-          }}
-        >
+        <div style={styles.rightSide}>
           <div style={{ height: "100%" }}>
-            <div
-              style={{
-                ...(!pathname.includes("employeesreport") &&
-                  !pathname.includes("editemployee") &&
-                  !pathname.includes("onlinestoresettings") &&
-                  !pathname.includes("dashboard")
-                  ? styles.page
-                  : {}),
-                ...(pathname.includes("dashboard") ? {
-                  backgroundColor: "rgba(238, 242, 255, 1)",
-                  height: "100%",
-                  width: "100%",
-                } : {}),
-              }}
-            >
+            <div style={styles.page}>
               {index &&
                 index.map((route, key) => (
                   <Route
@@ -255,38 +205,6 @@ function AdminContainer(props: { match: { url: string } }) {
           </div>
         </div>
       </div>
-      {viewVisible && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "white",
-              position: "absolute",
-              opacity: fadeVisible ? 1 : 0,
-              transition: "opacity 0.5s",
-              height: "100%",
-              width: "100%",
-            }}
-          >
-            <img
-              src={loadingGif}
-              alt=""
-              style={{ width: 450, height: 450, objectFit: "contain" }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -296,117 +214,45 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     flex: 1,
-    backgroundColor: "#eef2ff",
+    backgroundColor: "#f8fafc",
     minHeight: "100vh",
-  },
-  header: {
-    height: 75,
-    backgroundColor: "rgba(255,255,255,1)",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
   bottom: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: "rgba(238,242,255,1)",
-  },
-  logo: {
-    height: 70,
-    width: 222,
-    marginRight: 20,
-    marginLeft: 20,
-  },
-  rightSideRow: {
-    height: 39,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginRight: 50,
-  },
-  backToPOSBtn: {
-    width: 140,
-    height: 32,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 30,
-  },
-  pos: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
-  },
-  userBtn: {
-    height: 39,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  iconWithNameGroup: {
-    height: 39,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  userIcon: {
-    height: 39,
-    width: 40,
-    marginRight: 10,
-  },
-  username: {
-    color: "#435869",
-    fontSize: 15,
-    marginRight: 10,
-  },
-  chevronDownIcon: {
-    color: "rgba(128,128,128,1)",
-    fontSize: 30,
+    backgroundColor: "#f8fafc",
   },
   leftMenu: {
-    width: 278,
+    width: 240,
     height: "100%",
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: "column",
+    borderRight: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
+    flexShrink: 0,
   },
   menuOptionsContainer: {
-    width: 201,
     display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginTop: 0,
-    marginLeft: 15,
+    flexDirection: "column",
+    padding: "24px 16px",
+    gap: 2,
+    overflow: "auto",
+    flex: 1,
   },
   rightSide: {
-    width: "78%",
+    flex: 1,
     height: "100%",
     display: "flex",
-    justifyContent: "flex-end",
   },
   page: {
     width: "100%",
     backgroundColor: "#ffffff",
-    boxShadow: "3px 3px 15px rgba(0,0,0,0.2)",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
     height: "100%",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-  },
-  logoutFromAccount: {
-    fontWeight: "700",
-    color: "#121212",
-  },
-  logoutIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 26,
   },
 };
 

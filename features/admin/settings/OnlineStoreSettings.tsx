@@ -9,9 +9,9 @@ import {
 import { auth, db } from "services/firebase/config";
 import { createCheckoutSession } from "services/firebase/functions";
 import Switch from "shared/components/ui/Switch";
-import PayForOnlineStore from "./components/PayForOnlineStore";
 import { useAlert } from "react-alert";
-import loadingGif from "assets/loading.gif";
+import { FiGlobe, FiLock, FiShoppingBag, FiCheck } from "react-icons/fi";
+import { useHistory } from "react-router-dom";
 
 function OnlineStoreSettings() {
   const activePlan = activePlanState.use();
@@ -20,26 +20,17 @@ function OnlineStoreSettings() {
   const catalog = storeProductsState.use();
   const [urlEnding, seturlEnding] = useState(onlineStoreDetails.urlEnding);
   const [stripePublicKey, setstripePublicKey] = useState(
-    onlineStoreDetails.stripePublicKey
+    onlineStoreDetails.stripePublicKey,
   );
   const [stripeSecretKey, setstripeSecretKey] = useState(
-    onlineStoreDetails.stripeSecretKey
+    onlineStoreDetails.stripeSecretKey,
   );
   const [onlineStoreActive, setonlineStoreActive] = useState(
-    onlineStoreDetails.onlineStoreActive
+    onlineStoreDetails.onlineStoreActive,
   );
-  const [fadeOpacity, setFadeOpacity] = useState(0);
-  const [viewVisible, setviewVisible] = useState(false);
+  const [loading, setloading] = useState(false);
   const alertP = useAlert();
-
-  const fadeIn = () => {
-    setFadeOpacity(1);
-  };
-
-  const resetLoader = () => {
-    setviewVisible(true);
-    fadeIn();
-  };
+  const history = useHistory();
 
   const startOnlineStore = async () => {
     if (!urlEnding) {
@@ -56,7 +47,7 @@ function OnlineStoreSettings() {
 
     if (!querySnapshot.empty) {
       alertP.error(
-        "This url ending is already taken. Please choose another one."
+        "This url ending is already taken. Please choose another one.",
       );
       return;
     }
@@ -100,6 +91,7 @@ function OnlineStoreSettings() {
         stripeSecretKey:
           stripeSecretKey?.length ?? 0 > 0 ? stripeSecretKey : null,
       });
+      alertP.success("Online store set up successfully!");
     } catch {
       alertP.error("An error occurred while setting up the online store.");
     }
@@ -154,174 +146,232 @@ function OnlineStoreSettings() {
   };
 
   const payOnlineStore = async () => {
-    resetLoader();
+    setloading(true);
     await createCheckoutSession(
       "price_1OdwZqCIw3L7DOwIj1Fu96SW",
       window.location.href,
       window.location.href,
-      (msg) => alertP.error(msg || "An error occurred")
+      (msg) => alertP.error(msg || "An error occurred"),
     );
+    setloading(false);
   };
 
+  // Not on Professional plan — show upgrade prompt
   if (activePlan !== "professional") {
     return (
       <div style={styles.container}>
-        <div style={styles.headerContainer}>
-          <span style={styles.onlineStoreSettingsHeader}>
-            Online Store Settings
-          </span>
+        <div style={styles.headerRow}>
+          <div>
+            <span style={styles.title}>Online Store Settings</span>
+            <span style={styles.subtitle}>
+              Set up and manage your online ordering store
+            </span>
+          </div>
         </div>
-        <div style={{ backgroundColor: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: 24, maxWidth: 480, display: "flex", flexDirection: "column" as const, gap: 16 }}>
-          <span style={{ fontSize: 15, color: "#1e40af", lineHeight: "1.5" }}>
-            Online store is available on the Professional plan.
-          </span>
-          <button
-            style={{ padding: "12px 28px", backgroundColor: "#1470ef", color: "#fff", fontWeight: "600", fontSize: 15, border: "none", borderRadius: 10, cursor: "pointer", alignSelf: "flex-start" }}
-            onClick={() => window.location.href = "/authed/settings/billingsettings"}
-          >
-            Upgrade to Professional
-          </button>
+        <div style={styles.scrollArea}>
+          <div style={styles.upgradeCard}>
+            <div style={styles.upgradeIconWrap}>
+              <FiShoppingBag size={32} color="#1470ef" />
+            </div>
+            <span style={styles.upgradeTitle}>
+              Online Store is a Professional Feature
+            </span>
+            <span style={styles.upgradeText}>
+              Upgrade to the Professional plan to set up your online store, accept
+              online orders, and process payments through Stripe.
+            </span>
+            <button
+              style={styles.upgradeBtn}
+              onClick={() =>
+                history.push("/authed/settings/billingsettings")
+              }
+            >
+              Upgrade to Professional
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Professional plan but hasn't paid for online store add-on
+  if (onlineStoreDetails.paidStatus !== "active") {
+    return (
+      <div style={styles.container}>
+        <div style={styles.headerRow}>
+          <div>
+            <span style={styles.title}>Online Store Settings</span>
+            <span style={styles.subtitle}>
+              Set up and manage your online ordering store
+            </span>
+          </div>
+        </div>
+        <div style={styles.scrollArea}>
+          <div style={styles.pricingCard}>
+            <div style={styles.pricingHeader}>
+              <FiShoppingBag size={24} color="#1470ef" />
+              <span style={styles.pricingTitle}>Online Store</span>
+            </div>
+            <span style={styles.pricingDescription}>
+              Take your business to the next level with an online ordering store
+            </span>
+            <div style={styles.priceRow}>
+              <span style={styles.priceAmount}>$40</span>
+              <span style={styles.priceUnit}>/month</span>
+            </div>
+            <div style={styles.divider} />
+            <div style={styles.benefitsList}>
+              {[
+                "Manage straight from POS",
+                "24/7 Support",
+                "Simple and powerful",
+              ].map((benefit) => (
+                <div key={benefit} style={styles.benefitRow}>
+                  <FiCheck size={16} color="#10b981" />
+                  <span style={styles.benefitText}>{benefit}</span>
+                </div>
+              ))}
+            </div>
+            <button
+              style={{
+                ...styles.getStartedBtn,
+                opacity: loading ? 0.5 : 1,
+              }}
+              onClick={payOnlineStore}
+              disabled={loading}
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Active online store — show settings
   return (
     <div style={styles.container}>
-      <div style={styles.headerContainer}>
-        <span style={styles.onlineStoreSettingsHeader}>
-          Online Store Settings
-        </span>
+      <div style={styles.headerRow}>
+        <div>
+          <span style={styles.title}>Online Store Settings</span>
+          <span style={styles.subtitle}>
+            {onlineStoreDetails.onlineStoreSetUp
+              ? "Manage your online store configuration"
+              : "Set up your online ordering store"}
+          </span>
+        </div>
+        <button
+          style={styles.saveBtn}
+          onClick={
+            onlineStoreDetails.onlineStoreSetUp
+              ? UpdateStoreDetails
+              : startOnlineStore
+          }
+        >
+          {onlineStoreDetails.onlineStoreSetUp ? "Save Changes" : "Confirm Setup"}
+        </button>
       </div>
-      <div style={styles.onlineStoreInnerContainer}>
-        {onlineStoreDetails.paidStatus === "active" ? (
-          <div style={styles.innerGroup}>
-            <div style={styles.inputsGroup}>
-              <div style={styles.urlEndingInputGroup}>
-                <span style={styles.onlineUrlEndingTxt}>Online URL Ending</span>
-                {onlineStoreDetails.onlineStoreSetUp ? (
-                  <button
-                    style={{ ...styles.uRLBox, justifyContent: "center", display: "flex", alignItems: "center", cursor: "default" }}
-                  >
-                    <span>{onlineStoreDetails.urlEnding}</span>
-                  </button>
-                ) : (
-                  <input
-                    style={styles.uRLBox}
-                    placeholder="yourstorename"
-                    value={
-                      onlineStoreDetails.urlEnding
-                        ? onlineStoreDetails.urlEnding
-                        : urlEnding
+
+      <div style={styles.scrollArea}>
+        {/* Store URL Card */}
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <FiGlobe size={18} color="#1470ef" />
+            <span style={styles.cardTitle}>Store URL</span>
+          </div>
+          <div style={styles.fieldGroup}>
+            <span style={styles.fieldLabel}>URL Ending</span>
+            {onlineStoreDetails.onlineStoreSetUp ? (
+              <div style={styles.lockedUrlRow}>
+                <FiLock size={14} color="#94a3b8" />
+                <span style={styles.lockedUrlText}>
+                  {onlineStoreDetails.urlEnding}
+                </span>
+              </div>
+            ) : (
+              <div style={styles.urlInputRow}>
+                <span style={styles.urlPrefix}>divinepos.com/order/</span>
+                <input
+                  style={styles.urlInput}
+                  placeholder="yourstorename"
+                  value={
+                    onlineStoreDetails.urlEnding
+                      ? onlineStoreDetails.urlEnding
+                      : urlEnding
+                  }
+                  onChange={(e) => {
+                    if (!onlineStoreDetails.onlineStoreSetUp) {
+                      seturlEnding(
+                        e.target.value
+                          .replace(/[^a-zA-Z-]/g, "")
+                          .toLowerCase(),
+                      );
                     }
-                    onChange={(e) => {
-                      if (!onlineStoreDetails.onlineStoreSetUp) {
-                        seturlEnding(
-                          e.target.value.replace(/[^a-zA-Z-]/g, "").toLowerCase()
-                        );
-                      }
-                    }}
-                  />
-                )}
-              </div>
-              <div style={styles.stripePublicKeyInputGroup}>
-                <span style={styles.stripePublicKeyTxt}>Stripe Public Key</span>
-                <input
-                  style={styles.stripeKeyBox}
-                  placeholder="Enter Public Key"
-                  value={
-                    onlineStoreDetails.stripePublicKey
-                      ? onlineStoreDetails.stripePublicKey
-                      : stripePublicKey ?? ""
-                  }
-                  onChange={(e) => {
-                    setstripePublicKey(e.target.value);
                   }}
                 />
               </div>
-              <div style={styles.stripePrivateKeyInputGroup}>
-                <span style={styles.stripePrivateKeyTxt}>
-                  Stripe Private Key
-                </span>
-                <input
-                  style={styles.stripePrivateKeyBox}
-                  placeholder="Enter Private Key"
-                  value={
-                    onlineStoreDetails.stripeSecretKey
-                      ? onlineStoreDetails.stripeSecretKey
-                      : stripeSecretKey ?? ""
-                  }
-                  onChange={(e) => {
-                    setstripeSecretKey(e.target.value);
-                  }}
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                <span style={{ fontWeight: "700", marginRight: 10 }}>
-                  Online Store Active Status:
-                </span>
-                <Switch
-                  isActive={onlineStoreActive}
-                  toggleSwitch={() => setonlineStoreActive((prev) => !prev)}
-                />
-              </div>
+            )}
+            <span style={styles.fieldHint}>
+              {onlineStoreDetails.onlineStoreSetUp
+                ? "Your store URL has been set and cannot be changed"
+                : "Once confirmed, your URL cannot be changed"}
+            </span>
+          </div>
+        </div>
+
+        {/* Stripe Keys Card */}
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <FiLock size={18} color="#1470ef" />
+            <span style={styles.cardTitle}>Stripe Payment Keys</span>
+          </div>
+          <div style={styles.fieldGrid}>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Stripe Public Key</span>
+              <input
+                style={styles.input}
+                placeholder="Enter public key"
+                value={
+                  onlineStoreDetails.stripePublicKey
+                    ? onlineStoreDetails.stripePublicKey
+                    : stripePublicKey ?? ""
+                }
+                onChange={(e) => setstripePublicKey(e.target.value)}
+              />
             </div>
-            <div style={styles.bottomBtnGroup}>
-              <span style={styles.readInfo}>
-                {onlineStoreDetails.onlineStoreSetUp
-                  ? "*Your Store Url Has Already Been Set"
-                  : "*Once Confirmed Your Url CAN NOT BE CHANGED"}
-              </span>
-              {onlineStoreDetails.onlineStoreSetUp ? (
-                <button
-                  style={styles.confirmBtn}
-                  onClick={UpdateStoreDetails}
-                >
-                  <span style={styles.confirmTxtBtn}>Update</span>
-                </button>
-              ) : (
-                <button style={styles.confirmBtn} onClick={startOnlineStore}>
-                  <span style={styles.confirmTxtBtn}>Confirm</span>
-                </button>
-              )}
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Stripe Secret Key</span>
+              <input
+                style={styles.input}
+                placeholder="Enter secret key"
+                value={
+                  onlineStoreDetails.stripeSecretKey
+                    ? onlineStoreDetails.stripeSecretKey
+                    : stripeSecretKey ?? ""
+                }
+                onChange={(e) => setstripeSecretKey(e.target.value)}
+              />
             </div>
           </div>
-        ) : (
-          <PayForOnlineStore payOnlineStore={payOnlineStore} />
-        )}
-      </div>
-      {viewVisible && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "white",
-              position: "absolute",
-              opacity: fadeOpacity,
-              height: "100%",
-              width: "100%",
-              transition: "opacity 500ms",
-            }}
-          >
-            <img
-              src={loadingGif}
-              alt="Loading"
-              style={{ width: 450, height: 450, objectFit: "contain" }}
+        </div>
+
+        {/* Store Status Card */}
+        <div style={styles.card}>
+          <span style={styles.cardTitle}>Store Status</span>
+          <div style={styles.switchRow}>
+            <div>
+              <span style={styles.switchLabel}>Online Store Active</span>
+              <span style={styles.switchDescription}>
+                When enabled, customers can place orders through your online store
+              </span>
+            </div>
+            <Switch
+              isActive={onlineStoreActive}
+              toggleSwitch={() => setonlineStoreActive((prev) => !prev)}
             />
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -330,144 +380,290 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    width: 691,
-    height: 562,
-  },
-  headerContainer: {
-    height: 19,
-    alignSelf: "stretch",
-  },
-  onlineStoreSettingsHeader: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 16,
-  },
-  onlineStoreInnerContainer: {
-    display: "flex",
-    width: 499,
-    height: 485,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#bfc1cb",
-    boxShadow: "3px 3px 10px rgba(182, 184, 194, 1)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  innerGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 419,
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  inputsGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 300,
-    justifyContent: "space-between",
-  },
-  urlEndingInputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 86,
-    justifyContent: "space-between",
-  },
-  onlineUrlEndingTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
-  },
-  uRLBox: {
-    width: 358,
-    height: 50,
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#9b9b9b",
-    padding: 10,
+    height: "100%",
+    padding: 30,
     boxSizing: "border-box",
+    overflow: "hidden",
   },
-  stripePublicKeyInputGroup: {
+  headerRow: {
     display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 87,
+    flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 20,
+    flexShrink: 0,
   },
-  stripePublicKeyTxt: {
+  title: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
+    fontSize: 24,
+    color: "#0f172a",
+    display: "block",
   },
-  stripeKeyBox: {
-    width: 358,
-    height: 50,
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#9b9b9b",
-    padding: 10,
-    boxSizing: "border-box",
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 4,
+    display: "block",
   },
-  stripePrivateKeyInputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 86,
-    justifyContent: "space-between",
-  },
-  stripePrivateKeyTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
-  },
-  stripePrivateKeyBox: {
-    width: 358,
-    height: 50,
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#9b9b9b",
-    padding: 10,
-    boxSizing: "border-box",
-  },
-  bottomBtnGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    height: 69,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  readInfo: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 12,
-  },
-  confirmBtn: {
-    width: 173,
-    height: 46,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 22,
+  saveBtn: {
+    padding: "10px 24px",
+    backgroundColor: "#1470ef",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
     border: "none",
+    borderRadius: 10,
     cursor: "pointer",
   },
-  confirmTxtBtn: {
-    fontWeight: "700",
-    color: "rgba(255,245,245,1)",
+  scrollArea: {
+    flex: 1,
+    overflow: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    paddingBottom: 20,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    padding: 24,
+    display: "flex",
+    flexDirection: "column",
+    gap: 20,
+    flexShrink: 0,
+  },
+  cardHeader: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  fieldGrid: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 calc(50% - 8px)",
+    minWidth: 240,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  fieldHint: {
+    fontSize: 12,
+    color: "#94a3b8",
+    fontStyle: "italic",
+  },
+  input: {
+    height: 42,
+    padding: "0 12px",
     fontSize: 14,
+    color: "#0f172a",
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    outline: "none",
+    boxSizing: "border-box",
+  },
+  urlInputRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  urlPrefix: {
+    fontSize: 13,
+    color: "#94a3b8",
+    padding: "0 12px",
+    backgroundColor: "#f8fafc",
+    height: 42,
+    display: "flex",
+    alignItems: "center",
+    borderRight: "1px solid #e2e8f0",
+    whiteSpace: "nowrap",
+    flexDirection: "row",
+  },
+  urlInput: {
+    flex: 1,
+    height: 42,
+    padding: "0 12px",
+    fontSize: 14,
+    color: "#0f172a",
+    border: "none",
+    outline: "none",
+    boxSizing: "border-box",
+  },
+  lockedUrlRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    height: 42,
+    padding: "0 12px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+  },
+  lockedUrlText: {
+    fontSize: 14,
+    color: "#475569",
+    fontFamily: "monospace",
+  },
+  switchRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+  },
+  switchLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+    display: "block",
+  },
+  switchDescription: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginTop: 2,
+    display: "block",
+  },
+  // Upgrade prompt (non-Professional)
+  upgradeCard: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 16,
+    padding: 48,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    maxWidth: 480,
+  },
+  upgradeIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#eff6ff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  upgradeTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+    textAlign: "center",
+  },
+  upgradeText: {
+    fontSize: 14,
+    color: "#64748b",
+    textAlign: "center",
+    lineHeight: "1.6",
+    maxWidth: 360,
+  },
+  upgradeBtn: {
+    padding: "12px 28px",
+    backgroundColor: "#1470ef",
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+    marginTop: 8,
+  },
+  // Pricing card (pay for online store)
+  pricingCard: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    padding: 32,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    maxWidth: 400,
+  },
+  pricingHeader: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  pricingTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  pricingDescription: {
+    fontSize: 14,
+    color: "#64748b",
+    lineHeight: "1.5",
+  },
+  priceRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
+  },
+  priceAmount: {
+    fontSize: 36,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  priceUnit: {
+    fontSize: 14,
+    color: "#94a3b8",
+    fontWeight: "500",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e2e8f0",
+  },
+  benefitsList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  benefitRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  benefitText: {
+    fontSize: 14,
+    color: "#334155",
+  },
+  getStartedBtn: {
+    padding: "12px 28px",
+    backgroundColor: "#1470ef",
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+    alignSelf: "flex-start",
+    marginTop: 8,
   },
 };
 

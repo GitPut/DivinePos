@@ -3,50 +3,11 @@ import {
   BarChart,
   Bar,
   XAxis,
+  YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-
-const getIntroOfPage = (label: string, orders: string, amount: string) => {
-  if (label === "J\n") {
-    return `January\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "F\n\n") {
-    return `February\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "M\n\n\n") {
-    return `March\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "A\n\n\n\n") {
-    return `April\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "M\n\n\n\n\n") {
-    return `May\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "J\n\n\n\n\n\n") {
-    return `June\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "J\n\n\n\n\n\n\n") {
-    return `July\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "A\n\n\n\n\n\n\n\n") {
-    return `August\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "S\n\n\n\n\n\n\n\n\n") {
-    return `September\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "O\n\n\n\n\n\n\n\n\n\n") {
-    return `October\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "N\n\n\n\n\n\n\n\n\n\n\n") {
-    return `November\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  if (label === "D\n\n\n\n\n\n\n\n\n\n\n\n") {
-    return `December\nOrders: ${orders}\nRevenue: $${amount}`;
-  }
-  return "";
-};
 
 interface Month {
   name: string;
@@ -59,37 +20,61 @@ interface BarGraphProps {
   data: Month[];
 }
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
+const MONTH_NAMES: Record<string, string> = {
+  Jan: "January",
+  Feb: "February",
+  Mar: "March",
+  Apr: "April",
+  May: "May",
+  Jun: "June",
+  Jul: "July",
+  Aug: "August",
+  Sep: "September",
+  Oct: "October",
+  Nov: "November",
+  Dec: "December",
+};
+
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+}) => {
   if (active && payload && payload.length) {
+    const fullMonth = MONTH_NAMES[label ?? ""] || label;
     return (
       <div
         style={{
-          backgroundColor: "#1c294e",
-          borderRadius: 5,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 10,
+          backgroundColor: "#0f172a",
+          borderRadius: 8,
+          padding: "10px 14px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         }}
       >
         <span
           style={{
             fontWeight: "600",
-            color: "rgba(255,255,255,1)",
-            fontSize: 15,
-            whiteSpace: "pre-line",
+            color: "#fff",
+            fontSize: 13,
+            display: "block",
+            marginBottom: 4,
           }}
         >
-          {getIntroOfPage(
-            label ?? "",
-            payload[0].payload.pv,
-            payload[0].payload.uv.toFixed(2)
-          )}
+          {fullMonth}
+        </span>
+        <span style={{ color: "#94a3b8", fontSize: 12, display: "block" }}>
+          Orders: {payload[0].payload.pv}
+        </span>
+        <span style={{ color: "#94a3b8", fontSize: 12, display: "block" }}>
+          Revenue: ${payload[0].payload.uv.toFixed(2)}
         </span>
       </div>
     );
   }
-
   return null;
 };
 
@@ -97,11 +82,22 @@ export default class BarGraph extends PureComponent<BarGraphProps> {
   render() {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart width={150} height={50} data={this.props.data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" fontFamily="Arial" />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="pv" barSize={20} fill="#1c294e" />
+        <BarChart data={this.props.data} barCategoryGap="20%">
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+          <XAxis
+            dataKey="name"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 12, fill: "#94a3b8" }}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 11, fill: "#94a3b8" }}
+            width={40}
+          />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f1f5f9" }} />
+          <Bar dataKey="pv" barSize={24} fill="#1470ef" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     );

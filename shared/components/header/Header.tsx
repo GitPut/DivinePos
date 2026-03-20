@@ -2,6 +2,7 @@ import React from "react";
 import { useHistory } from "react-router-dom";
 import LogoutDropdown from "./LogoutDropdown";
 import Logo from "assets/dpos-logo-black.png";
+import { FiMonitor, FiGrid } from "react-icons/fi";
 
 interface HeaderProps {
   onPressLogo?: () => void;
@@ -13,10 +14,13 @@ const Header = ({ onPressLogo, isPosHeader }: HeaderProps) => {
 
   return (
     <div style={styles.header}>
-      <button onClick={onPressLogo} style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}>
-        <img src={Logo} alt="" style={styles.logo} key={'logo'} />
+      <button
+        onClick={onPressLogo}
+        style={styles.logoBtn}
+      >
+        <img src={Logo} alt="" style={styles.logo} />
       </button>
-      <div style={styles.rightSideRow}>
+      <div style={styles.rightSide}>
         {isPosHeader && (
           <>
             <button
@@ -25,13 +29,15 @@ const Header = ({ onPressLogo, isPosHeader }: HeaderProps) => {
               }
               style={styles.customerDisplayBtn}
             >
+              <FiMonitor size={14} color="#475569" />
               <span style={styles.customerDisplayTxt}>Customer Display</span>
             </button>
             <button
               onClick={() => history.push("/pos")}
-              style={styles.backToPOSBtn}
+              style={styles.posBtn}
             >
-              <span style={styles.pos}>POS</span>
+              <FiGrid size={14} color="#fff" />
+              <span style={styles.posTxt}>POS</span>
             </button>
           </>
         )}
@@ -44,136 +50,76 @@ const Header = ({ onPressLogo, isPosHeader }: HeaderProps) => {
 export default Header;
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    flex: 1,
-    backgroundColor: "#eef2ff",
-  },
   header: {
     height: 75,
-    backgroundColor: "rgba(255,255,255,1)",
+    backgroundColor: "#fff",
     flexDirection: "row",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    zIndex: 100,
+    borderBottom: "1px solid #e2e8f0",
+    position: "relative",
+    zIndex: 1000,
+    flexShrink: 0,
+    paddingLeft: 8,
+    paddingRight: 24,
   },
-  bottom: {
-    flexDirection: "row",
+  logoBtn: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
     display: "flex",
-    justifyContent: "space-between",
-    backgroundColor: "rgba(238,242,255,1)",
+    alignItems: "center",
   },
   logo: {
-    height: 70,
-    width: 222,
-    marginRight: 20,
-    marginLeft: 20,
+    height: 55,
+    width: 180,
+    marginLeft: 12,
     objectFit: "contain",
   },
-  rightSideRow: {
-    height: 39,
+  rightSide: {
     flexDirection: "row",
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginRight: 50,
+    gap: 10,
   },
   customerDisplayBtn: {
-    height: 32,
-    backgroundColor: "#475569",
-    borderRadius: 20,
+    height: 36,
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
-    marginRight: 10,
-    border: "none",
+    flexDirection: "row",
+    gap: 6,
     cursor: "pointer",
-    paddingLeft: 16,
-    paddingRight: 16,
+    paddingLeft: 14,
+    paddingRight: 14,
   },
   customerDisplayTxt: {
-    fontWeight: "600",
-    color: "rgba(255,255,255,1)",
+    fontWeight: "500",
+    color: "#475569",
     fontSize: 13,
   },
-  backToPOSBtn: {
-    width: 140,
-    height: 32,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
+  posBtn: {
+    height: 36,
+    backgroundColor: "#1470ef",
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
-    marginRight: 30,
+    flexDirection: "row",
+    gap: 6,
     border: "none",
     cursor: "pointer",
+    paddingLeft: 18,
+    paddingRight: 18,
   },
-  pos: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
-  },
-  userBtn: {
-    height: 39,
-    flexDirection: "row",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  iconWithNameGroup: {
-    height: 39,
-    flexDirection: "row",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  userIcon: {
-    height: 39,
-    width: 40,
-    marginRight: 10,
-  },
-  username: {
-    color: "#435869",
-    fontSize: 15,
-    marginRight: 10,
-  },
-  chevronDownIcon: {
-    color: "rgba(128,128,128,1)",
-    fontSize: 30,
-  },
-  leftMenu: {
-    width: 278,
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    display: "flex",
-  },
-  menuOptionsContainer: {
-    width: 201,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    display: "flex",
-    marginTop: 0,
-    marginLeft: 15,
-  },
-  rightSide: {
-    width: "78%",
-    height: "100%",
-    justifyContent: "flex-end",
-    display: "flex",
-  },
-  page: {
-    width: "100%",
-    backgroundColor: "#ffffff",
-    boxShadow: "3px 3px 15px rgba(0,0,0,0.2)",
-    height: "100%",
-  },
-  logoutFromAccount: {
-    fontWeight: "700",
-    color: "#121212",
-  },
-  logoutIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 26,
+  posTxt: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 13,
   },
 };

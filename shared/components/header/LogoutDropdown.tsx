@@ -1,66 +1,70 @@
 import React, { useState } from "react";
-import { FiChevronUp, FiChevronDown, FiLogOut } from "react-icons/fi";
+import { FiChevronDown, FiLogOut, FiUser } from "react-icons/fi";
 import { logout } from "services/firebase/functions";
 import { storeDetailsState } from "store/appState";
 import { auth } from "services/firebase/config";
-import userIcon from "assets/image_bTyU..png";
 
 interface LogoutDropdownProps {
   isPosHeader: boolean;
 }
 
 function LogoutDropdown({ isPosHeader }: LogoutDropdownProps) {
-  const [openDropdown, setopenDropdown] = useState(false);
+  const [open, setOpen] = useState(false);
   const storeDetails = storeDetailsState.use();
   const name =
     (isPosHeader ? storeDetails.name : auth.currentUser?.displayName) ?? "User";
-  const widthOfContainer = name?.length > 10 ? name.length * 10 + 50 : 150;
+
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
-    <div style={{ zIndex: 10000, position: "relative" }}>
+    <div style={{ position: "relative" }}>
       <button
-        style={styles.userBtn}
-        onClick={() => setopenDropdown((prev) => !prev)}
+        style={styles.trigger}
+        onClick={() => setOpen((prev) => !prev)}
       >
-        <div style={styles.iconWithNameGroup}>
-          <img
-            src={userIcon}
-            alt=""
-            style={styles.userIcon}
-          />
-          <span style={styles.username}>{name}</span>
+        <div style={styles.avatar}>
+          <span style={styles.avatarText}>{initials}</span>
         </div>
-        {openDropdown ? (
-          <FiChevronUp size={30} color="rgba(128,128,128,1)" />
-        ) : (
-          <FiChevronDown size={30} color="rgba(128,128,128,1)" />
-        )}
-      </button>
-      {openDropdown && (
-        <button
+        <span style={styles.name}>{name}</span>
+        <FiChevronDown
+          size={16}
+          color="#94a3b8"
           style={{
-            backgroundColor: "rgba(255,255,255,1)",
-            borderRadius: 10,
-            boxShadow: "3px 3px 10px rgba(0,0,0,0.2)",
-            flexDirection: "row",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: widthOfContainer,
-            height: 43,
-            position: "absolute",
-            bottom: -50,
-            left: 0,
-            padding: 10,
-            zIndex: 100000,
-            border: "none",
-            cursor: "pointer",
+            transition: "transform 0.2s",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
           }}
-          onClick={logout}
-        >
-          <span style={styles.logoutFromAccount}>Logout</span>
-          <FiLogOut size={26} color="rgba(0,0,0,1)" />
-        </button>
+        />
+      </button>
+      {open && (
+        <>
+          <div
+            style={styles.backdrop}
+            onClick={() => setOpen(false)}
+          />
+          <div style={styles.dropdown}>
+            <div style={styles.dropdownHeader}>
+              <div style={styles.dropdownAvatar}>
+                <FiUser size={14} color="#64748b" />
+              </div>
+              <div>
+                <span style={styles.dropdownName}>{name}</span>
+                <span style={styles.dropdownEmail}>
+                  {auth.currentUser?.email ?? ""}
+                </span>
+              </div>
+            </div>
+            <div style={styles.divider} />
+            <button style={styles.logoutBtn} onClick={logout}>
+              <FiLogOut size={16} color="#ef4444" />
+              <span style={styles.logoutTxt}>Log Out</span>
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -69,120 +73,122 @@ function LogoutDropdown({ isPosHeader }: LogoutDropdownProps) {
 export default LogoutDropdown;
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    flex: 1,
-    backgroundColor: "#eef2ff",
-  },
-  header: {
-    height: 75,
-    backgroundColor: "rgba(255,255,255,1)",
-    flexDirection: "row",
+  trigger: {
     display: "flex",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 8,
+    background: "none",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    cursor: "pointer",
+    padding: "6px 12px 6px 6px",
+    height: 42,
+    boxSizing: "border-box",
   },
-  bottom: {
-    flexDirection: "row",
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#1470ef",
     display: "flex",
-    justifyContent: "space-between",
-    backgroundColor: "rgba(238,242,255,1)",
-  },
-  logo: {
-    height: 70,
-    width: 222,
-    marginRight: 20,
-    marginLeft: 20,
-  },
-  rightSideRow: {
-    height: 39,
-    flexDirection: "row",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginRight: 50,
-  },
-  backToPOSBtn: {
-    width: 140,
-    height: 32,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    display: "flex",
-    marginRight: 30,
+    flexShrink: 0,
   },
-  pos: {
+  avatarText: {
+    color: "#fff",
+    fontSize: 12,
     fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
   },
-  userBtn: {
-    height: 39,
-    flexDirection: "row",
+  name: {
+    color: "#0f172a",
+    fontSize: 13,
+    fontWeight: "500",
+    maxWidth: 140,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  backdrop: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    zIndex: 9998,
+  },
+  dropdown: {
+    position: "absolute",
+    top: "calc(100% + 6px)",
+    right: 0,
+    width: 220,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+    zIndex: 9999,
+    overflow: "hidden",
+    padding: 4,
+  },
+  dropdownHeader: {
     display: "flex",
-    justifyContent: "space-between",
+    flexDirection: "row",
     alignItems: "center",
-    minWidth: 150,
+    gap: 10,
+    padding: "10px 12px",
+  },
+  dropdownAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#f1f5f9",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  dropdownName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#0f172a",
+    display: "block",
+    maxWidth: 150,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  dropdownEmail: {
+    fontSize: 11,
+    color: "#94a3b8",
+    display: "block",
+    marginTop: 1,
+    maxWidth: 150,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    margin: "2px 8px",
+  },
+  logoutBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+    padding: "10px 12px",
     background: "none",
     border: "none",
+    borderRadius: 6,
     cursor: "pointer",
-    padding: 0,
+    boxSizing: "border-box",
   },
-  iconWithNameGroup: {
-    height: 39,
-    flexDirection: "row",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  userIcon: {
-    height: 39,
-    width: 40,
-    marginRight: 10,
-    objectFit: "contain",
-  },
-  username: {
-    color: "#435869",
-    fontSize: 15,
-    marginRight: 10,
-  },
-  chevronDownIcon: {
-    color: "rgba(128,128,128,1)",
-    fontSize: 30,
-  },
-  leftMenu: {
-    width: 278,
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    display: "flex",
-  },
-  menuOptionsContainer: {
-    width: 201,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    display: "flex",
-    marginTop: 0,
-    marginLeft: 15,
-  },
-  rightSide: {
-    width: "78%",
-    height: "100%",
-    justifyContent: "flex-end",
-    display: "flex",
-  },
-  page: {
-    width: "100%",
-    backgroundColor: "#ffffff",
-    boxShadow: "3px 3px 15px rgba(0,0,0,0.2)",
-    height: "100%",
-  },
-  logoutFromAccount: {
-    fontWeight: "700",
-    color: "#121212",
-  },
-  logoutIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 26,
+  logoutTxt: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#ef4444",
   },
 };

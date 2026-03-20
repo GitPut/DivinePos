@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FiPlus } from "react-icons/fi";
 import OptionSelectionItem from "./OptionSelectionItem";
 import OptionConditionItem from "./OptionConditionItem";
 import generateId from "utils/generateId";
@@ -68,12 +69,13 @@ function OptionsItemExpanded({
     : [];
 
   return (
-    <div style={styles.innerOptionContainer1}>
-      <div style={styles.optionMainInfoRow1}>
-        <div style={styles.optionNameInputGroup1}>
-          <span style={styles.optionNameInputLbl1}>Option Name</span>
+    <div style={styles.body}>
+      {/* Row 1: Option Name, Option Type, Selection Limit */}
+      <div style={styles.fieldRow}>
+        <div style={styles.fieldGroup}>
+          <span style={styles.fieldLabel}>Option Name</span>
           <input
-            style={styles.optionNameInput2}
+            style={styles.input}
             onChange={(ev) => {
               const val = ev.target.value;
               sete((prevState) => ({
@@ -87,46 +89,44 @@ function OptionsItemExpanded({
               });
             }}
             value={e.label ? e.label : ""}
-            placeholder="Enter Name (Ex Size, Toppings, Cheese)"
+            placeholder="e.g. Size, Toppings, Cheese"
           />
         </div>
-        <div style={styles.optionTypeGroup1}>
-          <span style={styles.optionTypeDropdownLbl1}>Option Type</span>
-          <div>
-            <DropdownStringOptions
-              placeholder="Choose Type"
-              value={e.optionType}
-              setValue={(val) => {
-                if (e.optionType) {
-                  setnewProductOptions((prev) => {
-                    const clone = structuredClone(prev);
-                    clone[index].optionType = val;
-                    return clone;
-                  });
-                } else {
-                  setnewProductOptions((prev) => {
-                    const clone = structuredClone(prev);
-                    clone[index] = {
-                      ...prev[index],
-                      optionType: val,
-                    };
-                    return clone;
-                  });
-                }
-                sete((prevState) => ({
-                  ...prevState,
-                  optionType: val,
-                }));
-              }}
-              options={["Dropdown", "Quantity Dropdown", "Table View", "Row", "Included Selections"]}
-              scrollY={scrollY}
-            />
-          </div>
+        <div style={styles.fieldGroup}>
+          <span style={styles.fieldLabel}>Option Type</span>
+          <DropdownStringOptions
+            placeholder="Choose Type"
+            value={e.optionType}
+            setValue={(val) => {
+              if (e.optionType) {
+                setnewProductOptions((prev) => {
+                  const clone = structuredClone(prev);
+                  clone[index].optionType = val;
+                  return clone;
+                });
+              } else {
+                setnewProductOptions((prev) => {
+                  const clone = structuredClone(prev);
+                  clone[index] = {
+                    ...prev[index],
+                    optionType: val,
+                  };
+                  return clone;
+                });
+              }
+              sete((prevState) => ({
+                ...prevState,
+                optionType: val,
+              }));
+            }}
+            options={["Dropdown", "Quantity Dropdown", "Table View", "Row", "Included Selections"]}
+            scrollY={scrollY}
+          />
         </div>
-        <div style={styles.selectionLimitInputGroup1}>
-          <span style={styles.selectionLimitInputLbl1}>Selection Limit</span>
+        <div style={styles.fieldGroup}>
+          <span style={styles.fieldLabel}>Selection Limit</span>
           <input
-            style={styles.selectionLimitInput2}
+            style={styles.input}
             onChange={(ev) => {
               const val = ev.target.value;
               sete((prevState) => ({
@@ -140,14 +140,15 @@ function OptionsItemExpanded({
               });
             }}
             value={e.numOfSelectable ? e.numOfSelectable.toString() : ""}
-            placeholder="Leave empty for no limit"
+            placeholder="No limit"
           />
         </div>
       </div>
-      <div style={styles.spacer5}></div>
-      <div style={styles.optionMainInfoRow1}>
-        <div style={styles.optionRequiredRow1}>
-          <span style={styles.isOptionTxt1}>Is Option Required?:</span>
+
+      {/* Row 2: Toggles + Default Value + Included Selections fields */}
+      <div style={styles.fieldRow}>
+        <div style={styles.toggleRow}>
+          <span style={styles.toggleLabel}>Required</span>
           <Switch
             isActive={e.isRequired ? true : false}
             toggleSwitch={() => {
@@ -164,8 +165,8 @@ function OptionsItemExpanded({
           />
         </div>
         {(e.optionType === "Table View" || e.optionType === "Quantity Dropdown" || e.optionType === "Included Selections") && (
-          <div style={styles.optionRequiredRow1}>
-            <span style={styles.isOptionTxt1}>Allow Half & Half?:</span>
+          <div style={styles.toggleRow}>
+            <span style={styles.toggleLabel}>Half & Half</span>
             <Switch
               isActive={e.allowHalfAndHalf ?? false}
               toggleSwitch={() => {
@@ -183,69 +184,67 @@ function OptionsItemExpanded({
           </div>
         )}
         {(e.optionType === "Dropdown" || e.optionType === "Row") && (
-          <div style={styles.optionTypeGroup1}>
-            <span style={styles.optionTypeDropdownLbl1}>Default Value</span>
-            <div>
-              <DropdownArrayOptions
-                placeholder="Default Value"
-                value={e.defaultValue ? e.defaultValue.label : null}
-                setValue={(val, valIndex) => {
-                  if (typeof valIndex !== "number" && valIndex === undefined)
-                    return;
-                  settestMap((prev) => {
-                    const clone = structuredClone(prev);
-                    clone.forEach((element, indexOfOl) => {
-                      if (element.selected) {
-                        clone[indexOfOl].selected = false;
-                      }
-                    });
-                    if (val) {
-                      clone[valIndex].selected = true;
+          <div style={styles.fieldGroup}>
+            <span style={styles.fieldLabel}>Default Value</span>
+            <DropdownArrayOptions
+              placeholder="Default Value"
+              value={e.defaultValue ? e.defaultValue.label : null}
+              setValue={(val, valIndex) => {
+                if (typeof valIndex !== "number" && valIndex === undefined)
+                  return;
+                settestMap((prev) => {
+                  const clone = structuredClone(prev);
+                  clone.forEach((element, indexOfOl) => {
+                    if (element.selected) {
+                      clone[indexOfOl].selected = false;
                     }
-                    return clone;
                   });
-                  if (typeof val !== "object") return;
-                  setnewProductOptions((prev) => {
-                    const clone = structuredClone(prev);
-                    clone[index].defaultValue = {
-                      ...val,
-                      label: val.label,
-                      id: val.id ?? "",
-                    };
+                  if (val) {
+                    clone[valIndex].selected = true;
+                  }
+                  return clone;
+                });
+                if (typeof val !== "object") return;
+                setnewProductOptions((prev) => {
+                  const clone = structuredClone(prev);
+                  clone[index].defaultValue = {
+                    ...val,
+                    label: val.label,
+                    id: val.id ?? "",
+                  };
 
-                    clone[index].optionsList.forEach((element, indexOfOl) => {
-                      if (element.selected) {
-                        clone[index].optionsList[indexOfOl].selected = false;
-                      }
-                    });
-                    if (val) {
-                      clone[index].optionsList[valIndex].selected = true;
+                  clone[index].optionsList.forEach((element, indexOfOl) => {
+                    if (element.selected) {
+                      clone[index].optionsList[indexOfOl].selected = false;
                     }
+                  });
+                  if (val) {
+                    clone[index].optionsList[valIndex].selected = true;
+                  }
 
-                    return clone;
-                  });
-                  sete((prevState) => {
-                    const clone = structuredClone(prevState);
-                    clone.defaultValue = {
-                      ...val,
-                      label: val.label,
-                      id: val.id ?? "",
-                    };
-                    return clone;
-                  });
-                }}
-                options={DropdownOptions}
-                scrollY={scrollY}
-              />
-            </div>
+                  return clone;
+                });
+                sete((prevState) => {
+                  const clone = structuredClone(prevState);
+                  clone.defaultValue = {
+                    ...val,
+                    label: val.label,
+                    id: val.id ?? "",
+                  };
+                  return clone;
+                });
+              }}
+              options={DropdownOptions}
+              scrollY={scrollY}
+            />
           </div>
         )}
-        {e.optionType === "Included Selections" ? (
+        {e.optionType === "Included Selections" && (
           <>
-            <div style={styles.selectionLimitInputGroup1}>
-              <span style={styles.selectionLimitInputLbl1}>Included Selections</span>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Included Selections</span>
               <input
-                style={styles.selectionLimitInput2}
+                style={styles.input}
                 onChange={(ev) => {
                   const val = ev.target.value;
                   sete((prevState) => ({
@@ -262,10 +261,10 @@ function OptionsItemExpanded({
                 placeholder="e.g. 3"
               />
             </div>
-            <div style={styles.selectionLimitInputGroup1}>
-              <span style={styles.selectionLimitInputLbl1}>Extra Selection Price</span>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Extra Selection Price</span>
               <input
-                style={styles.selectionLimitInput2}
+                style={styles.input}
                 onChange={(ev) => {
                   const val = ev.target.value;
                   sete((prevState) => ({
@@ -283,77 +282,70 @@ function OptionsItemExpanded({
               />
             </div>
           </>
-        ) : (
-          <div style={{ width: 195 }} />
         )}
       </div>
+
+      {/* Included Selections: Display Style */}
       {e.optionType === "Included Selections" && (
-        <>
-          <div style={styles.spacer5}></div>
-          <div style={styles.optionMainInfoRow1}>
-            <div style={styles.optionTypeGroup1}>
-              <span style={styles.optionTypeDropdownLbl1}>Display Style</span>
-              <div>
-                <DropdownStringOptions
-                  placeholder="Choose Style"
-                  value={e.includedDisplayStyle ?? null}
-                  setValue={(val) => {
-                    sete((prevState) => ({
-                      ...prevState,
-                      includedDisplayStyle: val ?? undefined,
-                    }));
-                    setnewProductOptions((prev) => {
-                      const clone = structuredClone(prev);
-                      clone[index].includedDisplayStyle = val ?? undefined;
-                      return clone;
-                    });
-                  }}
-                  options={["Quantity Dropdown", "Table View"]}
-                  scrollY={scrollY}
-                />
-              </div>
-            </div>
-            <div style={{ width: 239 }} />
-            <div style={{ width: 195 }} />
+        <div style={styles.fieldRow}>
+          <div style={styles.fieldGroup}>
+            <span style={styles.fieldLabel}>Display Style</span>
+            <DropdownStringOptions
+              placeholder="Choose Style"
+              value={e.includedDisplayStyle ?? null}
+              setValue={(val) => {
+                sete((prevState) => ({
+                  ...prevState,
+                  includedDisplayStyle: val ?? undefined,
+                }));
+                setnewProductOptions((prev) => {
+                  const clone = structuredClone(prev);
+                  clone[index].includedDisplayStyle = val ?? undefined;
+                  return clone;
+                });
+              }}
+              options={["Quantity Dropdown", "Table View"]}
+              scrollY={scrollY}
+            />
           </div>
-        </>
+        </div>
       )}
+
+      {/* Link Pricing To */}
       {optionLbls.length >= 1 && (
-        <>
-          <div style={styles.spacer5}></div>
-          <div style={styles.optionMainInfoRow1}>
-            <div style={styles.optionTypeGroup1}>
-              <span style={styles.optionTypeDropdownLbl1}>Link Pricing To</span>
-              <div>
-                <DropdownStringOptions
-                  placeholder="None"
-                  value={e.sizeLinkedOptionLabel ?? null}
-                  setValue={(val) => {
-                    sete((prevState) => ({
-                      ...prevState,
-                      sizeLinkedOptionLabel: val ?? undefined,
-                    }));
-                    setnewProductOptions((prev) => {
-                      const clone = structuredClone(prev);
-                      clone[index].sizeLinkedOptionLabel = val ?? undefined;
-                      return clone;
-                    });
-                  }}
-                  options={optionLbls}
-                  scrollY={scrollY}
-                />
-              </div>
-            </div>
-            <div style={{ width: 239 }} />
-            <div style={{ width: 195 }} />
+        <div style={styles.fieldRow}>
+          <div style={styles.fieldGroup}>
+            <span style={styles.fieldLabel}>Link Pricing To</span>
+            <DropdownStringOptions
+              placeholder="None"
+              value={e.sizeLinkedOptionLabel ?? null}
+              setValue={(val) => {
+                sete((prevState) => ({
+                  ...prevState,
+                  sizeLinkedOptionLabel: val ?? undefined,
+                }));
+                setnewProductOptions((prev) => {
+                  const clone = structuredClone(prev);
+                  clone[index].sizeLinkedOptionLabel = val ?? undefined;
+                  return clone;
+                });
+              }}
+              options={optionLbls}
+              scrollY={scrollY}
+            />
           </div>
-        </>
+        </div>
       )}
-      <div style={styles.spacer6}></div>
+
+      {/* Selections Section */}
+      {testMap.length > 0 && (
+        <div style={styles.sectionDivider}>
+          <span style={styles.sectionTitle}>Selections</span>
+        </div>
+      )}
       {testMap.map((e, indexInnerList) => (
         <OptionSelectionItem
           key={e.id}
-          style={styles.optionSelectionItem1}
           eInnerListStart={e}
           indexInnerList={indexInnerList}
           testMap={testMap}
@@ -370,10 +362,9 @@ function OptionsItemExpanded({
           sizeLinkedLabels={sizeLinkedLabels}
         />
       ))}
-      {testMap.length > 0 && <div style={styles.spacer7}></div>}
-      <div style={styles.addAnotherSelectionBtnRow1}>
+      <div style={styles.addBtnRow}>
         <button
-          style={styles.addAnotherSelectionBtn2}
+          style={styles.addSelectionBtn}
           onClick={() => {
             const cloneOuter = structuredClone(testMap);
             cloneOuter.push({
@@ -393,17 +384,23 @@ function OptionsItemExpanded({
             testMap.length > 0 && testMap[testMap.length - 1].label === null
           }
         >
-          <span style={styles.addAnotherSelectionBtnLbl1}>
+          <FiPlus size={14} color="#1470ef" />
+          <span style={styles.addSelectionTxt}>
             {testMap.length > 0 ? "Add Another Selection" : "Add Selection"}
           </span>
         </button>
       </div>
-      <div style={styles.spacer6}></div>
+
+      {/* Conditions Section */}
+      {caseList.length > 0 && (
+        <div style={styles.sectionDivider}>
+          <span style={styles.sectionTitle}>Conditions</span>
+        </div>
+      )}
       {caseList.length > 0 &&
         caseList.map((ifStatement, indexOfIf) => (
           <OptionConditionItem
             key={indexOfIf}
-            style={styles.optionSelectionItem1}
             ifStatement={ifStatement}
             indexOfIf={indexOfIf}
             scrollY={scrollY}
@@ -414,11 +411,10 @@ function OptionsItemExpanded({
             newProduct={newProduct}
           />
         ))}
-      {caseList.length > 0 && <div style={styles.spacer7}></div>}
       {optionLbls.length >= 1 && (
-        <div style={styles.addAnotherSelectionBtnRow1}>
+        <div style={styles.addBtnRow}>
           <button
-            style={styles.addAnotherSelectionBtn2}
+            style={styles.addSelectionBtn}
             onClick={() => {
               const id = generateId(10);
               if (!newProductOptions[index].selectedCaseList) {
@@ -465,9 +461,8 @@ function OptionsItemExpanded({
               }
             }}
           >
-            <span style={styles.addAnotherSelectionBtnLbl1}>
-              Add If Statement
-            </span>
+            <FiPlus size={14} color="#1470ef" />
+            <span style={styles.addSelectionTxt}>Add Condition</span>
           </button>
         </div>
       )}
@@ -476,124 +471,95 @@ function OptionsItemExpanded({
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  innerOptionContainer1: {
-    width: "100%",
+  body: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    marginTop: 20,
-    paddingLeft: 20,
-    paddingRight: 20,
+    padding: "20px 20px 8px",
+    gap: 16,
   },
-  optionMainInfoRow1: {
-    width: "100%",
-    height: 84,
+  fieldRow: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+    alignItems: "flex-end",
   },
-  optionNameInputGroup1: {
-    width: 239,
-    height: 84,
+  fieldGroup: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
+    gap: 6,
+    flex: "1 1 180px",
+    minWidth: 140,
   },
-  optionNameInputLbl1: {
-    color: "#121212",
-    fontSize: 17,
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
   },
-  optionNameInput2: {
-    width: 239,
-    height: 50,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    padding: 10,
+  input: {
+    height: 42,
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    padding: "0 12px",
+    fontSize: 14,
+    color: "#0f172a",
     boxSizing: "border-box" as const,
+    outline: "none",
   },
-  optionTypeGroup1: {
-    width: 197,
-    height: 77,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  optionTypeDropdownLbl1: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  selectionLimitInputGroup1: {
-    width: 195,
-    height: 77,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  selectionLimitInputLbl1: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  selectionLimitInput2: {
-    width: 195,
-    height: 50,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    padding: 10,
-    boxSizing: "border-box" as const,
-  },
-  spacer5: {
-    width: "100%",
-    height: 40,
-  },
-  optionRequiredRow1: {
-    width: 239,
-    height: 20,
+  toggleRow: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 10,
+    height: 42,
+    padding: "0 14px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+    border: "1px solid #f1f5f9",
   },
-  isOptionTxt1: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
+  toggleLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+    whiteSpace: "nowrap",
   },
-  spacer6: {
-    width: "100%",
-    height: 53,
+  sectionDivider: {
+    borderTop: "1px solid #e2e8f0",
+    paddingTop: 16,
+    marginTop: 4,
   },
-  optionSelectionItem1: {
-    width: "100%",
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#94a3b8",
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
   },
-  spacer7: {
-    width: "100%",
-    height: 61,
-  },
-  addAnotherSelectionBtnRow1: {
-    height: 47,
-    alignSelf: "stretch",
+  addBtnRow: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    paddingTop: 4,
+    paddingBottom: 8,
   },
-  addAnotherSelectionBtn2: {
-    width: 173,
-    height: 47,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
+  addSelectionBtn: {
+    height: 36,
+    backgroundColor: "#fff",
+    border: "1px dashed #cbd5e1",
+    borderRadius: 8,
     display: "flex",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    border: "none",
+    gap: 6,
+    paddingLeft: 16,
+    paddingRight: 16,
     cursor: "pointer",
   },
-  addAnotherSelectionBtnLbl1: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 15,
+  addSelectionTxt: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#1470ef",
   },
 };
 

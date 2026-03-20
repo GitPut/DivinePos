@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import InputField from "./components/InputField";
 import {
   onlineStoreState,
   setStoreDetailsState,
@@ -81,86 +80,57 @@ function GeneralSettings() {
   };
 
   return (
-    <div
-      style={{
-        ...styles.contentContainer,
-        overflow: "auto",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 30,
-        }}
-      >
-        <div style={styles.inputsLeftAndRight}>
-          <div style={styles.leftSideGroup}>
-            <InputField
-              lbl="Store Name"
-              style={styles.storeNameInput}
-              placeholder="Enter store name"
-              onChangeText={(val) => setname(val)}
-              value={name}
-            />
-            <InputField
-              lbl="Store Website URL"
-              style={styles.storeWebsiteUrlInput}
-              placeholder="Enter store website URL"
-              onChangeText={(val) => setwebsite(val)}
-              value={website}
-            />
-            <InputField
-              lbl="Store Phone Number"
-              style={styles.storePhoneNumberInput}
-              placeholder="Enter store phone number"
-              onChangeText={(val) => setphoneNumber(val)}
-              value={phoneNumber}
-            />
-            <InputField
-              lbl="Settings Password"
-              style={styles.settingsPasswordInput}
-              placeholder="Enter settings password"
-              onChangeText={(val) => setsettingsPassword(val)}
-              value={settingsPassword}
-            />
-          </div>
-          <div style={styles.rightSideGroup}>
-            <InputField
-              lbl="Tax Rate - Default (13%)"
-              style={styles.taxRateInput}
-              placeholder="Enter tax rate (Ex. 13%)"
-              onChangeText={(val) => {
-                settaxRate(val);
-              }}
-              value={taxRate ? taxRate.toString() : ""}
-            />
-            <div
-              style={{
-                ...styles.taxRateInput,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <span
-                style={{
-                  fontWeight: "700",
-                  color: "#020202",
-                  fontSize: 17,
-                  height: 20,
-                  alignSelf: "stretch",
-                  display: "inline-block",
-                }}
-              >
-                Store Address
-              </span>
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.headerRow}>
+        <div>
+          <span style={styles.title}>General Settings</span>
+          <span style={styles.subtitle}>
+            Manage your store details and preferences
+          </span>
+        </div>
+        <button style={styles.saveBtn} onClick={handleDataUpdate}>
+          Save Changes
+        </button>
+      </div>
+
+      {/* Scrollable content */}
+      <div style={styles.scrollArea}>
+        {/* Store Information Card */}
+        <div style={styles.card}>
+          <span style={styles.cardTitle}>Store Information</span>
+          <div style={styles.fieldGrid}>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Store Name</span>
+              <input
+                style={styles.input}
+                placeholder="Enter store name"
+                value={name}
+                onChange={(e) => setname(e.target.value)}
+              />
+            </div>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Phone Number</span>
+              <input
+                style={styles.input}
+                placeholder="Enter store phone number"
+                value={phoneNumber}
+                onChange={(e) => setphoneNumber(e.target.value)}
+              />
+            </div>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Website URL</span>
+              <input
+                style={styles.input}
+                placeholder="Enter store website URL"
+                value={website}
+                onChange={(e) => setwebsite(e.target.value)}
+              />
+            </div>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Store Address</span>
               <GooglePlacesAutocomplete
-                apiOptions={{
-                  region: "CA",
-                }}
+                apiOptions={{ region: "CA" }}
                 debounce={800}
                 apiKey={GOOGLE_API_KEY}
                 selectProps={{
@@ -172,46 +142,71 @@ function GeneralSettings() {
                 }}
               />
             </div>
-            <div style={styles.acceptDeliveryGroup}>
-              <span style={styles.acceptDeliveryLbl}>Accept Delivery?</span>
-              <Switch
-                isActive={acceptDelivery}
-                toggleSwitch={() => setacceptDelivery((prev) => !prev)}
-              />
-            </div>
-            {acceptDelivery && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  width: "100%",
-                }}
-              >
-                <InputField
-                  lbl="Delivery Fee"
-                  style={{ height: 89, width: "48%" }}
-                  placeholder="Enter delivery price"
-                  onChangeText={(val) => setdeliveryPrice(val)}
-                  value={deliveryPrice}
-                />
-                <InputField
-                  lbl="Delivery Radius (KM)"
-                  style={{ height: 89, width: "48%" }}
-                  placeholder="Enter delivery range in KM"
-                  onChangeText={(val) => setdeliveryRange(val)}
-                  value={deliveryRange}
-                />
-              </div>
-            )}
-            {!acceptDelivery && <div style={{ height: 89, width: "100%" }} />}
           </div>
         </div>
-        <div style={styles.btnContainer}>
-          <button style={styles.saveBtn} onClick={handleDataUpdate}>
-            <span style={styles.saveBtnTxt}>Save</span>
-          </button>
+
+        {/* Tax & Security Card */}
+        <div style={styles.card}>
+          <span style={styles.cardTitle}>Tax & Security</span>
+          <div style={styles.fieldGrid}>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Tax Rate (%)</span>
+              <input
+                style={styles.input}
+                placeholder="Enter tax rate (e.g. 13)"
+                value={taxRate ? taxRate.toString() : ""}
+                onChange={(e) => settaxRate(e.target.value)}
+              />
+            </div>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Settings Password</span>
+              <input
+                style={styles.input}
+                placeholder="Enter settings password"
+                value={settingsPassword}
+                onChange={(e) => setsettingsPassword(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery Card */}
+        <div style={styles.card}>
+          <span style={styles.cardTitle}>Delivery</span>
+          <div style={styles.switchRow}>
+            <div>
+              <span style={styles.switchLabel}>Accept Delivery Orders</span>
+              <span style={styles.switchDescription}>
+                Enable delivery ordering for your customers
+              </span>
+            </div>
+            <Switch
+              isActive={acceptDelivery}
+              toggleSwitch={() => setacceptDelivery((prev) => !prev)}
+            />
+          </div>
+          {acceptDelivery && (
+            <div style={styles.fieldGrid}>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Delivery Fee ($)</span>
+                <input
+                  style={styles.input}
+                  placeholder="Enter delivery price"
+                  value={deliveryPrice}
+                  onChange={(e) => setdeliveryPrice(e.target.value)}
+                />
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Delivery Radius (KM)</span>
+                <input
+                  style={styles.input}
+                  placeholder="Enter delivery range in KM"
+                  value={deliveryRange}
+                  onChange={(e) => setdeliveryRange(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -222,112 +217,114 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    width: "100%",
-    height: 759,
-  },
-  headerLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 16,
-  },
-  contentContainer: {
-    width: "100%",
     height: "100%",
+    padding: 30,
+    boxSizing: "border-box",
+    overflow: "hidden",
   },
-  inputsLeftAndRight: {
+  headerRow: {
     display: "flex",
-    width: "95%",
-    height: 414,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 20,
+    flexShrink: 0,
   },
-  leftSideGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: "40%",
-    height: 414,
-    justifyContent: "space-between",
-  },
-  storeNameInput: {
-    height: 89,
-    width: "100%",
-  },
-  storeWebsiteUrlInput: {
-    height: 89,
-    width: "100%",
-  },
-  storePhoneNumberInput: {
-    height: 89,
-    width: "100%",
-  },
-  settingsPasswordInput: {
-    height: 89,
-    width: "100%",
-  },
-  rightSideGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: "40%",
-    height: 414,
-    justifyContent: "space-between",
-  },
-  acceptDeliveryGroup: {
-    display: "flex",
-    width: "100%",
-    height: 89,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "flex-start",
-    paddingBottom: 27,
-  },
-  acceptDeliveryLbl: {
+  title: {
     fontWeight: "700",
-    color: "#121212",
-    textDecoration: "underline",
-    fontSize: 17,
-    marginRight: 10,
+    fontSize: 24,
+    color: "#0f172a",
+    display: "block",
   },
-  acceptDeliverySwitch: {
-    width: 46,
-    height: 20,
-    backgroundColor: "#E6E6E6",
-  },
-  deliveryPriceInput: {
-    height: 89,
-    width: "100%",
-  },
-  deliveryRangeInput: {
-    height: 89,
-    width: "100%",
-  },
-  taxRateInput: {
-    height: 89,
-    width: "100%",
-  },
-  btnContainer: {
-    display: "flex",
-    width: "100%",
-    height: 111,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 4,
+    display: "block",
   },
   saveBtn: {
-    width: 173,
-    height: 46,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    padding: "10px 24px",
+    backgroundColor: "#1470ef",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
     border: "none",
+    borderRadius: 10,
     cursor: "pointer",
   },
-  saveBtnTxt: {
-    fontWeight: "700",
-    color: "rgba(255,245,245,1)",
+  scrollArea: {
+    flex: 1,
+    overflow: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    paddingBottom: 20,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    padding: 24,
+    display: "flex",
+    flexDirection: "column",
+    gap: 20,
+    flexShrink: 0,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  fieldGrid: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 calc(50% - 8px)",
+    minWidth: 240,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  input: {
+    height: 42,
+    padding: "0 12px",
     fontSize: 14,
+    color: "#0f172a",
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    outline: "none",
+    boxSizing: "border-box",
+  },
+  switchRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+  },
+  switchLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+    display: "block",
+  },
+  switchDescription: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginTop: 2,
+    display: "block",
   },
 };
 

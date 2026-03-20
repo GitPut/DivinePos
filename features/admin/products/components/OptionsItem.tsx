@@ -1,9 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { RefObject, useState } from "react";
-import { FiClipboard, FiChevronDown, FiChevronUp } from "react-icons/fi";
-import { MdContentCopy, MdDeleteOutline } from "react-icons/md";
+import {
+  FiClipboard,
+  FiChevronDown,
+  FiChevronUp,
+  FiCopy,
+  FiTrash2,
+  FiPlus,
+} from "react-icons/fi";
 import OptionsItemExpanded from "./OptionsItemExpanded";
-import { Tooltip } from "react-tooltip";
 import { useAlert } from "react-alert";
 import { Option, ProductProp } from "types";
 
@@ -70,27 +74,27 @@ function OptionsItem({
     navigator.clipboard.writeText(JSON.stringify(e));
   };
 
+  const isExpanded = indexOn === index;
+
   return (
     <>
       <div
         style={{
           ...styles.container,
           ...style,
-          ...(indexOn === index ? { paddingBottom: 20 } : {}),
+          ...(isExpanded ? { paddingBottom: 20 } : {}),
           ...(selectedID === item.id
-            ? { borderColor: "#4CAF50", border: "2px solid #4CAF50" }
-            : { borderColor: "#000000" }),
+            ? { borderColor: "#1470ef", boxShadow: "0 0 0 1px #1470ef" }
+            : {}),
         }}
       >
         <button
           style={{
-            ...styles.closedOptionContainer,
-            ...(index === indexOn
-              ? { borderBottom: "1px solid #000000" }
-              : {}),
+            ...styles.header,
+            ...(isExpanded ? { borderBottom: "1px solid #e2e8f0" } : {}),
           }}
           onClick={() => {
-            if (indexOn !== index) {
+            if (!isExpanded) {
               setindexOn(index);
               setselectedID(null);
             } else {
@@ -98,39 +102,28 @@ function OptionsItem({
             }
           }}
         >
-          <span style={styles.optionNameLbl}>
-            {e.label ? e.label : "New Option"}
-          </span>
+          <div style={styles.headerLeft}>
+            <span style={styles.optionIndex}>{index + 1}</span>
+            <span style={styles.optionName}>
+              {e.label ? e.label : "New Option"}
+            </span>
+            {e.optionType && (
+              <span style={styles.typeBadge}>{e.optionType}</span>
+            )}
+          </div>
           <div style={styles.btnsRow}>
             <button
-              style={styles.moveDownBtn}
+              style={styles.iconBtn}
               onClick={(ev) => {
                 ev.stopPropagation();
                 copyEToClipboard();
               }}
-              id="copyToClipboardBtn"
+              title="Copy to clipboard"
             >
-              <FiClipboard size={20} color="white" />
+              <FiClipboard size={14} color="#64748b" />
             </button>
-            <Tooltip
-              anchorSelect="#copyToClipboardBtn"
-              place="top"
-              style={{
-                backgroundColor: "black",
-              }}
-            >
-              <span
-                style={{
-                  color: "white",
-                  fontSize: 16,
-                  padding: 10,
-                }}
-              >
-                Copy to clipboard
-              </span>
-            </Tooltip>
             <button
-              style={styles.moveDownBtn}
+              style={styles.iconBtn}
               onClick={(ev) => {
                 ev.stopPropagation();
                 if (
@@ -153,29 +146,12 @@ function OptionsItem({
                   setselectedID(item.id ?? "");
                 }
               }}
-              id="moveDownBtn"
+              title="Move down"
             >
-              <FiChevronDown size={30} color="white" />
+              <FiChevronDown size={15} color="#64748b" />
             </button>
-            <Tooltip
-              anchorSelect="#moveDownBtn"
-              place="top"
-              style={{
-                backgroundColor: "black",
-              }}
-            >
-              <span
-                style={{
-                  color: "white",
-                  fontSize: 16,
-                  padding: 10,
-                }}
-              >
-                Move down
-              </span>
-            </Tooltip>
             <button
-              style={styles.moveUpBtn}
+              style={styles.iconBtn}
               onClick={(ev) => {
                 ev.stopPropagation();
                 if (newProductOptions.length > 1 && index !== 0) {
@@ -195,29 +171,12 @@ function OptionsItem({
                   setselectedID(item.id ?? "");
                 }
               }}
-              id="moveUpBtn"
+              title="Move up"
             >
-              <FiChevronUp size={30} color="white" />
+              <FiChevronUp size={15} color="#64748b" />
             </button>
-            <Tooltip
-              anchorSelect="#moveUpBtn"
-              place="top"
-              style={{
-                backgroundColor: "black",
-              }}
-            >
-              <span
-                style={{
-                  color: "white",
-                  fontSize: 16,
-                  padding: 10,
-                }}
-              >
-                Move up
-              </span>
-            </Tooltip>
             <button
-              style={styles.duplicateBtn}
+              style={styles.iconBtn}
               onClick={(ev) => {
                 ev.stopPropagation();
                 setnewProductOptions((prev) => {
@@ -237,29 +196,12 @@ function OptionsItem({
                 setindexOn(newProductOptions.length);
                 setselectedID(null);
               }}
-              id="duplicateBtn"
+              title="Duplicate"
             >
-              <MdContentCopy size={26} color="white" />
+              <FiCopy size={14} color="#64748b" />
             </button>
-            <Tooltip
-              anchorSelect="#duplicateBtn"
-              place="top"
-              style={{
-                backgroundColor: "black",
-              }}
-            >
-              <span
-                style={{
-                  color: "white",
-                  fontSize: 16,
-                  padding: 10,
-                }}
-              >
-                Duplicate
-              </span>
-            </Tooltip>
             <button
-              style={styles.deleteBtn}
+              style={styles.deleteIconBtn}
               onClick={(ev) => {
                 ev.stopPropagation();
                 const newProductOptionsUpdated = newProduct.options.filter(
@@ -278,30 +220,13 @@ function OptionsItem({
                 setindexOn(null);
                 setselectedID(null);
               }}
-              id="deleteBtn"
+              title="Delete"
             >
-              <MdDeleteOutline size={26} color="white" />
+              <FiTrash2 size={14} color="#ef4444" />
             </button>
-            <Tooltip
-              anchorSelect="#deleteBtn"
-              place="top"
-              style={{
-                backgroundColor: "black",
-              }}
-            >
-              <span
-                style={{
-                  color: "white",
-                  fontSize: 16,
-                  padding: 10,
-                }}
-              >
-                Delete
-              </span>
-            </Tooltip>
           </div>
         </button>
-        {indexOn === index && (
+        {isExpanded && (
           <OptionsItemExpanded
             item={item}
             newProduct={newProduct}
@@ -318,7 +243,7 @@ function OptionsItem({
         )}
       </div>
       {index === newProduct.options.length - 1 && (
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+        <div style={styles.bottomBtns}>
           <button
             onClick={() => {
               setnewProductOptions((prev) => {
@@ -339,10 +264,11 @@ function OptionsItem({
             disabled={e.label === null}
             style={styles.createOptionBtn}
           >
+            <FiPlus size={15} color="#fff" />
             <span style={styles.createOptionTxt}>Create Option</span>
           </button>
           <button
-            style={{ ...styles.createOptionBtn, marginLeft: 20 }}
+            style={styles.pasteOptionBtn}
             onClick={async () => {
               try {
                 const text = await navigator.clipboard.readText();
@@ -387,7 +313,8 @@ function OptionsItem({
               }
             }}
           >
-            <span style={styles.createOptionTxt}>Paste Option</span>
+            <FiClipboard size={15} color="#475569" />
+            <span style={styles.pasteOptionTxt}>Paste Option</span>
           </button>
         </div>
       )}
@@ -397,251 +324,141 @@ function OptionsItem({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderStyle: "solid",
-    borderWidth: 1,
-    backgroundColor: "rgba(255,255,255,1)",
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "flex-start",
-    marginBottom: 30,
+    marginBottom: 12,
+    overflow: "hidden",
   },
-  innerOptionContainer1: {
-    width: 808,
-    height: 389,
-    display: "flex",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    marginTop: 20,
-    marginLeft: 20,
-  },
-  optionMainInfoRow1: {
-    width: 808,
-    height: 84,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  optionNameInputGroup1: {
-    width: 239,
-    height: 84,
-    display: "flex",
-    justifyContent: "space-between",
-  },
-  optionNameInputLbl1: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  optionNameInput2: {
-    width: 239,
-    height: 50,
-    backgroundColor: "#ffffff",
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderColor: "#9b9b9b",
-    borderRadius: 5,
-  },
-  optionTypeGroup1: {
-    width: 197,
-    height: 77,
-    display: "flex",
-    justifyContent: "space-between",
-  },
-  optionTypeDropdownLbl1: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  optionTypeDropdown2: {
-    width: 195,
-    height: 50,
-    backgroundColor: "#ffffff",
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderColor: "#9b9b9b",
-    borderRadius: 5,
-  },
-  selectionLimitInputGroup1: {
-    width: 195,
-    height: 77,
-    display: "flex",
-    justifyContent: "space-between",
-  },
-  selectionLimitInputLbl1: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  selectionLimitInput2: {
-    width: 195,
-    height: 50,
-    backgroundColor: "#ffffff",
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderColor: "#9b9b9b",
-    borderRadius: 5,
-  },
-  spacer5: {
-    width: 808,
-    height: 40,
-  },
-  optionRequiredRow1: {
-    width: 216,
-    height: 20,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  isOptionTxt1: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
-  },
-  isRequiredBtn1: {
-    width: 44,
-    height: 20,
-    backgroundColor: "#E6E6E6",
-  },
-  spacer6: {
-    width: 808,
-    height: 53,
-  },
-  optionSelectionItem1: {
-    height: 84,
-    width: 808,
-  },
-  spacer7: {
-    width: 808,
-    height: 61,
-  },
-  addAnotherSelectionBtnRow1: {
-    height: 47,
-    alignSelf: "stretch",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addAnotherSelectionBtn2: {
-    width: 173,
-    height: 47,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-  },
-  addAnotherSelectionBtnLbl1: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 15,
-  },
-  createOptionBtn: {
-    width: 173,
-    height: 47,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-  },
-  createOptionTxt: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 20,
-  },
-  closedOptionContainer: {
-    backgroundColor: "rgba(255,255,255,1)",
+  header: {
+    backgroundColor: "#fff",
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    height: 67,
+    minHeight: 52,
     border: "none",
     cursor: "pointer",
-    padding: 0,
+    padding: "0 16px",
+    boxSizing: "border-box",
   },
-  optionNameLbl: {
-    color: "#121212",
-    fontSize: 17,
-    marginRight: 20,
-    marginLeft: 20,
-  },
-  btnsRow: {
-    width: 224,
-    height: 35,
+  headerLeft: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginRight: 20,
-    marginLeft: 20,
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
   },
-  moveUpBtn: {
-    width: 35,
-    height: 35,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
+  optionIndex: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: "#f1f5f9",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-    padding: 0,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748b",
+    flexShrink: 0,
   },
-  chevronUp: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 30,
+  optionName: {
+    color: "#0f172a",
+    fontSize: 14,
+    fontWeight: "600",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
-  moveDownBtn: {
-    width: 35,
-    height: 35,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
+  typeBadge: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "#64748b",
+    backgroundColor: "#f1f5f9",
+    padding: "3px 8px",
+    borderRadius: 4,
+    whiteSpace: "nowrap",
+  },
+  btnsRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0,
+  },
+  iconBtn: {
+    width: 30,
+    height: 30,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 6,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    border: "none",
     cursor: "pointer",
     padding: 0,
   },
-  chevronDown: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 30,
-  },
-  duplicateBtn: {
-    width: 35,
-    height: 35,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
+  deleteIconBtn: {
+    width: 30,
+    height: 30,
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fee2e2",
+    borderRadius: 6,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    border: "none",
     cursor: "pointer",
     padding: 0,
   },
-  duplicateIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 26,
-  },
-  deleteBtn: {
-    width: 35,
-    height: 35,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
+  bottomBtns: {
     display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  createOptionBtn: {
+    height: 38,
+    backgroundColor: "#1470ef",
+    borderRadius: 8,
+    display: "flex",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
+    paddingLeft: 16,
+    paddingRight: 16,
     border: "none",
     cursor: "pointer",
-    padding: 0,
   },
-  deleteIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 26,
+  createOptionTxt: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 13,
+  },
+  pasteOptionBtn: {
+    height: 38,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingLeft: 16,
+    paddingRight: 16,
+    cursor: "pointer",
+  },
+  pasteOptionTxt: {
+    fontWeight: "500",
+    color: "#475569",
+    fontSize: 13,
   },
 };
 

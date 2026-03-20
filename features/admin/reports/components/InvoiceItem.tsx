@@ -1,5 +1,6 @@
 import React from "react";
-import { IoClose } from "react-icons/io5";
+import { FiTrash2 } from "react-icons/fi";
+import { IoCheckmark } from "react-icons/io5";
 import { TransListStateItem } from "types";
 
 interface InvoiceItemProps {
@@ -18,14 +19,26 @@ const InvoiceItem = React.memo(
     baseSelectedRows,
     deleteTransaction,
   }: InvoiceItemProps) => {
-    const options = { hour12: true };
-    const date = item.date.toDate().toLocaleString("en-US", options);
+    const date = item.date.toDate().toLocaleString("en-US", { hour12: true });
+    const isSelected = baseSelectedRows?.includes(item.id);
+
+    const typeColors: Record<string, { bg: string; text: string }> = {
+      Delivery: { bg: "#fef3c7", text: "#92400e" },
+      Pickup: { bg: "#dbeafe", text: "#1e40af" },
+      "In Store": { bg: "#d1fae5", text: "#065f46" },
+      Other: { bg: "#f1f5f9", text: "#475569" },
+    };
+    const typeStyle = typeColors[item.type ?? "Other"] || typeColors["Other"];
 
     return (
-      <div style={{ ...styles.container, ...style }}>
-        <div style={styles.checkboxCont1}>
+      <div style={{ ...styles.row, ...style, backgroundColor: isSelected ? "#f0f7ff" : "#fff" }}>
+        <div style={styles.checkboxCell}>
           <button
-            style={styles.checkbox2}
+            style={{
+              ...styles.checkbox,
+              backgroundColor: isSelected ? "#1470ef" : "#fff",
+              borderColor: isSelected ? "#1470ef" : "#d1d5db",
+            }}
             onClick={() => {
               setbaseSelectedRows((prev) => {
                 if (prev.includes(item.id!)) {
@@ -36,150 +49,99 @@ const InvoiceItem = React.memo(
               });
             }}
           >
-            {baseSelectedRows?.includes(item.id) && "X"}
+            {isSelected && <IoCheckmark size={14} color="#fff" />}
           </button>
         </div>
-        <div style={styles.orderIdCont1}>
-          <span style={styles.orderId3}>{item.id}</span>
-        </div>
-        <div style={styles.customerNameCont1}>
-          <span style={styles.peterPutros}>
-            {item.name ? item.name : "N/A"}
+        <span style={{ ...styles.cell, flex: 1.2, fontWeight: "600", color: "#0f172a" }}>
+          {item.id}
+        </span>
+        <span style={{ ...styles.cell, flex: 1.5 }}>
+          {item.name || "N/A"}
+        </span>
+        <span style={{ ...styles.cell, flex: 1.8, color: "#64748b", fontSize: 13 }}>
+          {date}
+        </span>
+        <span style={{ ...styles.cell, flex: 0.8, fontWeight: "600", color: "#0f172a" }}>
+          ${item.amount}
+        </span>
+        <span style={{ ...styles.cell, flex: 0.7, color: "#64748b" }}>
+          {item.system}
+        </span>
+        <div style={{ flex: 0.8, display: "flex", flexDirection: "row", alignItems: "center" }}>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: "600",
+              color: typeStyle.text,
+              backgroundColor: typeStyle.bg,
+              padding: "3px 10px",
+              borderRadius: 6,
+            }}
+          >
+            {item.type}
           </span>
         </div>
-        <div style={styles.dateCont1}>
-          <span style={styles.may252025}>{date?.toLocaleString()}</span>
+        <div style={styles.deleteCell}>
+          <button style={styles.deleteBtn} onClick={deleteTransaction}>
+            <FiTrash2 size={15} color="#94a3b8" />
+          </button>
         </div>
-        <div style={styles.totalCont1}>
-          <span style={styles.total3}>${item.amount}</span>
-        </div>
-        <div style={styles.systemTypeCont1}>
-          <span style={styles.pos}>{item.system}</span>
-        </div>
-        <div style={styles.orderTypeCont1}>
-          <span style={styles.pickUp}>{item.type}</span>
-        </div>
-        <button
-          onClick={deleteTransaction}
-          style={{
-            height: 30,
-            width: 30,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "red",
-            borderRadius: 5,
-            position: "absolute",
-            right: 10,
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          <IoClose size={24} color="white" />
-        </button>
       </div>
     );
   }
 );
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  row: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    borderColor: "rgba(133,127,127,1)",
-    borderBottomWidth: 1,
-    borderBottomStyle: "solid",
-    height: 40,
-    position: "relative",
+    padding: "0 16px",
+    height: 48,
+    borderBottom: "1px solid #f1f5f9",
+    transition: "background-color 0.1s",
   },
-  checkboxCont1: {
+  checkboxCell: {
+    width: 40,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: 50,
-    alignSelf: "stretch",
-    marginBottom: 5,
   },
-  checkbox2: {
+  checkbox: {
     width: 20,
     height: 20,
-    backgroundColor: "rgba(255,255,255,1)",
     borderRadius: 5,
-    border: "1px solid #000000",
+    border: "2px solid #d1d5db",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     cursor: "pointer",
     padding: 0,
+    transition: "all 0.15s",
   },
-  orderIdCont1: {
-    width: 120,
+  cell: {
+    fontSize: 14,
+    color: "#334155",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  deleteCell: {
+    width: 40,
     display: "flex",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "center",
-    alignSelf: "stretch",
-    marginBottom: 5,
   },
-  orderId3: {
-    color: "#121212",
-    fontSize: 15,
-  },
-  customerNameCont1: {
-    width: 180,
-    display: "flex",
-    justifyContent: "center",
-    alignSelf: "stretch",
-    marginBottom: 5,
-  },
-  peterPutros: {
-    color: "#121212",
-    fontSize: 15,
-  },
-  dateCont1: {
-    width: 180,
+  deleteBtn: {
+    width: 32,
+    height: 32,
     display: "flex",
     justifyContent: "center",
-    alignSelf: "stretch",
-    marginBottom: 5,
-  },
-  may252025: {
-    color: "#121212",
-    fontSize: 15,
-  },
-  totalCont1: {
-    width: 120,
-    display: "flex",
-    justifyContent: "center",
-    alignSelf: "stretch",
-    marginBottom: 5,
-  },
-  total3: {
-    color: "#121212",
-    fontSize: 15,
-  },
-  systemTypeCont1: {
-    width: 120,
-    display: "flex",
-    justifyContent: "center",
-    alignSelf: "stretch",
-    marginBottom: 5,
-  },
-  pos: {
-    color: "#121212",
-    fontSize: 15,
-  },
-  orderTypeCont1: {
-    width: 120,
-    display: "flex",
-    justifyContent: "center",
-    alignSelf: "stretch",
-    marginBottom: 5,
-  },
-  pickUp: {
-    color: "#121212",
-    fontSize: 15,
+    alignItems: "center",
+    backgroundColor: "transparent",
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer",
   },
 };
 

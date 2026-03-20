@@ -3,7 +3,6 @@ import { FiMinus, FiPlus } from "react-icons/fi";
 import { updateData } from "services/firebase/functions";
 import { setStoreProductsState, storeProductsState } from "store/appState";
 import { useAlert } from "react-alert";
-import useWindowSize from "shared/hooks/useWindowSize";
 
 interface AddCategoryModalProps {
   setaddCategoryModal: (val: boolean | string | null) => void;
@@ -16,7 +15,6 @@ function AddCategoryModal({
   existingCategory,
   index,
 }: AddCategoryModalProps) {
-  const { height, width } = useWindowSize();
   const [categoryName, setcategoryName] = useState<string>(
     existingCategory ? existingCategory : ""
   );
@@ -59,248 +57,210 @@ function AddCategoryModal({
   };
 
   return (
-    <button
+    <div
+      style={styles.backdrop}
       onClick={() => setaddCategoryModal(false)}
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: height,
-        width: width,
-        border: "none",
-        background: "none",
-        cursor: "default",
-        padding: 0,
-      }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ cursor: "default" }}
+        style={styles.container}
       >
-        <div style={styles.container}>
-          <span style={styles.addCategoryTxt}>Add Category</span>
-          <div style={styles.bottomContainer}>
-            <div style={styles.nameAndPosRow}>
-              <div style={styles.categoryNameGroup}>
-                <span style={styles.categoryNameLbl}>Category Name</span>
-                <input
-                  style={styles.categoryNameInput}
-                  placeholder="Enter Category Name"
-                  value={categoryName}
-                  onChange={(e) => setcategoryName(e.target.value)}
-                />
-              </div>
-              <div style={styles.categoryPositionGroup}>
-                <span style={styles.categoryPosition}>Category Position</span>
-                <div style={styles.minusPlusSelectorRow}>
-                  <button
-                    style={styles.minusContainer}
-                    onClick={() =>
-                      setcategoryPosition((prev) =>
-                        prev !== 0 ? prev - 1 : prev
-                      )
-                    }
-                  >
-                    <FiMinus style={styles.minusIcon} />
-                  </button>
-                  <div style={styles.indexContainer}>
-                    <span style={styles.text}>{categoryPosition + 1}</span>
-                  </div>
-                  <button
-                    style={styles.plusContainer}
-                    onClick={() =>
-                      setcategoryPosition((prev) =>
-                        prev < catalog.categories.length ? prev + 1 : prev
-                      )
-                    }
-                  >
-                    <FiPlus style={styles.plusIcon} />
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div style={styles.btnsRow}>
+        <span style={styles.title}>
+          {existingCategory ? "Edit Category" : "Add Category"}
+        </span>
+        <span style={styles.subtitle}>
+          {existingCategory
+            ? "Update the category name or position"
+            : "Create a new category for your menu"}
+        </span>
+
+        <div style={styles.fieldsArea}>
+          {/* Category Name */}
+          <div style={styles.fieldGroup}>
+            <span style={styles.fieldLabel}>Category Name</span>
+            <input
+              style={styles.input}
+              placeholder="e.g. Appetizers, Drinks, Desserts"
+              value={categoryName}
+              onChange={(e) => setcategoryName(e.target.value)}
+            />
+          </div>
+
+          {/* Category Position */}
+          <div style={styles.fieldGroup}>
+            <span style={styles.fieldLabel}>Position</span>
+            <div style={styles.positionRow}>
               <button
-                onClick={() => setaddCategoryModal(false)}
-                style={styles.cancelBox}
+                style={styles.positionBtn}
+                onClick={() =>
+                  setcategoryPosition((prev) =>
+                    prev !== 0 ? prev - 1 : prev
+                  )
+                }
               >
-                <span style={styles.cancelTxt}>Cancel</span>
+                <FiMinus size={16} color="#475569" />
               </button>
-              <button onClick={Update} style={styles.saveBox}>
-                <span style={styles.saveTxt}>Save</span>
+              <div style={styles.positionValue}>
+                <span style={styles.positionNum}>{categoryPosition + 1}</span>
+              </div>
+              <button
+                style={styles.positionBtn}
+                onClick={() =>
+                  setcategoryPosition((prev) =>
+                    prev < catalog.categories.length ? prev + 1 : prev
+                  )
+                }
+              >
+                <FiPlus size={16} color="#475569" />
               </button>
             </div>
           </div>
         </div>
+
+        <div style={styles.btnsRow}>
+          <button
+            onClick={() => setaddCategoryModal(false)}
+            style={styles.cancelBtn}
+          >
+            <span style={styles.cancelTxt}>Cancel</span>
+          </button>
+          <button onClick={Update} style={styles.saveBtn}>
+            <span style={styles.saveTxt}>
+              {existingCategory ? "Save Changes" : "Add Category"}
+            </span>
+          </button>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
+  backdrop: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
+    width: "100%",
+    cursor: "default",
+  },
   container: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
+    backgroundColor: "#fff",
+    borderRadius: 14,
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    width: 511,
-    height: 582,
+    width: 440,
+    padding: 28,
+    gap: 4,
+    cursor: "default",
   },
-  addCategoryTxt: {
+  title: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 21,
-    marginTop: 40,
-    marginBottom: 40,
-    display: "inline-block",
-  },
-  bottomContainer: {
-    width: 377,
-    height: 321,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  nameAndPosRow: {
-    width: 377,
-    height: 77,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  categoryNameGroup: {
-    width: 197,
-    height: 77,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  categoryNameLbl: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  categoryNameInput: {
-    width: 197,
-    height: 50,
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    border: "1px solid #9b9b9b",
-    padding: 10,
-    boxSizing: "border-box" as const,
-  },
-  categoryPositionGroup: {
-    width: 150,
-    height: 77,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  categoryPosition: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  minusPlusSelectorRow: {
-    width: 150,
-    height: 50,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  minusContainer: {
-    width: 50,
-    height: 50,
-    backgroundColor: "rgba(179,179,179,1)",
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-    padding: 0,
-  },
-  minusIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 35,
-  },
-  indexContainer: {
-    width: 50,
-    height: 50,
-    backgroundColor: "#E6E6E6",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  text: {
-    fontWeight: "700",
-    color: "#121212",
+    color: "#0f172a",
     fontSize: 20,
   },
-  plusContainer: {
-    width: 50,
-    height: 50,
-    backgroundColor: "rgba(179,179,179,1)",
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginBottom: 20,
+  },
+  fieldsArea: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-    padding: 0,
+    flexDirection: "column",
+    gap: 16,
   },
-  plusIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 35,
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
   },
-  btnsRow: {
-    width: 377,
-    height: 47,
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+  },
+  input: {
+    height: 42,
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    padding: "0 12px",
+    fontSize: 14,
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
+  },
+  positionRow: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 0,
+    width: 130,
   },
-  cancelBox: {
-    width: 173,
-    height: 47,
-    backgroundColor: "#eef2ff",
-    borderRadius: 20,
-    boxShadow: "3px 3px 20px rgba(240, 240, 240, 1)",
+  positionBtn: {
+    width: 42,
+    height: 42,
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  },
+  positionValue: {
+    width: 46,
+    height: 42,
+    backgroundColor: "#fff",
+    borderTop: "1px solid #e2e8f0",
+    borderBottom: "1px solid #e2e8f0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  positionNum: {
+    fontWeight: "700",
+    color: "#0f172a",
+    fontSize: 15,
+  },
+  btnsRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 24,
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 42,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    border: "none",
     cursor: "pointer",
   },
   cancelTxt: {
-    fontWeight: "700",
-    color: "#1c294e",
-    fontSize: 20,
+    fontWeight: "600",
+    color: "#475569",
+    fontSize: 14,
   },
-  saveBox: {
-    width: 173,
-    height: 47,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
-    boxShadow: "3px 3px 20px rgba(216, 216, 216, 1)",
+  saveBtn: {
+    flex: 1,
+    height: 42,
+    backgroundColor: "#1470ef",
+    border: "none",
+    borderRadius: 8,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    border: "none",
     cursor: "pointer",
   },
   saveTxt: {
-    fontWeight: "700",
-    color: "#eef2ff",
-    fontSize: 20,
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 14,
   },
 };
 

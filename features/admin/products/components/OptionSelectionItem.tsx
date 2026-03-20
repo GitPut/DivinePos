@@ -1,6 +1,5 @@
 import React from "react";
-import { FiChevronDown, FiChevronUp } from "react-icons/fi";
-import { MdDeleteOutline } from "react-icons/md";
+import { FiChevronDown, FiChevronUp, FiTrash2 } from "react-icons/fi";
 import { Option, OptionsList } from "types";
 
 interface OptionSelectionItemProps {
@@ -40,95 +39,89 @@ function OptionSelectionItem({
         ...styles.container,
         ...style,
         ...(highlightedOptionID === eInnerList.id
-          ? {
-              borderBottom: "2px solid #4CAF50",
-              paddingBottom: 20,
-              paddingTop: 20,
-            }
-          : {
-              borderBottom: "2px solid #d3d3d3",
-              paddingBottom: 20,
-              paddingTop: 20,
-            }),
+          ? { borderColor: "#1470ef" }
+          : {}),
       }}
     >
-      <div style={styles.optionSelectionNameInputGroup}>
-        <span style={styles.selectionNameInputLbl}>Option Selection Name</span>
-        <input
-          style={styles.selectionNameInput}
-          onChange={(e) => {
-            const val = e.target.value;
-            const cloneOuter = structuredClone(testMap);
-            cloneOuter[indexInnerList].label = val;
-            setnewProductOptions((prev) => {
-              const clone = structuredClone(prev);
-              clone[index].optionsList = cloneOuter;
-              return clone;
-            });
-            settestMap(cloneOuter);
-          }}
-          value={eInnerList?.label ?? ''}
-          placeholder="Enter Name (Ex: Small, Pepperoni, Extra Cheese) "
-        />
-      </div>
-      {sizeLinkedLabels && sizeLinkedLabels.length > 0 ? (
-        <div style={styles.sizePriceRow}>
-          {sizeLinkedLabels.map((sizeLabel) => (
-            <div key={sizeLabel} style={styles.sizePriceInputGroup}>
-              <span style={styles.sizePriceLbl}>{sizeLabel}</span>
-              <input
-                style={styles.sizePriceInput}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const re = /^-?\d*\.?\d*$/;
-                  if (val === "" || re.test(val)) {
-                    const cloneOuter = structuredClone(testMap);
-                    if (!cloneOuter[indexInnerList].priceBySize) {
-                      cloneOuter[indexInnerList].priceBySize = {};
-                    }
-                    cloneOuter[indexInnerList].priceBySize![sizeLabel] = val;
-                    setnewProductOptions((prev) => {
-                      const clone = structuredClone(prev);
-                      clone[index].optionsList = cloneOuter;
-                      return clone;
-                    });
-                    settestMap(cloneOuter);
-                  }
-                }}
-                value={eInnerList?.priceBySize?.[sizeLabel] ?? ""}
-                placeholder="0"
-              />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={styles.selectionPriceIncreaseInputGroup}>
-          <span style={styles.selectionPriceIncreaseLbl}>Price Increase</span>
+      <div style={styles.fieldsRow}>
+        <div style={styles.nameGroup}>
+          <span style={styles.fieldLabel}>Selection Name</span>
           <input
-            style={styles.selectionPriceIncreaseInput}
+            style={styles.input}
             onChange={(e) => {
               const val = e.target.value;
-              const re = /^-?\d*\.?\d*$/;
-
-              if (val === "" || re.test(val)) {
-                const cloneOuter = structuredClone(testMap);
-                cloneOuter[indexInnerList].priceIncrease = val;
-                setnewProductOptions((prev) => {
-                  const clone = structuredClone(prev);
-                  clone[index].optionsList = cloneOuter;
-                  return clone;
-                });
-                settestMap(cloneOuter);
-              }
+              const cloneOuter = structuredClone(testMap);
+              cloneOuter[indexInnerList].label = val;
+              setnewProductOptions((prev) => {
+                const clone = structuredClone(prev);
+                clone[index].optionsList = cloneOuter;
+                return clone;
+              });
+              settestMap(cloneOuter);
             }}
-            value={eInnerList?.priceIncrease ? eInnerList.priceIncrease.toString() : ""}
-            placeholder="Enter If Price Increases With Selection"
+            value={eInnerList?.label ?? ""}
+            placeholder="e.g. Small, Pepperoni, Extra Cheese"
           />
         </div>
-      )}
+        {sizeLinkedLabels && sizeLinkedLabels.length > 0 ? (
+          <div style={styles.sizePriceRow}>
+            {sizeLinkedLabels.map((sizeLabel) => (
+              <div key={sizeLabel} style={styles.sizePriceGroup}>
+                <span style={styles.fieldLabel}>{sizeLabel}</span>
+                <input
+                  style={styles.input}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const re = /^-?\d*\.?\d*$/;
+                    if (val === "" || re.test(val)) {
+                      const cloneOuter = structuredClone(testMap);
+                      if (!cloneOuter[indexInnerList].priceBySize) {
+                        cloneOuter[indexInnerList].priceBySize = {};
+                      }
+                      cloneOuter[indexInnerList].priceBySize![sizeLabel] = val;
+                      setnewProductOptions((prev) => {
+                        const clone = structuredClone(prev);
+                        clone[index].optionsList = cloneOuter;
+                        return clone;
+                      });
+                      settestMap(cloneOuter);
+                    }
+                  }}
+                  value={eInnerList?.priceBySize?.[sizeLabel] ?? ""}
+                  placeholder="0"
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={styles.priceGroup}>
+            <span style={styles.fieldLabel}>Price Increase</span>
+            <input
+              style={styles.input}
+              onChange={(e) => {
+                const val = e.target.value;
+                const re = /^-?\d*\.?\d*$/;
+
+                if (val === "" || re.test(val)) {
+                  const cloneOuter = structuredClone(testMap);
+                  cloneOuter[indexInnerList].priceIncrease = val;
+                  setnewProductOptions((prev) => {
+                    const clone = structuredClone(prev);
+                    clone[index].optionsList = cloneOuter;
+                    return clone;
+                  });
+                  settestMap(cloneOuter);
+                }
+              }}
+              value={eInnerList?.priceIncrease ? eInnerList.priceIncrease.toString() : ""}
+              placeholder="0.00"
+            />
+          </div>
+        )}
+      </div>
       <div style={styles.btnsRow}>
         <button
-          style={styles.moveDownBtn}
+          style={styles.iconBtn}
           onClick={() => {
             if (testMap.length > 1 && indexInnerList !== testMap.length - 1) {
               setnewProductOptions((prev) => {
@@ -142,11 +135,12 @@ function OptionSelectionItem({
               });
             }
           }}
+          title="Move down"
         >
-          <FiChevronDown style={styles.chevronDown} />
+          <FiChevronDown size={14} color="#64748b" />
         </button>
         <button
-          style={styles.moveUpBtn}
+          style={styles.iconBtn}
           onClick={() => {
             if (testMap.length > 1 && indexInnerList !== 0) {
               setnewProductOptions((prev) => {
@@ -160,8 +154,9 @@ function OptionSelectionItem({
               });
             }
           }}
+          title="Move up"
         >
-          <FiChevronUp style={styles.chevronUp} />
+          <FiChevronUp size={14} color="#64748b" />
         </button>
         <button
           style={styles.deleteBtn}
@@ -180,8 +175,9 @@ function OptionSelectionItem({
             sethighlightedOptionID(eInnerList.id);
             scrollToPositionIncluding(0);
           }}
+          title="Delete"
         >
-          <MdDeleteOutline style={styles.deleteIcon} />
+          <FiTrash2 size={14} color="#ef4444" />
         </button>
       </div>
     </div>
@@ -192,104 +188,48 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-end",
-    marginBottom: 20,
+    gap: 10,
+    padding: "10px 0",
+    borderBottom: "1px solid #f1f5f9",
+    borderLeft: "2px solid transparent",
+    paddingLeft: 2,
   },
-  optionSelectionNameInputGroup: {
-    width: 290,
-    height: 84,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  selectionNameInputLbl: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  selectionNameInput: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    padding: 10,
-    boxSizing: "border-box" as const,
-  },
-  selectionPriceIncreaseInputGroup: {
-    width: 199,
-    height: 84,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  selectionPriceIncreaseLbl: {
-    color: "#121212",
-    fontSize: 17,
-  },
-  selectionPriceIncreaseInput: {
-    height: 50,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    alignSelf: "stretch",
-    padding: 10,
-    boxSizing: "border-box" as const,
-  },
-  btnsRow: {
-    width: 180,
-    height: 50,
+  fieldsRow: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginRight: 0,
-    marginLeft: 0,
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
   },
-  moveUpBtn: {
-    width: 50,
-    height: 50,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
+  nameGroup: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 200px",
+    minWidth: 120,
   },
-  chevronUp: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 30,
-  },
-  moveDownBtn: {
-    width: 50,
-    height: 50,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
+  priceGroup: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
+    flexDirection: "column",
+    gap: 6,
+    flex: "0 1 160px",
+    minWidth: 100,
   },
-  chevronDown: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 30,
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748b",
   },
-  deleteBtn: {
-    width: 50,
-    height: 50,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-  },
-  deleteIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 27,
+  input: {
+    height: 38,
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    padding: "0 10px",
+    fontSize: 13,
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
   },
   sizePriceRow: {
     display: "flex",
@@ -297,29 +237,44 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
     flex: 1,
   },
-  sizePriceInputGroup: {
+  sizePriceGroup: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    height: 84,
+    gap: 6,
     flex: 1,
     minWidth: 0,
   },
-  sizePriceLbl: {
-    color: "#121212",
-    fontSize: 13,
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+  btnsRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0,
+    paddingBottom: 1,
   },
-  sizePriceInput: {
-    height: 50,
-    backgroundColor: "#ffffff",
-    border: "1px solid #9b9b9b",
-    borderRadius: 5,
-    padding: 10,
-    boxSizing: "border-box" as const,
-    width: "100%",
+  iconBtn: {
+    width: 30,
+    height: 30,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 6,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  },
+  deleteBtn: {
+    width: 30,
+    height: 30,
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fee2e2",
+    borderRadius: 6,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
   },
 };
 

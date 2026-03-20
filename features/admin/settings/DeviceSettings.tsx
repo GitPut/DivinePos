@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   activePlanState,
   deviceIdState,
@@ -8,17 +8,14 @@ import {
   setDeviceState,
 } from "store/appState";
 import { auth, db } from "services/firebase/config";
-
 import Switch from "shared/components/ui/Switch";
-import { FiChevronLeft, FiChevronRight, FiPlus } from "react-icons/fi";
+import { FiPlus, FiMonitor, FiDownload, FiTrash2 } from "react-icons/fi";
 import { IoKey } from "react-icons/io5";
-import "react-select2-wrapper/css/select2.css";
 import ReactSelect from "react-select";
 import { GooglePlacesStyles } from "utils/googlePlacesStyles";
 import { useAlert } from "react-alert";
 import windowsDownloadImg from "assets/images/image_E3zi..png";
 import macDownloadImg from "assets/images/image_F2vF..png";
-import loadingGif from "assets/loading.gif";
 
 interface OtherDeviceOptionsProp {
   value: string;
@@ -29,22 +26,11 @@ function DeviceSettings() {
   const deviceTree = deviceTreeState.use();
   const myDeviceID = deviceIdState.use();
   const activePlan = activePlanState.use();
-  const [fadeOpacity, setFadeOpacity] = useState(0);
-  const [viewVisible, setviewVisible] = useState(false);
   const [selectedDevice, setselectedDevice] = useState(0);
   const [otherDeviceOptions, setOtherDeviceOptions] = useState<
     OtherDeviceOptionsProp[]
   >([]);
   const alertP = useAlert();
-
-  const fadeIn = () => {
-    setFadeOpacity(1);
-  };
-
-  const resetLoader = () => {
-    setviewVisible(true);
-    fadeIn();
-  };
 
   useEffect(() => {
     if (deviceTree.devices.length > 0) {
@@ -65,7 +51,6 @@ function DeviceSettings() {
       const newDeviceTreeDevices = [];
       for (let index = 0; index < deviceTree.devices.length; index++) {
         const element = deviceTree.devices[index];
-
         if (element.id === myDeviceID) {
           newDeviceTreeDevices.unshift(element);
         } else {
@@ -76,386 +61,370 @@ function DeviceSettings() {
     }
   }, []);
 
+  const canAddDevice =
+    activePlan === "professional" || deviceTree.devices.length < 1;
+
+  const handleAddDevice = () => {
+    db.collection("users")
+      .doc(auth?.currentUser?.uid)
+      .collection("devices")
+      .add({
+        name: `Device${deviceTree.devices.length}`,
+        id: null,
+        printToPrinter: null,
+      })
+      .then((docRef) => {
+        const clone = { ...deviceTree };
+        clone.devices.push({
+          name: "",
+          id: null,
+          printToPrinter: null,
+          sendPrintToUserID: null,
+          docID: docRef.id,
+          printOnlineOrders: false,
+          useDifferentDeviceToPrint: false,
+        });
+        setDeviceTreeState(clone);
+        setselectedDevice(clone.devices.length - 1);
+      });
+  };
+
+  const handleSaveDevice = () => {
+    db.collection("users")
+      .doc(auth?.currentUser?.uid)
+      .collection("devices")
+      .doc(deviceTree.devices[selectedDevice].docID)
+      .update({
+        ...deviceTree.devices[selectedDevice],
+        printOnlineOrders:
+          deviceTree.devices[selectedDevice].printOnlineOrders ?? false,
+      });
+    if (deviceTree.devices[selectedDevice].id === myDeviceID) {
+      setDeviceState({
+        ...deviceTree.devices[selectedDevice],
+        printOnlineOrders:
+          deviceTree.devices[selectedDevice].printOnlineOrders ?? false,
+      });
+    }
+    alertP.success("Device Updated!");
+  };
+
+  const handleDeleteDevice = () => {
+    db.collection("users")
+      .doc(auth?.currentUser?.uid)
+      .collection("devices")
+      .doc(deviceTree.devices[selectedDevice].docID)
+      .delete();
+    let clone = { ...deviceTree };
+    clone = {
+      ...clone,
+      devices: clone.devices.filter(
+        (deviceSearch) =>
+          deviceSearch.docID !== deviceTree.devices[selectedDevice].docID,
+      ),
+    };
+    setDeviceTreeState(clone);
+    setselectedDevice((prev) => (prev > 0 ? prev - 1 : 0));
+    resetDeviceState();
+  };
+
+  const handleSetToMyID = () => {
+    const deviceBatch = db.batch();
+    const oldDevice = deviceTree.devices.find((d) => d.id === myDeviceID);
+    if (oldDevice) {
+      deviceBatch.update(
+        db
+          .collection("users")
+          .doc(auth?.currentUser?.uid)
+          .collection("devices")
+          .doc(oldDevice.docID),
+        { id: null },
+      );
+    }
+    deviceBatch.update(
+      db
+        .collection("users")
+        .doc(auth?.currentUser?.uid)
+        .collection("devices")
+        .doc(deviceTree.devices[selectedDevice].docID),
+      { id: myDeviceID },
+    );
+    deviceBatch.commit();
+    const clone = { ...deviceTree };
+    if (oldDevice) {
+      clone.devices.find((d) => d.id === myDeviceID)!.id = null;
+    }
+    clone.devices[selectedDevice].id = myDeviceID;
+    setDeviceTreeState(clone);
+    setDeviceState({
+      name: deviceTree.devices[selectedDevice].name,
+      id: deviceTree.devices[selectedDevice].id,
+      docID: deviceTree.devices[selectedDevice].docID,
+      useDifferentDeviceToPrint:
+        deviceTree.devices[selectedDevice].useDifferentDeviceToPrint,
+      printToPrinter: deviceTree.devices[selectedDevice].printToPrinter,
+      sendPrintToUserID:
+        deviceTree.devices[selectedDevice].sendPrintToUserID,
+      printOnlineOrders:
+        deviceTree.devices[selectedDevice].printOnlineOrders,
+    });
+  };
+
+  const device = deviceTree.devices[selectedDevice];
+
   return (
     <div style={styles.container}>
-      <span style={styles.pageLbl}>Device Settings</span>
-      <div
-        style={{ height: "100%", width: "100%", overflow: "auto" }}
-      >
-        <div style={styles.group}>
-          <div style={styles.deviceScrollContainer}>
-            {selectedDevice > 0 ? (
+      {/* Header */}
+      <div style={styles.headerRow}>
+        <div>
+          <span style={styles.title}>Device Settings</span>
+          <span style={styles.subtitle}>
+            {deviceTree.devices.length} device
+            {deviceTree.devices.length !== 1 ? "s" : ""} registered
+          </span>
+        </div>
+        {canAddDevice && (
+          <button style={styles.addBtn} onClick={handleAddDevice}>
+            <FiPlus size={18} color="#fff" />
+            <span style={styles.addBtnText}>Add Device</span>
+          </button>
+        )}
+      </div>
+
+      {/* Scrollable content */}
+      <div style={styles.scrollArea}>
+        {/* Device Tabs */}
+        {deviceTree.devices.length > 0 && (
+          <div style={styles.tabsRow}>
+            {deviceTree.devices.map((d, i) => (
               <button
-                style={styles.nextDeviceBtn}
-                onClick={() => setselectedDevice((prev) => prev - 1)}
-              >
-                <FiChevronLeft size={40} color="rgba(255,255,255,1)" />
-              </button>
-            ) : (
-              <div style={styles.backBtn} />
-            )}
-            {deviceTree.devices.length > 0 ? (
-              <div style={styles.deviceContainer}>
-                <div style={styles.topGroup}>
-                  <div style={styles.deviceNameInputGroup}>
-                    <span style={styles.deviceName}>Device Name</span>
-                    <input
-                      style={styles.deviceNameInput}
-                      placeholder="Enter device name"
-                      value={deviceTree.devices[selectedDevice].name}
-                      onChange={(e) => {
-                        const clone = { ...deviceTree };
-                        clone.devices[selectedDevice].name = e.target.value;
-                        setDeviceTreeState(clone);
-                      }}
-                    />
-                  </div>
-                  <div style={styles.deviceIDRow}>
-                    <div
-                      style={{ display: "flex", flexDirection: "row", alignItems: "center" }}
-                    >
-                      <span style={styles.deviceIdLbl}>Device ID:</span>
-                      <span style={styles.deviceId}>
-                        {deviceTree.devices[selectedDevice].id
-                          ? deviceTree.devices[selectedDevice].id?.toUpperCase()
-                          : "No device ID set"}
-                      </span>
-                    </div>
-                    <button
-                      style={styles.setToMyIDBtn}
-                      onClick={() => {
-                        const deviceBatch = db.batch();
-                        const oldDevice = deviceTree.devices.find(
-                          (d) => d.id === myDeviceID
-                        );
-                        if (oldDevice) {
-                          deviceBatch.update(
-                            db.collection("users").doc(auth?.currentUser?.uid).collection("devices").doc(oldDevice.docID),
-                            { id: null }
-                          );
-                        }
-                        deviceBatch.update(
-                          db.collection("users").doc(auth?.currentUser?.uid).collection("devices").doc(deviceTree.devices[selectedDevice].docID),
-                          { id: myDeviceID }
-                        );
-                        deviceBatch.commit();
-                        const clone = { ...deviceTree };
-                        if (oldDevice) {
-                          clone.devices.find((d) => d.id === myDeviceID)!.id = null;
-                        }
-                        clone.devices[selectedDevice].id = myDeviceID;
-                        setDeviceTreeState(clone);
-                        setDeviceState({
-                          name: deviceTree.devices[selectedDevice].name,
-                          id: deviceTree.devices[selectedDevice].id,
-                          docID: deviceTree.devices[selectedDevice].docID,
-                          useDifferentDeviceToPrint:
-                            deviceTree.devices[selectedDevice]
-                              .useDifferentDeviceToPrint,
-                          printToPrinter:
-                            deviceTree.devices[selectedDevice].printToPrinter,
-                          sendPrintToUserID:
-                            deviceTree.devices[selectedDevice]
-                              .sendPrintToUserID,
-                          printOnlineOrders:
-                            deviceTree.devices[selectedDevice]
-                              .printOnlineOrders,
-                        });
-                      }}
-                    >
-                      <IoKey size={25} color="rgba(255,255,255,1)" />
-                    </button>
-                  </div>
-                  <div style={styles.printOnlineOrderRow}>
-                    <span style={styles.printOnlineOrdersLbl}>
-                      Print Online Orders:
-                    </span>
-                    <Switch
-                      isActive={
-                        deviceTree.devices[selectedDevice].printOnlineOrders
-                      }
-                      toggleSwitch={() => {
-                        const clone = { ...deviceTree };
-                        clone.devices[selectedDevice].printOnlineOrders =
-                          !deviceTree.devices[selectedDevice].printOnlineOrders;
-                        setDeviceTreeState(clone);
-                      }}
-                    />
-                  </div>
-                  <div style={styles.useDifferentDeviceRow}>
-                    <span style={styles.useDifferentDeviceLbl}>
-                      Use Different Device To Print:
-                    </span>
-                    <Switch
-                      isActive={
-                        deviceTree.devices[selectedDevice]
-                          .useDifferentDeviceToPrint ?? false
-                      }
-                      toggleSwitch={() => {
-                        const clone = { ...deviceTree };
-                        clone.devices[
-                          selectedDevice
-                        ].useDifferentDeviceToPrint =
-                          !deviceTree.devices[selectedDevice]
-                            .useDifferentDeviceToPrint;
-                        setDeviceTreeState(clone);
-                      }}
-                    />
-                  </div>
-                  <div style={styles.printerToPrinterInputGroup}>
-                    <span style={styles.printToPrinterLbl}>
-                      Print to Printer
-                    </span>
-                    {!deviceTree.devices[selectedDevice]
-                      .useDifferentDeviceToPrint ? (
-                      <input
-                        style={styles.printToPrintInput}
-                        placeholder="Enter printer name"
-                        value={
-                          deviceTree.devices[selectedDevice].printToPrinter ??
-                          ""
-                        }
-                        onChange={(e) => {
-                          const clone = { ...deviceTree };
-                          clone.devices[selectedDevice].printToPrinter = e.target.value;
-                          setDeviceTreeState(clone);
-                        }}
-                      />
-                    ) : (
-                      <ReactSelect
-                        options={otherDeviceOptions}
-                        value={
-                          deviceTree.devices[selectedDevice].sendPrintToUserID
-                        }
-                        onChange={(val) => {
-                          const clone = { ...deviceTree };
-                          clone.devices[selectedDevice].sendPrintToUserID = val;
-                          setDeviceTreeState(clone);
-                        }}
-                        placeholder={"Choose Device To Send Print To"}
-                        menuPortalTarget={document.body}
-                        styles={{
-                          ...GooglePlacesStyles,
-                          input: (provided) => ({
-                            ...provided,
-                            fontFamily: "sans-serif",
-                            width: "100%",
-                            height: 40,
-                            borderRadius: 5,
-                            paddingTop: 5,
-                          }),
-                        }}
-                        menuPlacement="auto"
-                        menuPosition="fixed"
-                      />
-                    )}
-                  </div>
-                </div>
-                <div style={styles.btnsRow}>
-                  <button
-                    style={styles.updateDeviceBtn}
-                    onClick={() => {
-                      db.collection("users")
-                        .doc(auth?.currentUser?.uid)
-                        .collection("devices")
-                        .doc(deviceTree.devices[selectedDevice].docID)
-                        .update({
-                          ...deviceTree.devices[selectedDevice],
-                          printOnlineOrders:
-                            deviceTree.devices[selectedDevice]
-                              .printOnlineOrders ?? false,
-                        });
-                      if (
-                        deviceTree.devices[selectedDevice].id === myDeviceID
-                      ) {
-                        setDeviceState({
-                          ...deviceTree.devices[selectedDevice],
-                          printOnlineOrders:
-                            deviceTree.devices[selectedDevice]
-                              .printOnlineOrders ?? false,
-                        });
-                      }
-                      alertP.success("Device Updated!");
-                    }}
-                  >
-                    <span style={styles.saveDevice}>Save Device</span>
-                  </button>
-                  <button
-                    style={styles.deleteDeviceBtn}
-                    onClick={() => {
-                      db.collection("users")
-                        .doc(auth?.currentUser?.uid)
-                        .collection("devices")
-                        .doc(deviceTree.devices[selectedDevice].docID)
-                        .delete();
-                      let clone = { ...deviceTree };
-                      clone = {
-                        ...clone,
-                        devices: clone.devices.filter(
-                          (deviceSearch) =>
-                            deviceSearch.docID !==
-                            deviceTree.devices[selectedDevice].docID
-                        ),
-                      };
-                      setDeviceTreeState(clone);
-                      setselectedDevice((prev) => (prev > 0 ? prev - 1 : 0));
-                      resetDeviceState();
-                    }}
-                  >
-                    <span style={styles.deleteDevice}>Delete Device</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div
+                key={d.docID}
                 style={{
-                  display: "flex",
-                  height: 400,
-                  width: 358,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  ...styles.tab,
+                  ...(i === selectedDevice ? styles.tabActive : {}),
                 }}
+                onClick={() => setselectedDevice(i)}
               >
-                <span>No Devices Found</span>
-              </div>
-            )}
-            {selectedDevice < deviceTree.devices.length - 1 ? (
-              <button
-                style={styles.nextDeviceBtn}
-                onClick={() => setselectedDevice((prev) => prev + 1)}
-              >
-                <FiChevronRight size={40} color="rgba(255,255,255,1)" />
-              </button>
-            ) : activePlan === "professional" ? (
-              <button
-                style={styles.nextDeviceBtn}
-                onClick={() => {
-                  db.collection("users")
-                    .doc(auth?.currentUser?.uid)
-                    .collection("devices")
-                    .add({
-                      name: `Device${deviceTree.devices.length}`,
-                      id: null,
-                      printToPrinter: null,
-                    })
-                    .then((docRef) => {
-                      const clone = { ...deviceTree };
-                      clone.devices.push({
-                        name: "",
-                        id: null,
-                        printToPrinter: null,
-                        sendPrintToUserID: null,
-                        docID: docRef.id,
-                        printOnlineOrders: false,
-                        useDifferentDeviceToPrint: false,
-                      });
-                      setDeviceTreeState(clone);
-                    });
-                }}
-              >
-                <FiPlus size={40} color="rgba(255,255,255,1)" />
-              </button>
-            ) : deviceTree.devices.length < 1 ? (
-              <button
-                style={styles.nextDeviceBtn}
-                onClick={() => {
-                  db.collection("users")
-                    .doc(auth?.currentUser?.uid)
-                    .collection("devices")
-                    .add({
-                      name: `Device${deviceTree.devices.length}`,
-                      id: null,
-                      printToPrinter: null,
-                    })
-                    .then((docRef) => {
-                      const clone = { ...deviceTree };
-                      clone.devices.push({
-                        name: "",
-                        id: null,
-                        printToPrinter: null,
-                        sendPrintToUserID: null,
-                        docID: docRef.id,
-                        printOnlineOrders: false,
-                        useDifferentDeviceToPrint: false,
-                      });
-                      setDeviceTreeState(clone);
-                    });
-                }}
-              >
-                <FiPlus size={40} color="rgba(255,255,255,1)" />
-              </button>
-            ) : (
-              <div style={styles.upgradeMessage}>
-                <span style={{ color: "#94a3b8", fontSize: 12, textAlign: "center" }}>
-                  Upgrade to Professional for unlimited devices
+                <FiMonitor
+                  size={14}
+                  color={i === selectedDevice ? "#1470ef" : "#94a3b8"}
+                />
+                <span
+                  style={{
+                    ...styles.tabText,
+                    color: i === selectedDevice ? "#1470ef" : "#64748b",
+                    fontWeight: i === selectedDevice ? "600" : "500",
+                  }}
+                >
+                  {d.name || `Device ${i + 1}`}
                 </span>
-              </div>
+                {d.id === myDeviceID && (
+                  <span style={styles.currentBadge}>Current</span>
+                )}
+              </button>
+            ))}
+            {!canAddDevice && activePlan !== "professional" && (
+              <span style={styles.upgradeHint}>
+                Upgrade to Professional for more devices
+              </span>
             )}
           </div>
-          <div style={styles.downloadRow}>
-            <div style={styles.downloadGroup}>
-              <span style={styles.downloadTxt}>
-                Download our helper software to enable seamless integration of
-                your printer with our service.
-              </span>
-              <div style={styles.downloadsBtnsRow}>
-                <a
-                  href="https://divinepos.com/wp-content/uploads/Divine%20POS%20Helper.exe"
-                  download="Divine Pos Helper.exe"
-                >
-                  <img
-                    src={windowsDownloadImg}
-                    alt="Download for Windows"
-                    style={styles.windowsDownloadImg}
+        )}
+
+        {deviceTree.devices.length > 0 && device ? (
+          <>
+            {/* Device Info Card */}
+            <div style={styles.card}>
+              <span style={styles.cardTitle}>Device Information</span>
+              <div style={styles.fieldGrid}>
+                <div style={styles.fieldGroup}>
+                  <span style={styles.fieldLabel}>Device Name</span>
+                  <input
+                    style={styles.input}
+                    placeholder="Enter device name"
+                    value={device.name}
+                    onChange={(e) => {
+                      const clone = { ...deviceTree };
+                      clone.devices[selectedDevice].name = e.target.value;
+                      setDeviceTreeState(clone);
+                    }}
                   />
-                </a>
-                <a
-                  href="https://divinepos.com/wp-content/uploads/Divine%20POS%20Helper.pkg"
-                  download="Divine Pos Helper.pkg"
-                >
-                  <img
-                    src={macDownloadImg}
-                    alt="Download for Mac"
-                    style={styles.macDownloadImg}
-                  />
-                </a>
+                </div>
+                <div style={styles.fieldGroup}>
+                  <span style={styles.fieldLabel}>Device ID</span>
+                  <div style={styles.deviceIdRow}>
+                    <span style={styles.deviceIdText}>
+                      {device.id
+                        ? device.id.toUpperCase()
+                        : "No device ID set"}
+                    </span>
+                    <button
+                      style={styles.setIdBtn}
+                      onClick={handleSetToMyID}
+                      title="Set to this browser's device ID"
+                    >
+                      <IoKey size={14} color="#fff" />
+                      <span style={styles.setIdBtnText}>Set to This Device</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Print Settings Card */}
+            <div style={styles.card}>
+              <span style={styles.cardTitle}>Print Settings</span>
+              <div style={styles.switchRow}>
+                <div>
+                  <span style={styles.switchLabel}>Print Online Orders</span>
+                  <span style={styles.switchDescription}>
+                    Automatically print orders received from the online store
+                  </span>
+                </div>
+                <Switch
+                  isActive={device.printOnlineOrders}
+                  toggleSwitch={() => {
+                    const clone = { ...deviceTree };
+                    clone.devices[selectedDevice].printOnlineOrders =
+                      !device.printOnlineOrders;
+                    setDeviceTreeState(clone);
+                  }}
+                />
+              </div>
+              <div style={styles.switchRow}>
+                <div>
+                  <span style={styles.switchLabel}>
+                    Use Different Device to Print
+                  </span>
+                  <span style={styles.switchDescription}>
+                    Send print jobs to another registered device
+                  </span>
+                </div>
+                <Switch
+                  isActive={device.useDifferentDeviceToPrint ?? false}
+                  toggleSwitch={() => {
+                    const clone = { ...deviceTree };
+                    clone.devices[selectedDevice].useDifferentDeviceToPrint =
+                      !device.useDifferentDeviceToPrint;
+                    setDeviceTreeState(clone);
+                  }}
+                />
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>
+                  {device.useDifferentDeviceToPrint
+                    ? "Send Print To"
+                    : "Printer Name"}
+                </span>
+                {!device.useDifferentDeviceToPrint ? (
+                  <input
+                    style={styles.input}
+                    placeholder="Enter printer name"
+                    value={device.printToPrinter ?? ""}
+                    onChange={(e) => {
+                      const clone = { ...deviceTree };
+                      clone.devices[selectedDevice].printToPrinter =
+                        e.target.value;
+                      setDeviceTreeState(clone);
+                    }}
+                  />
+                ) : (
+                  <ReactSelect
+                    options={otherDeviceOptions}
+                    value={device.sendPrintToUserID}
+                    onChange={(val) => {
+                      const clone = { ...deviceTree };
+                      clone.devices[selectedDevice].sendPrintToUserID = val;
+                      setDeviceTreeState(clone);
+                    }}
+                    placeholder="Choose device to send print to"
+                    menuPortalTarget={document.body}
+                    styles={{
+                      ...GooglePlacesStyles,
+                      control: (base) => ({
+                        ...base,
+                        display: "flex",
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                        minHeight: 42,
+                        borderColor: "#e2e8f0",
+                        borderRadius: 8,
+                        boxShadow: "none",
+                      }),
+                      input: (provided) => ({
+                        ...provided,
+                        fontFamily: "sans-serif",
+                        width: "100%",
+                        height: 36,
+                        borderRadius: 5,
+                        paddingTop: 5,
+                      }),
+                    }}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={styles.actionsRow}>
+              <button style={styles.saveBtn} onClick={handleSaveDevice}>
+                Save Device
+              </button>
+              <button style={styles.deleteBtn} onClick={handleDeleteDevice}>
+                <FiTrash2 size={14} />
+                Delete Device
+              </button>
+            </div>
+          </>
+        ) : (
+          <div style={styles.emptyState}>
+            <FiMonitor size={40} color="#cbd5e1" />
+            <span style={styles.emptyTitle}>No Devices Found</span>
+            <span style={styles.emptyText}>
+              Add a device to get started with printing
+            </span>
+          </div>
+        )}
+
+        {/* Download Helper Card */}
+        <div style={styles.card}>
+          <div style={styles.downloadHeader}>
+            <FiDownload size={18} color="#1470ef" />
+            <span style={styles.cardTitle}>Printer Helper Software</span>
+          </div>
+          <span style={styles.downloadDescription}>
+            Download our helper software to enable seamless integration of your
+            printer with our service.
+          </span>
+          <div style={styles.downloadBtns}>
+            <a
+              href="https://divinepos.com/wp-content/uploads/Divine%20POS%20Helper.exe"
+              download="Divine Pos Helper.exe"
+              style={styles.downloadLink}
+            >
+              <img
+                src={windowsDownloadImg}
+                alt="Download for Windows"
+                style={styles.downloadImg}
+              />
+            </a>
+            <a
+              href="https://divinepos.com/wp-content/uploads/Divine%20POS%20Helper.pkg"
+              download="Divine Pos Helper.pkg"
+              style={styles.downloadLink}
+            >
+              <img
+                src={macDownloadImg}
+                alt="Download for Mac"
+                style={styles.downloadImg}
+              />
+            </a>
           </div>
         </div>
       </div>
-      {viewVisible && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "white",
-              position: "absolute",
-              opacity: fadeOpacity,
-              height: "100%",
-              width: "100%",
-              transition: "opacity 500ms",
-            }}
-          >
-            <img
-              src={loadingGif}
-              alt="Loading"
-              style={{ width: 450, height: 450, objectFit: "contain" }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -464,267 +433,259 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-start",
-    justifyContent: "flex-start",
-    width: "100%",
     height: "100%",
-  },
-  pageLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 16,
-    margin: 20,
-    display: "inline-block",
-  },
-  group: {
-    display: "flex",
-    flexDirection: "column",
-    alignSelf: "stretch",
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  deviceScrollContainer: {
-    display: "flex",
-    width: 639,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    margin: 20,
-  },
-  backBtn: {
-    display: "flex",
-    width: 50,
-    height: 50,
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  deviceContainer: {
-    display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 468,
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  topGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 360,
-    justifyContent: "space-between",
-  },
-  deviceNameInputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 88,
-    justifyContent: "space-between",
-  },
-  deviceName: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
-  },
-  deviceNameInput: {
-    width: 358,
-    height: 51,
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#a0a0a0",
-    padding: 10,
+    padding: 30,
     boxSizing: "border-box",
+    overflow: "hidden",
   },
-  deviceIDRow: {
+  headerRow: {
     display: "flex",
-    width: 354,
-    height: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  deviceIdLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
-    marginRight: 10,
-  },
-  deviceId: {
-    fontWeight: "300",
-    color: "#121212",
-    fontSize: 14,
-  },
-  setToMyIDBtn: {
-    display: "flex",
-    width: 30,
-    height: 30,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-    padding: 0,
-  },
-  printOnlineOrderRow: {
-    display: "flex",
-    width: 356,
-    height: 21,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-  },
-  printOnlineOrdersLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
-  },
-  printOnlineSwitch: {
-    width: 40,
-    height: 20,
-    backgroundColor: "#E6E6E6",
-  },
-  useDifferentDeviceRow: {
-    display: "flex",
-    width: 356,
-    height: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  useDifferentDeviceLbl: {
-    fontWeight: "700",
-    color: "#111111",
-    fontSize: 17,
-  },
-  useDiffrentDeviceSwitch: {
-    width: 40,
-    height: 20,
-    backgroundColor: "#E6E6E6",
-  },
-  printerToPrinterInputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    width: 358,
-    height: 88,
-    justifyContent: "space-between",
-  },
-  printToPrinterLbl: {
-    fontWeight: "700",
-    color: "#111111",
-    fontSize: 17,
-  },
-  printToPrintInput: {
-    width: 358,
-    height: 51,
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#a0a0a0",
-    padding: 10,
-    boxSizing: "border-box",
-  },
-  btnsRow: {
-    display: "flex",
-    width: 356,
-    height: 49,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  updateDeviceBtn: {
-    display: "flex",
-    width: 170,
-    height: 48,
-    backgroundColor: "rgba(76,175,80,1)",
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-  },
-  saveDevice: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 16,
-  },
-  deleteDeviceBtn: {
-    display: "flex",
-    width: 170,
-    height: 48,
-    backgroundColor: "rgba(244,67,54,1)",
-    borderRadius: 20,
-    opacity: 0.61,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-  },
-  deleteDevice: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 16,
-  },
-  nextDeviceBtn: {
-    display: "flex",
-    width: 50,
-    height: 50,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-    padding: 0,
-  },
-  upgradeMessage: {
-    display: "flex",
-    width: 80,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 8,
-  },
-  downloadRow: {
-    width: "95%",
-  },
-  downloadGroup: {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  downloadTxt: {
-    color: "#121212",
-    fontSize: 17,
-    lineHeight: "14px",
-    marginBottom: 10,
-    marginTop: 10,
-    display: "inline-block",
-  },
-  downloadsBtnsRow: {
-    display: "flex",
-    width: 289,
-    height: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 20,
+    flexShrink: 0,
   },
-  windowsDownloadImg: {
-    height: 50,
-    width: 132,
-    objectFit: "contain",
+  title: {
+    fontWeight: "700",
+    fontSize: 24,
+    color: "#0f172a",
+    display: "block",
   },
-  macDownloadImg: {
-    height: 50,
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 4,
+    display: "block",
+  },
+  addBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: "10px 20px",
+    backgroundColor: "#1470ef",
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+  },
+  addBtnText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  scrollArea: {
+    flex: 1,
+    overflow: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    paddingBottom: 20,
+  },
+  tabsRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+    flexShrink: 0,
+  },
+  tab: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 16px",
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    cursor: "pointer",
+  },
+  tabActive: {
+    backgroundColor: "#eff6ff",
+    borderColor: "#1470ef",
+  },
+  tabText: {
+    fontSize: 13,
+  },
+  currentBadge: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#065f46",
+    backgroundColor: "#d1fae5",
+    padding: "2px 6px",
+    borderRadius: 4,
+    marginLeft: 4,
+  },
+  upgradeHint: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginLeft: 8,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    padding: 24,
+    display: "flex",
+    flexDirection: "column",
+    gap: 20,
+    flexShrink: 0,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  fieldGrid: {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 calc(50% - 8px)",
+    minWidth: 240,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  input: {
+    height: 42,
+    padding: "0 12px",
+    fontSize: 14,
+    color: "#0f172a",
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    outline: "none",
+    boxSizing: "border-box",
+  },
+  deviceIdRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    height: 42,
+  },
+  deviceIdText: {
+    fontSize: 13,
+    color: "#64748b",
+    fontFamily: "monospace",
+    letterSpacing: 0.5,
+  },
+  setIdBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 12px",
+    backgroundColor: "#1c294e",
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer",
+  },
+  setIdBtnText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  switchRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+  },
+  switchLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+    display: "block",
+  },
+  switchDescription: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginTop: 2,
+    display: "block",
+  },
+  actionsRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 12,
+    flexShrink: 0,
+  },
+  saveBtn: {
+    padding: "10px 24px",
+    backgroundColor: "#1470ef",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+  },
+  deleteBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: "10px 20px",
+    backgroundColor: "#fff",
+    color: "#ef4444",
+    fontSize: 14,
+    fontWeight: "600",
+    border: "1px solid #fecaca",
+    borderRadius: 10,
+    cursor: "pointer",
+  },
+  emptyState: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 60,
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "#94a3b8",
+  },
+  downloadHeader: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  downloadDescription: {
+    fontSize: 14,
+    color: "#475569",
+    lineHeight: "1.5",
+  },
+  downloadBtns: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 16,
+    alignItems: "center",
+  },
+  downloadLink: {
+    display: "flex",
+  },
+  downloadImg: {
+    height: 44,
     width: 132,
     objectFit: "contain",
   },

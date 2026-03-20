@@ -6,6 +6,7 @@ interface DropdownMenuButtonProps {
   active: boolean;
   labelImg?: string;
   labelText?: string;
+  labelIcon?: React.ReactNode;
   options: {
     label: string;
     link: string | (() => void);
@@ -20,39 +21,65 @@ function DropdownMenuButton({
   active,
   labelImg,
   labelText,
+  labelIcon,
   options,
   labelImgStyle,
   dropDownOpen,
   toggleDropdown,
 }: DropdownMenuButtonProps) {
+  const isHighlighted = active || dropDownOpen;
+
   return (
     <div>
       <button
         style={{
           ...styles.container,
-          ...((active || dropDownOpen) ? {
-            boxShadow: "3px 3px 0px rgba(0,0,0,0.2)",
-            borderRadius: 10,
-            backgroundColor: "rgba(255,255,255,1)",
-          } : {}),
+          ...(isHighlighted
+            ? {
+                backgroundColor: "#fff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+              }
+            : {}),
         }}
         onClick={toggleDropdown}
       >
-        {labelImg ? (
-          <img
-            src={labelImg}
-            alt=""
-            style={{ ...styles.btnLblImg, ...labelImgStyle }}
-          />
-        ) : (
-          <span style={styles.btnLblText}>{labelText}</span>
-        )}
+        <div style={styles.inner}>
+          {labelImg ? (
+            <img
+              src={labelImg}
+              alt=""
+              style={{ ...styles.btnLblImg, ...labelImgStyle }}
+            />
+          ) : (
+            <>
+              {labelIcon && (
+                <div
+                  style={{
+                    ...styles.iconWrap,
+                    backgroundColor: isHighlighted ? "#eff6ff" : "transparent",
+                    color: isHighlighted ? "#1470ef" : "#64748b",
+                  }}
+                >
+                  {labelIcon}
+                </div>
+              )}
+              <span
+                style={{
+                  ...styles.labelText,
+                  color: isHighlighted ? "#0f172a" : "#475569",
+                }}
+              >
+                {labelText}
+              </span>
+            </>
+          )}
+        </div>
         {!active && !dropDownOpen ? (
-          <FiChevronRight style={styles.dropDownBtnChevronDown} />
+          <FiChevronRight size={16} color="#94a3b8" />
         ) : dropDownOpen ? (
-          <FiChevronUp style={styles.dropDownBtnChevronDown} />
+          <FiChevronUp size={16} color="#64748b" />
         ) : (
-          <FiChevronDown style={styles.dropDownBtnChevronDown} />
+          <FiChevronDown size={16} color="#64748b" />
         )}
       </button>
       {dropDownOpen && (
@@ -72,42 +99,46 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 4,
     height: 42,
-    width: 201,
+    width: "100%",
     border: "none",
     background: "transparent",
     cursor: "pointer",
-    padding: 0,
+    padding: "0 8px",
+    borderRadius: 8,
+    boxSizing: "border-box",
+  },
+  inner: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  labelText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   btnLblImg: {
     marginRight: 10,
-    marginLeft: 10,
+    marginLeft: 2,
     objectFit: "contain",
   },
-  btnLblText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#435869",
-    marginLeft: 10,
-  },
-  dropDownBtnChevronDown: {
-    color: "rgba(128,128,128,1)",
-    fontSize: 30,
-    marginRight: 10,
-    marginLeft: 10,
-  },
-  dropDownMenuBtn: {
-    height: 42,
-    width: 201,
-  },
   dropDownOptionsContainer: {
-    width: 179,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    marginLeft: 20,
+    gap: 2,
+    marginBottom: 8,
+    marginLeft: 50,
   },
 };
 
