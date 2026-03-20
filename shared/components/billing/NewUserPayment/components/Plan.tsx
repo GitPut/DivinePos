@@ -31,7 +31,7 @@ const Plan = ({
     <button
       style={{
         ...styles.container,
-        border: isPlanSelected ? "2px solid #1470ef" : "1px solid #e2e8f0",
+        border: isPlanSelected ? "2px solid #1D294E" : "1px solid #e2e8f0",
         backgroundColor: isPlanSelected ? "#f8fafc" : "#fff",
       }}
       onClick={selectPlan}
@@ -62,7 +62,7 @@ const Plan = ({
       <div
         style={{
           ...styles.selectPlanBtn,
-          backgroundColor: isPlanSelected ? "#1470ef" : "#f1f5f9",
+          backgroundColor: isPlanSelected ? "#1D294E" : "#f1f5f9",
         }}
       >
         <span
@@ -96,7 +96,7 @@ const styles: Record<string, React.CSSProperties> = {
   recommendedBadge: {
     position: "absolute",
     top: -14,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 20,
     padding: "5px 16px",
   },

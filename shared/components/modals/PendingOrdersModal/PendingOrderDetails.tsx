@@ -67,7 +67,7 @@ function PendingOrderDetails({
   const getMethodColor = (): string => {
     if (element?.method === "tableOrder") return "#8b5cf6";
     if (element?.method === "deliveryOrder" || element?.method === "delivery") return "#f59e0b";
-    if (element?.method === "pickupOrder" || element?.method === "pickup") return "#1470ef";
+    if (element?.method === "pickupOrder" || element?.method === "pickup") return "#1D294E";
     if (element?.online) return "#06b6d4";
     return "#10b981";
   };
@@ -167,7 +167,7 @@ function PendingOrderDetails({
                 }
               }}
             >
-              <FiEdit3 size={13} color="#1470ef" />
+              <FiEdit3 size={13} color="#1D294E" />
               <span style={styles.editOrderTxt}>Edit Order</span>
             </button>
           )}
@@ -370,7 +370,7 @@ const styles: Record<string, React.CSSProperties> = {
   editOrderTxt: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#1470ef",
+    color: "#1D294E",
   },
   cartScroll: {
     flex: 1,

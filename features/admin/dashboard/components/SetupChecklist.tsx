@@ -38,7 +38,7 @@ function SetupChecklist() {
       id: "store_name",
       title: "Set your store name",
       description: "Add your store's name so it appears on receipts and your online store",
-      icon: <FiShoppingBag size={16} color="#1470ef" />,
+      icon: <FiShoppingBag size={16} color="#1D294E" />,
       link: "/authed/settings/generalsettings",
       isComplete: !!storeDetails.name && storeDetails.name.length > 0,
     },
@@ -104,7 +104,7 @@ function SetupChecklist() {
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <div style={styles.headerIcon}>
-            <FiSettings size={18} color="#1470ef" />
+            <FiSettings size={18} color="#1D294E" />
           </div>
           <div>
             <span style={styles.headerTitle}>Set up your store</span>
@@ -252,7 +252,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   progressBarFill: {
     height: 4,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 2,
     transition: "width 0.3s ease",
   },

@@ -307,7 +307,7 @@ const styles: Record<string, React.CSSProperties> = {
   upgradePlanBtn: {
     marginTop: 24,
     padding: "11px 20px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontWeight: "600",
     fontSize: 14,

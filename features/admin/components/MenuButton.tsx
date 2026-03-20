@@ -44,7 +44,7 @@ function MenuButton({
                 style={{
                   ...styles.iconWrap,
                   backgroundColor: active ? "#eff6ff" : "transparent",
-                  color: active ? "#1470ef" : "#64748b",
+                  color: active ? "#1D294E" : "#64748b",
                 }}
               >
                 {labelIcon}

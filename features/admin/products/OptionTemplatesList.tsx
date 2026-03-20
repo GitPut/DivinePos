@@ -264,7 +264,7 @@ function OptionTemplatesList() {
                     <div key={template.id} style={styles.templateCard}>
                       <div style={styles.cardHeader}>
                         <div style={styles.cardIcon}>
-                          <FiLayers size={18} color="#1470ef" />
+                          <FiLayers size={18} color="#1D294E" />
                         </div>
                         <div style={styles.cardInfo}>
                           <span style={styles.cardName}>{template.name}</span>
@@ -407,7 +407,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   addBtn: {
     height: 40,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     display: "flex",
@@ -643,7 +643,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: 40,
     paddingLeft: 20,
     paddingRight: 20,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     display: "flex",

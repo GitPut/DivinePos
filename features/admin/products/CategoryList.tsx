@@ -30,7 +30,7 @@ function CategoryList() {
       title: "Are you sure?",
       text: "You won't be able to revert this!",
       showCancelButton: true,
-      confirmButtonColor: "#1470ef",
+      confirmButtonColor: "#1D294E",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     }).then(function (t) {
@@ -38,7 +38,7 @@ function CategoryList() {
         Swal.fire({
           title: "Deleted!",
           text: "Your category has been deleted.",
-          confirmButtonColor: "#1470ef",
+          confirmButtonColor: "#1D294E",
         });
         const localCatalog = structuredClone(catalog);
         if (localCatalog.categories.length > 1) {
@@ -198,7 +198,7 @@ function CategoryList() {
                       : {}),
                     ...(isDragging ? { opacity: 0.4 } : {}),
                     ...(isDragOver
-                      ? { borderTop: "2px solid #1470ef", marginTop: -1 }
+                      ? { borderTop: "2px solid #1D294E", marginTop: -1 }
                       : {}),
                     ...(!isSearching ? { cursor: "grab" } : {}),
                   }}
@@ -348,7 +348,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   addBtn: {
     height: 40,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     display: "flex",

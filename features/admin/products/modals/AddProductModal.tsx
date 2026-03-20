@@ -95,7 +95,7 @@ function AddProductModal({
         title: "Discard changes?",
         text: "You have unsaved changes that will be lost.",
         showCancelButton: true,
-        confirmButtonColor: "#1470ef",
+        confirmButtonColor: "#1D294E",
         cancelButtonColor: "#94a3b8",
         confirmButtonText: "Discard",
         cancelButtonText: "Keep editing",
@@ -274,7 +274,7 @@ function AddProductModal({
       {/* Top Bar */}
       <div style={styles.topBar}>
         <div style={styles.topBarLeft}>
-          <button style={styles.closeBtn} onClick={confirmDiscard}>
+          <button style={styles.closeBtn} onClick={closeModal}>
             <FiX size={18} color="#64748b" />
           </button>
           <span style={styles.topBarTitle}>{modalTitle}</span>
@@ -325,7 +325,7 @@ function AddProductModal({
               <span style={styles.actionBtnTxt}>{showPreview ? "Hide Preview" : "Show Preview"}</span>
             </button>
           )}
-          <button style={styles.cancelBtn} onClick={confirmDiscard}>
+          <button style={styles.cancelBtn} onClick={closeModal}>
             <span style={styles.cancelTxt}>Cancel</span>
           </button>
           <button style={styles.saveBtn} onClick={handleDataUpdate}>
@@ -529,7 +529,7 @@ function AddProductModal({
                     style={styles.templatePickerBtn}
                     onClick={() => setShowTemplatePicker(true)}
                   >
-                    <FiLayers size={14} color="#1470ef" />
+                    <FiLayers size={14} color="#1D294E" />
                     <span style={styles.templatePickerTxt}>Add from Template</span>
                   </button>
                   <button
@@ -578,7 +578,7 @@ function AddProductModal({
                         style={styles.templatePickerBtn}
                         onClick={() => setShowTemplatePicker(true)}
                       >
-                        <FiLayers size={15} color="#1470ef" />
+                        <FiLayers size={15} color="#1D294E" />
                         <span style={styles.templatePickerTxt}>Add from Template</span>
                       </button>
                     )}
@@ -631,7 +631,7 @@ function AddProductModal({
                             }}
                           >
                             <div style={styles.templatePickerItemLeft}>
-                              <FiLayers size={14} color="#1470ef" />
+                              <FiLayers size={14} color="#1D294E" />
                               <div>
                                 <span style={styles.templatePickerItemName}>{template.name}</span>
                                 <span style={styles.templatePickerItemMeta}>
@@ -768,7 +768,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: 36,
     paddingLeft: 20,
     paddingRight: 20,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     cursor: "pointer",
@@ -843,7 +843,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     fontWeight: "600",
     color: "#fff",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     width: 20,
     height: 20,
     borderRadius: 10,
@@ -997,7 +997,7 @@ const styles: Record<string, React.CSSProperties> = {
   emptyOptionsHint: { fontSize: 13, color: "#94a3b8", marginBottom: 14, textAlign: "center" as const, maxWidth: 400 },
   optionBtnsRow: { display: "flex", flexDirection: "row", alignItems: "center", gap: 10 },
   createOptionBtn: {
-    height: 38, paddingLeft: 16, paddingRight: 16, backgroundColor: "#1470ef",
+    height: 38, paddingLeft: 16, paddingRight: 16, backgroundColor: "#1D294E",
     borderRadius: 8, display: "flex", flexDirection: "row", alignItems: "center",
     justifyContent: "center", gap: 6, border: "none", cursor: "pointer",
   },
@@ -1026,7 +1026,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row" as const, alignItems: "center", justifyContent: "center",
     gap: 6, cursor: "pointer",
   },
-  templatePickerTxt: { fontWeight: "600", color: "#1470ef", fontSize: 13 },
+  templatePickerTxt: { fontWeight: "600", color: "#1D294E", fontSize: 13 },
   templatePickerOverlay: {
     position: "relative" as const, marginTop: 8,
   },
@@ -1065,7 +1065,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12, color: "#94a3b8", display: "block",
   },
   templatePickerItemAction: {
-    fontSize: 13, fontWeight: "600", color: "#1470ef",
+    fontSize: 13, fontWeight: "600", color: "#1D294E",
   },
 };
 

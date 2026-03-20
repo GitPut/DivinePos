@@ -105,7 +105,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   posBtn: {
     height: 36,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",

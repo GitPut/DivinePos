@@ -78,7 +78,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pickupBtn: {
     height: 30,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 6,
     display: "flex",
     flexDirection: "row",

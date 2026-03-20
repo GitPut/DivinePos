@@ -111,7 +111,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 16,
   },
   backLinkText: {
-    color: "#1470ef",
+    color: "#1D294E",
     fontSize: 14,
     fontWeight: "500",
   },

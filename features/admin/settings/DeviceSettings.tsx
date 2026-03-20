@@ -207,12 +207,12 @@ function DeviceSettings() {
               >
                 <FiMonitor
                   size={14}
-                  color={i === selectedDevice ? "#1470ef" : "#94a3b8"}
+                  color={i === selectedDevice ? "#1D294E" : "#94a3b8"}
                 />
                 <span
                   style={{
                     ...styles.tabText,
-                    color: i === selectedDevice ? "#1470ef" : "#64748b",
+                    color: i === selectedDevice ? "#1D294E" : "#64748b",
                     fontWeight: i === selectedDevice ? "600" : "500",
                   }}
                 >
@@ -392,7 +392,7 @@ function DeviceSettings() {
         {/* Download Helper Card */}
         <div style={styles.card}>
           <div style={styles.downloadHeader}>
-            <FiDownload size={18} color="#1470ef" />
+            <FiDownload size={18} color="#1D294E" />
             <span style={styles.cardTitle}>Printer Helper Software</span>
           </div>
           <span style={styles.downloadDescription}>
@@ -465,7 +465,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: 8,
     padding: "10px 20px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 10,
     cursor: "pointer",
@@ -504,7 +504,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   tabActive: {
     backgroundColor: "#eff6ff",
-    borderColor: "#1470ef",
+    borderColor: "#1D294E",
   },
   tabText: {
     fontSize: 13,
@@ -625,7 +625,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   saveBtn: {
     padding: "10px 24px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",

@@ -573,7 +573,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   filterBtn: {
     padding: "8px 16px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     border: "none",
     borderRadius: 8,

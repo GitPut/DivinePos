@@ -87,7 +87,7 @@ function OptionsItem({
           ...style,
           ...(isExpanded ? { paddingBottom: 20 } : {}),
           ...(selectedID === item.id
-            ? { borderColor: "#1470ef", boxShadow: "0 0 0 1px #1470ef" }
+            ? { borderColor: "#1D294E", boxShadow: "0 0 0 1px #1D294E" }
             : {}),
         }}
       >
@@ -427,7 +427,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   createOptionBtn: {
     height: 38,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 8,
     display: "flex",
     flexDirection: "row",

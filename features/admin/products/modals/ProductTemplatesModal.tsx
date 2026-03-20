@@ -63,7 +63,7 @@ function ProductTemplatesModal({
         <div style={styles.header}>
           <div style={styles.headerLeft}>
             <div style={styles.iconWrap}>
-              <FiLayers size={18} color="#1470ef" />
+              <FiLayers size={18} color="#1D294E" />
             </div>
             <div>
               <span style={styles.title}>Product Templates</span>
@@ -352,7 +352,7 @@ const styles: Record<string, React.CSSProperties> = {
   cardOptions: {
     fontSize: 11,
     fontWeight: "500",
-    color: "#1470ef",
+    color: "#1D294E",
     backgroundColor: "#eff6ff",
     padding: "2px 8px",
     borderRadius: 4,
@@ -360,7 +360,7 @@ const styles: Record<string, React.CSSProperties> = {
   useBtn: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#1470ef",
+    color: "#1D294E",
     marginTop: 4,
   },
   emptyState: {

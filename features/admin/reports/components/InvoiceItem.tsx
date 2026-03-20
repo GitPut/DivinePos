@@ -36,8 +36,8 @@ const InvoiceItem = React.memo(
           <button
             style={{
               ...styles.checkbox,
-              backgroundColor: isSelected ? "#1470ef" : "#fff",
-              borderColor: isSelected ? "#1470ef" : "#d1d5db",
+              backgroundColor: isSelected ? "#1D294E" : "#fff",
+              borderColor: isSelected ? "#1D294E" : "#d1d5db",
             }}
             onClick={() => {
               setbaseSelectedRows((prev) => {

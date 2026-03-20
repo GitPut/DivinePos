@@ -79,7 +79,7 @@ function PeriodDropdown({
                   ...styles.container,
                   borderBottomLeftRadius: 0,
                   borderBottomRightRadius: 0,
-                  borderBottomColor: "#1470ef",
+                  borderBottomColor: "#1D294E",
                 }}
                 onClick={() => setopenDropdown((prev) => !prev)}
               >
@@ -92,7 +92,7 @@ function PeriodDropdown({
                     style={{
                       ...styles.option,
                       ...(option === value
-                        ? { backgroundColor: "#eff6ff", color: "#1470ef" }
+                        ? { backgroundColor: "#eff6ff", color: "#1D294E" }
                         : {}),
                       ...(listIndex < options.length - 1
                         ? { borderBottom: "1px solid #f1f5f9" }

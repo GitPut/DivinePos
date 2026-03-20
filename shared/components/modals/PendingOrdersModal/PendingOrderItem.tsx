@@ -47,7 +47,7 @@ function PendingOrderItem({
   const getMethodColor = (): string => {
     if (element.method === "tableOrder") return "#8b5cf6";
     if (element.method === "deliveryOrder" || element.method === "delivery") return "#f59e0b";
-    if (element.method === "pickupOrder" || element.method === "pickup") return "#1470ef";
+    if (element.method === "pickupOrder" || element.method === "pickup") return "#1D294E";
     if (element.online) return "#06b6d4";
     return "#10b981";
   };

@@ -32,7 +32,7 @@ function ProductList() {
       title: "Are you sure?",
       text: "You won't be able to revert this!",
       showCancelButton: true,
-      confirmButtonColor: "#1470ef",
+      confirmButtonColor: "#1D294E",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     }).then(function (t) {
@@ -40,7 +40,7 @@ function ProductList() {
         Swal.fire({
           title: "Deleted!",
           text: "Your product has been deleted.",
-          confirmButtonColor: "#1470ef",
+          confirmButtonColor: "#1D294E",
         });
         const localCatalog = structuredClone(catalog);
         if (localCatalog.products.length > 1) {
@@ -383,7 +383,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   addBtn: {
     height: 40,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     display: "flex",
@@ -481,7 +481,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   emptyAddBtn: {
     height: 40,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     display: "flex",

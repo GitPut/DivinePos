@@ -190,7 +190,7 @@ const styles: Record<string, React.CSSProperties> = {
   authorizeBtn: {
     width: "100%",
     height: 44,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 10,
     border: "none",
     cursor: "pointer",

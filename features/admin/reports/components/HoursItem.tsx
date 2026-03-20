@@ -33,7 +33,7 @@ function HoursItem({
         <button
           style={{
             ...styles.paidBtn,
-            backgroundColor: isPaid ? "#f1f5f9" : "#1470ef",
+            backgroundColor: isPaid ? "#f1f5f9" : "#1D294E",
             color: isPaid ? "#475569" : "#fff",
             border: isPaid ? "1px solid #e2e8f0" : "none",
           }}

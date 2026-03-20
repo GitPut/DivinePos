@@ -90,7 +90,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: 30,
     height: 30,
     borderRadius: 8,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

@@ -18,6 +18,7 @@ const SideBar = ({
 }: SideBarProps) => {
   return (
     <div style={styles.container}>
+      {/* Steps row */}
       <div style={styles.stepsRow}>
         <div style={styles.stepItem}>
           <div
@@ -28,7 +29,7 @@ const SideBar = ({
             }}
           >
             {stageNum > 1 ? (
-              <FiCheck size={16} color="#fff" />
+              <FiCheck size={14} color="#fff" />
             ) : (
               <span style={styles.stepNumber}>1</span>
             )}
@@ -36,16 +37,16 @@ const SideBar = ({
           <span
             style={{
               ...styles.stepLabel,
-              ...(stageNum >= 1 ? { color: "#0f172a" } : {}),
+              ...(stageNum >= 1 ? { color: "#0f172a", fontWeight: "600" } : {}),
             }}
           >
-            Plan
+            Choose Plan
           </span>
         </div>
         <div
           style={{
             ...styles.stepLine,
-            backgroundColor: stageNum > 1 ? "#1470ef" : "#e2e8f0",
+            backgroundColor: stageNum > 1 ? "#1D294E" : "#e2e8f0",
           }}
         />
         <div style={styles.stepItem}>
@@ -60,14 +61,15 @@ const SideBar = ({
           <span
             style={{
               ...styles.stepLabel,
-              ...(stageNum >= 2 ? { color: "#0f172a" } : {}),
+              ...(stageNum >= 2 ? { color: "#0f172a", fontWeight: "600" } : {}),
             }}
           >
-            Details
+            Store Details
           </span>
         </div>
       </div>
 
+      {/* Action buttons */}
       <div style={styles.buttonContainer}>
         {stageNum === 1 ? (
           <button
@@ -88,7 +90,6 @@ const SideBar = ({
             <button
               style={{
                 ...styles.primaryButton,
-                flex: 1,
                 ...(!detailsFilledOut ? styles.primaryButtonDisabled : {}),
               }}
               disabled={!detailsFilledOut}
@@ -110,41 +111,42 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     maxWidth: 960,
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     alignItems: "center",
-    gap: 32,
+    justifyContent: "space-between",
     padding: "0 20px",
+    marginBottom: 16,
   },
   stepsRow: {
     flexDirection: "row",
     display: "flex",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   stepItem: {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
   },
   stepCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: "#e2e8f0",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
   stepCircleActive: {
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
   },
   stepCircleCompleted: {
     backgroundColor: "#10b981",
   },
   stepNumber: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   stepLabel: {
@@ -153,26 +155,24 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#94a3b8",
   },
   stepLine: {
-    width: 60,
+    width: 40,
     height: 2,
     borderRadius: 1,
-    marginBottom: 24,
   },
   buttonContainer: {
-    width: "100%",
-    maxWidth: 520,
+    display: "flex",
   },
   buttonRow: {
     flexDirection: "row",
     display: "flex",
-    gap: 12,
-    width: "100%",
+    gap: 8,
   },
   primaryButton: {
-    backgroundColor: "#1470ef",
-    borderRadius: 10,
-    height: 48,
-    width: "100%",
+    backgroundColor: "#1D294E",
+    borderRadius: 8,
+    height: 38,
+    paddingLeft: 24,
+    paddingRight: 24,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -186,14 +186,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   buttonText: {
     color: "#fff",
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
   },
   backButton: {
     backgroundColor: "#fff",
-    borderRadius: 10,
-    height: 48,
-    padding: "0 28px",
+    borderRadius: 8,
+    height: 38,
+    paddingLeft: 20,
+    paddingRight: 20,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -202,7 +203,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   backButtonText: {
     color: "#0f172a",
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
   },
 };

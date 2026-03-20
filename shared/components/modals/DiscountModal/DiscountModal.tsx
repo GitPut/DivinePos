@@ -272,7 +272,7 @@ const styles: Record<string, React.CSSProperties> = {
   applyBtn: {
     flex: 1,
     height: 44,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 10,
     border: "none",
     alignItems: "center",

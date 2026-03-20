@@ -58,7 +58,7 @@ function WooCommerceSettings() {
         <div style={styles.scrollArea}>
           <div style={styles.upgradeCard}>
             <div style={styles.upgradeIconWrap}>
-              <FiShoppingCart size={32} color="#1470ef" />
+              <FiShoppingCart size={32} color="#1D294E" />
             </div>
             <span style={styles.upgradeTitle}>
               WooCommerce is a Professional Feature
@@ -120,7 +120,7 @@ function WooCommerceSettings() {
             {/* API Credentials Card */}
             <div style={styles.card}>
               <div style={styles.cardHeader}>
-                <FiKey size={18} color="#1470ef" />
+                <FiKey size={18} color="#1D294E" />
                 <span style={styles.cardTitle}>API Credentials</span>
               </div>
               <div style={styles.fieldGroup}>
@@ -208,7 +208,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   saveBtn: {
     padding: "10px 24px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
@@ -370,7 +370,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   upgradeBtn: {
     padding: "12px 28px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontWeight: "600",
     fontSize: 15,

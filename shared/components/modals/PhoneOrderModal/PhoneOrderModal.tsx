@@ -221,7 +221,7 @@ const PhoneOrderModal = () => {
                 updatePosState({ ongoingDelivery: false, name: "", phone: "", address: null, buzzCode: "", unitNumber: "", deliveryChecked: false, deliveryModal: false, saveCustomerModal: true });
               }}
             >
-              <FiUsers size={15} color="#1470ef" />
+              <FiUsers size={15} color="#1D294E" />
               <span style={styles.savedCustomersTxt}>Saved Customers</span>
             </button>
           </div>
@@ -363,7 +363,7 @@ const styles: Record<string, React.CSSProperties> = {
   orderBtn: {
     width: "100%",
     height: 44,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 10,
     border: "none",
     display: "flex",
@@ -389,6 +389,6 @@ const styles: Record<string, React.CSSProperties> = {
   savedCustomersTxt: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#1470ef",
+    color: "#1D294E",
   },
 };

@@ -242,7 +242,7 @@ const styles: Record<string, React.CSSProperties> = {
   resubscribeBtn: {
     marginTop: 8,
     padding: "14px 36px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontWeight: "700",
     fontSize: 16,

@@ -19,7 +19,7 @@ const StageStepView = ({ step, stageLbl, stageDesc, stageNum }: StageStepViewPro
           width: 28,
           height: 28,
           borderRadius: 14,
-          backgroundColor: isCompleted ? "#10b981" : isActive ? "#1470ef" : "#e2e8f0",
+          backgroundColor: isCompleted ? "#10b981" : isActive ? "#1D294E" : "#e2e8f0",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

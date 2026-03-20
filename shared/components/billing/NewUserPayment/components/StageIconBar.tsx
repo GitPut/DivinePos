@@ -28,7 +28,7 @@ const StageIconBar = ({ stageNum }: StageIconBarProps) => {
       <div
         style={{
           ...styles.divider,
-          backgroundColor: stageNum > 1 ? "#1470ef" : "#e2e8f0",
+          backgroundColor: stageNum > 1 ? "#1D294E" : "#e2e8f0",
         }}
       />
       <div
@@ -57,7 +57,7 @@ const styles: Record<string, React.CSSProperties> = {
   activeIconContainer: {
     width: 40,
     height: 40,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",

@@ -249,7 +249,7 @@ const styles: Record<string, React.CSSProperties> = {
   saveBtn: {
     flex: 1,
     height: 42,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     display: "flex",

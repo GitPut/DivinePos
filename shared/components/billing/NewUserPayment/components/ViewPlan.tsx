@@ -50,7 +50,7 @@ const ViewPlan = ({ planType, setstageNum }: PlanProps) => {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     borderRadius: 16,
-    border: "2px solid #1470ef",
+    border: "2px solid #1D294E",
     backgroundColor: "#f8fafc",
     display: "flex",
     flexDirection: "column",
@@ -61,7 +61,7 @@ const styles: Record<string, React.CSSProperties> = {
   selectedLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#1470ef",
+    color: "#1D294E",
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 8,
@@ -109,7 +109,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 0,
   },
   changeBtnText: {
-    color: "#1470ef",
+    color: "#1D294E",
     fontSize: 14,
     fontWeight: "500",
   },

@@ -171,7 +171,7 @@ function OnlineStoreSettings() {
         <div style={styles.scrollArea}>
           <div style={styles.upgradeCard}>
             <div style={styles.upgradeIconWrap}>
-              <FiShoppingBag size={32} color="#1470ef" />
+              <FiShoppingBag size={32} color="#1D294E" />
             </div>
             <span style={styles.upgradeTitle}>
               Online Store is a Professional Feature
@@ -209,7 +209,7 @@ function OnlineStoreSettings() {
         <div style={styles.scrollArea}>
           <div style={styles.pricingCard}>
             <div style={styles.pricingHeader}>
-              <FiShoppingBag size={24} color="#1470ef" />
+              <FiShoppingBag size={24} color="#1D294E" />
               <span style={styles.pricingTitle}>Online Store</span>
             </div>
             <span style={styles.pricingDescription}>
@@ -276,7 +276,7 @@ function OnlineStoreSettings() {
         {/* Store URL Card */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
-            <FiGlobe size={18} color="#1470ef" />
+            <FiGlobe size={18} color="#1D294E" />
             <span style={styles.cardTitle}>Store URL</span>
           </div>
           <div style={styles.fieldGroup}>
@@ -322,7 +322,7 @@ function OnlineStoreSettings() {
         {/* Stripe Keys Card */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
-            <FiLock size={18} color="#1470ef" />
+            <FiLock size={18} color="#1D294E" />
             <span style={styles.cardTitle}>Stripe Payment Keys</span>
           </div>
           <div style={styles.fieldGrid}>
@@ -408,7 +408,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   saveBtn: {
     padding: "10px 24px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
@@ -582,7 +582,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   upgradeBtn: {
     padding: "12px 28px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontWeight: "600",
     fontSize: 15,
@@ -655,7 +655,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   getStartedBtn: {
     padding: "12px 28px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontWeight: "600",
     fontSize: 15,

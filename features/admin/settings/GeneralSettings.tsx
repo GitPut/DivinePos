@@ -245,7 +245,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   saveBtn: {
     padding: "10px 24px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",

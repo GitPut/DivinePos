@@ -481,7 +481,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   addHoursBtn: {
     padding: "10px 20px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     border: "none",
     borderRadius: 8,

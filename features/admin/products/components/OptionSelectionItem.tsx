@@ -39,7 +39,7 @@ function OptionSelectionItem({
         ...styles.container,
         ...style,
         ...(highlightedOptionID === eInnerList.id
-          ? { borderColor: "#1470ef" }
+          ? { borderColor: "#1D294E" }
           : {}),
       }}
     >

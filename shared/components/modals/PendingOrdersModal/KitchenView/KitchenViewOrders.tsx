@@ -32,7 +32,7 @@ const KitchenViewOrders = () => {
   const getMethodColor = (order: TransListStateItem): string => {
     if (order.method === "tableOrder") return "#8b5cf6";
     if (order.method === "deliveryOrder" || order.method === "delivery") return "#f59e0b";
-    if (order.method === "pickupOrder" || order.method === "pickup") return "#1470ef";
+    if (order.method === "pickupOrder" || order.method === "pickup") return "#1D294E";
     if (order.online) return "#06b6d4";
     return "#10b981";
   };

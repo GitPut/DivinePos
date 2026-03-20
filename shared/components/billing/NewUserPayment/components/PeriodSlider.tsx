@@ -19,7 +19,7 @@ function PeriodSlider({ setpaymentTerm, paymentTerm }: PeriodSliderProps) {
     <div style={styles.container}>
       <div
         style={{
-          backgroundColor: "#1470ef",
+          backgroundColor: "#1D294E",
           borderRadius: 10,
           width: 155,
           height: 40,

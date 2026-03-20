@@ -94,6 +94,15 @@ const NewUserPayment = () => {
       <Header />
       <div style={{ ...styles.container, height: height - 75 }}>
         <div style={styles.innerContainer}>
+          <SideBar
+            stageNum={stageNum}
+            setstageNum={setstageNum}
+            planType={planType}
+            CheckOutFunc={CheckOutFunc}
+            detailsFilledOut={
+              storeName?.length > 0 && phoneNumber?.length > 0 && !!address
+            }
+          />
           {stageNum === 1 && (
             <PlanStage
               planType={planType}
@@ -114,15 +123,6 @@ const NewUserPayment = () => {
               website={website}
             />
           )}
-          <SideBar
-            stageNum={stageNum}
-            setstageNum={setstageNum}
-            planType={planType}
-            CheckOutFunc={CheckOutFunc}
-            detailsFilledOut={
-              storeName?.length > 0 && phoneNumber?.length > 0 && !!address
-            }
-          />
         </div>
       </div>
     </>

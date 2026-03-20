@@ -258,7 +258,7 @@ function OptionsItemExpanded({
           }}
           disabled={testMap.length > 0 && testMap[testMap.length - 1].label === null}
         >
-          <FiPlus size={14} color="#1470ef" />
+          <FiPlus size={14} color="#1D294E" />
           <span style={styles.addSelectionTxt}>
             {testMap.length > 0 ? "Add Another Choice" : "Add Choice"}
           </span>
@@ -459,7 +459,7 @@ function OptionsItemExpanded({
                         }
                       }}
                     >
-                      <FiPlus size={14} color="#1470ef" />
+                      <FiPlus size={14} color="#1D294E" />
                       <span style={styles.addSelectionTxt}>Add Visibility Rule</span>
                     </button>
                   </div>
@@ -593,7 +593,7 @@ const styles: Record<string, React.CSSProperties> = {
   bulkPriceLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#1470ef",
+    color: "#1D294E",
   },
   bulkPriceFields: {
     display: "flex",
@@ -627,7 +627,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: 34,
     paddingLeft: 14,
     paddingRight: 14,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     cursor: "pointer",
@@ -666,7 +666,7 @@ const styles: Record<string, React.CSSProperties> = {
   addSelectionTxt: {
     fontSize: 13,
     fontWeight: "500",
-    color: "#1470ef",
+    color: "#1D294E",
   },
   advancedToggle: {
     display: "flex",

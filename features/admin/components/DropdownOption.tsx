@@ -17,7 +17,7 @@ function DropdownOption({ option }: DropdownOptionProps) {
       style={{
         ...styles.container,
         ...(option.active
-          ? { color: "#1470ef", fontWeight: "600" }
+          ? { color: "#1D294E", fontWeight: "600" }
           : {}),
       }}
       onClick={() => {
@@ -31,7 +31,7 @@ function DropdownOption({ option }: DropdownOptionProps) {
       <div
         style={{
           ...styles.dot,
-          backgroundColor: option.active ? "#1470ef" : "#cbd5e1",
+          backgroundColor: option.active ? "#1D294E" : "#cbd5e1",
         }}
       />
       <span

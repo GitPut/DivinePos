@@ -96,7 +96,7 @@ const TableSettings = () => {
         <div style={styles.scrollArea}>
           <div style={styles.upgradeCard}>
             <div style={styles.upgradeIconWrap}>
-              <FiGrid size={32} color="#1470ef" />
+              <FiGrid size={32} color="#1D294E" />
             </div>
             <span style={styles.upgradeTitle}>
               Table Management is a Professional Feature
@@ -268,7 +268,7 @@ const TableSettings = () => {
                       style={{
                         ...styles.toggleBtn,
                         backgroundColor: table.isActive
-                          ? "#1470ef"
+                          ? "#1D294E"
                           : "#cbd5e1",
                       }}
                       onClick={() =>
@@ -341,7 +341,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   saveBtn: {
     padding: "10px 24px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
@@ -429,7 +429,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     padding: "8px 14px",
@@ -453,7 +453,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     border: "none",
     borderRadius: 8,
     padding: "8px 16px",
@@ -597,7 +597,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   upgradeBtn: {
     padding: "12px 28px",
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontWeight: "600",
     fontSize: 15,

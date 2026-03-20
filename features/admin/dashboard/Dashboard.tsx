@@ -333,7 +333,7 @@ const Dashboard: React.FC = () => {
         <div style={styles.kpiRow}>
           <div style={styles.kpiCard}>
             <div style={{ ...styles.kpiIconWrap, backgroundColor: "#eff6ff" }}>
-              <FiDollarSign size={20} color="#1470ef" />
+              <FiDollarSign size={20} color="#1D294E" />
             </div>
             <div>
               <span style={styles.kpiValue}>
@@ -438,7 +438,7 @@ const Dashboard: React.FC = () => {
                   backgroundColor: "#eff6ff",
                 }}
               >
-                <FiShoppingBag size={18} color="#1470ef" />
+                <FiShoppingBag size={18} color="#1D294E" />
               </div>
               <span style={styles.orderCardTitle}>Pickup Orders</span>
             </div>
@@ -541,7 +541,7 @@ const Dashboard: React.FC = () => {
                 label: "Average",
                 value: wait.average,
                 bg: "#eff6ff",
-                color: "#1470ef",
+                color: "#1D294E",
               },
               {
                 label: "Mean",

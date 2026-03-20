@@ -97,7 +97,7 @@ export default class BarGraph extends PureComponent<BarGraphProps> {
             width={40}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f1f5f9" }} />
-          <Bar dataKey="pv" barSize={24} fill="#1470ef" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="pv" barSize={24} fill="#1D294E" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     );

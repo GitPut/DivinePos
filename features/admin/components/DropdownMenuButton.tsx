@@ -57,7 +57,7 @@ function DropdownMenuButton({
                   style={{
                     ...styles.iconWrap,
                     backgroundColor: isHighlighted ? "#eff6ff" : "transparent",
-                    color: isHighlighted ? "#1470ef" : "#64748b",
+                    color: isHighlighted ? "#1D294E" : "#64748b",
                   }}
                 >
                   {labelIcon}

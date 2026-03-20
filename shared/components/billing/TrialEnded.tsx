@@ -62,7 +62,7 @@ const TrialEnded = () => {
           <button
             style={{
               ...styles.planCard,
-              border: selectedPlan === "starter" ? "2px solid #1470ef" : "1px solid #e2e8f0",
+              border: selectedPlan === "starter" ? "2px solid #1D294E" : "1px solid #e2e8f0",
               backgroundColor: selectedPlan === "starter" ? "#f8fafc" : "#fff",
             }}
             onClick={() => setSelectedPlan("starter")}
@@ -90,7 +90,7 @@ const TrialEnded = () => {
           <button
             style={{
               ...styles.planCard,
-              border: selectedPlan === "professional" ? "2px solid #1470ef" : "1px solid #e2e8f0",
+              border: selectedPlan === "professional" ? "2px solid #1D294E" : "1px solid #e2e8f0",
               backgroundColor: selectedPlan === "professional" ? "#f8fafc" : "#fff",
               position: "relative",
             }}
@@ -196,7 +196,7 @@ const styles: Record<string, React.CSSProperties> = {
   recommendedBadge: {
     position: "absolute",
     top: -14,
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 20,
     padding: "5px 16px",
   },
@@ -277,7 +277,7 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: 320,
   },
   checkoutButton: {
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 10,
     height: 48,
     width: "100%",
