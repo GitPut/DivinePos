@@ -80,16 +80,17 @@ const Plan = ({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 16,
+    borderRadius: 14,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    width: 280,
-    padding: "28px 24px 24px",
+    flex: "1 1 220px",
+    maxWidth: 280,
+    padding: "22px 20px 18px",
     cursor: "pointer",
     position: "relative",
     background: "none",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+    boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
     transition: "border-color 0.2s, background-color 0.2s",
   },
   recommendedBadge: {
@@ -152,11 +153,11 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     height: 1,
     backgroundColor: "#e2e8f0",
-    margin: "20px 0",
+    margin: "14px 0",
   },
   featuresContainer: {
     width: "100%",
-    gap: 10,
+    gap: 6,
     display: "flex",
     flexDirection: "column",
     flex: 1,
@@ -175,12 +176,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   selectPlanBtn: {
     width: "100%",
-    height: 42,
-    borderRadius: 10,
+    height: 38,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
-    marginTop: 20,
+    marginTop: 14,
     transition: "background-color 0.2s",
   },
   selectPlanText: {

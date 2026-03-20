@@ -19,12 +19,12 @@ const ViewPlan = ({ planType, setstageNum }: PlanProps) => {
       setrecurence(null);
     } else if (planType === "starter") {
       setplanName("Starter");
-      setplanPrice("49");
+      setplanPrice("29");
       setplanPeriodDesc("Auto-renews unless cancelled");
       setrecurence("/ month");
     } else if (planType === "professional") {
       setplanName("Professional");
-      setplanPrice("99");
+      setplanPrice("69");
       setplanPeriodDesc("Auto-renews unless cancelled");
       setrecurence("/ month");
     }

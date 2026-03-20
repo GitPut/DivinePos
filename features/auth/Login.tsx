@@ -30,6 +30,10 @@ function Login() {
 
   return (
     <div style={styles.page}>
+      {/* Decorative circles */}
+      <div style={{ ...styles.circle, width: 400, height: 400, top: -120, right: -100, opacity: 0.07 }} />
+      <div style={{ ...styles.circle, width: 300, height: 300, bottom: -80, left: -80, opacity: 0.05 }} />
+      <div style={{ ...styles.circle, width: 200, height: 200, top: "40%", left: "10%", opacity: 0.04 }} />
       <div style={styles.card}>
         <div style={styles.logoContainer}>
           <a href="https://divinepos.com" style={{ textDecoration: "none" }}>
@@ -120,6 +124,13 @@ const styles: Record<string, React.CSSProperties> = {
     background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)",
     padding: 20,
     boxSizing: "border-box",
+    overflow: "hidden",
+    position: "relative",
+  },
+  circle: {
+    position: "absolute",
+    borderRadius: "50%",
+    backgroundColor: "#94a3b8",
   },
   card: {
     backgroundColor: "#fff",
@@ -202,7 +213,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
   },
   primaryButton: {
-    backgroundColor: "#1470ef",
+    backgroundColor: "#1D294E",
     borderRadius: 10,
     height: 48,
     width: "100%",
@@ -225,7 +236,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   link: {
-    color: "#1470ef",
+    color: "#1D294E",
     fontWeight: "500",
     fontSize: 14,
   },

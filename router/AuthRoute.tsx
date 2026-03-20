@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import BackendPosContainer from "features/admin/AdminContainer";
 import HomeScreen from "features/pos/PosScreen";
 import CustomerDisplay from "features/customer-display/CustomerDisplay";
@@ -10,6 +10,7 @@ import {
   useHistory,
   Route,
 } from "react-router-dom";
+import Walkthrough from "shared/components/Walkthrough";
 
 const SuperAdminContainer = React.lazy(
   () => import("features/superadmin/SuperAdminContainer")
@@ -35,9 +36,29 @@ const SuperAdminGuard: React.FC = () => {
   );
 };
 
+// Export so sidebar can trigger it
+export let triggerWalkthrough: (() => void) | null = null;
+
 const AuthRoute: React.FC<AuthRouteProps> = (props) => {
   const { location } = props;
   const history = useHistory();
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+  // Auto-show walkthrough on first login
+  useEffect(() => {
+    const completed = localStorage.getItem("walkthroughCompleted");
+    if (!completed) {
+      // Small delay so the page renders first
+      const timer = setTimeout(() => setShowWalkthrough(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Expose trigger for sidebar "Walkthrough" button
+  useEffect(() => {
+    triggerWalkthrough = () => setShowWalkthrough(true);
+    return () => { triggerWalkthrough = null; };
+  }, []);
 
   useEffect(() => {
     const isLoginSettings = localStorage.getItem("isAuthedBackend");
@@ -55,13 +76,19 @@ const AuthRoute: React.FC<AuthRouteProps> = (props) => {
   }, [location.pathname]);
 
   return (
-    <Switch>
-      <Route path="/superadmin" component={SuperAdminGuard} />
-      <Route path="/pos" component={HomeScreen} />
-      <Route path="/authed" component={BackendPosContainer} />
-      <Route path="/customer-display" component={CustomerDisplay} />
-      <Route path="/order/:urlEnding" component={OrderPage} />
-    </Switch>
+    <>
+      <Switch>
+        <Route path="/superadmin" component={SuperAdminGuard} />
+        <Route path="/pos" component={HomeScreen} />
+        <Route path="/authed" component={BackendPosContainer} />
+        <Route path="/customer-display" component={CustomerDisplay} />
+        <Route path="/order/:urlEnding" component={OrderPage} />
+      </Switch>
+      <Walkthrough
+        isVisible={showWalkthrough}
+        onClose={() => setShowWalkthrough(false)}
+      />
+    </>
   );
 };
 

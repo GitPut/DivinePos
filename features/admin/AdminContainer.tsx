@@ -12,7 +12,9 @@ import {
   FiFileText,
   FiSettings,
   FiHelpCircle,
+  FiPlayCircle,
 } from "react-icons/fi";
+import { triggerWalkthrough } from "router/AuthRoute";
 
 function AdminContainer(props: { match: { url: string } }) {
   const { match } = props;
@@ -192,6 +194,14 @@ function AdminContainer(props: { match: { url: string } }) {
                   active: pathname.includes("help/5"),
                 },
               ]}
+            />
+            <MenuButton
+              labelIcon={<FiPlayCircle size={18} />}
+              labelText="Walkthrough"
+              active={false}
+              onPress={() => {
+                if (triggerWalkthrough) triggerWalkthrough();
+              }}
             />
           </div>
         </div>

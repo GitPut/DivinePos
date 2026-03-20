@@ -12,7 +12,7 @@ import { AddressType } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
 
 const STARTER_PRICE_ID = "price_1T8TIlCIw3L7DOwIDUpngIcI";
-const PROFESSIONAL_PRICE_ID = "price_1T8TJBCIw3L7DOwIlItWv4xo";
+const PROFESSIONAL_PRICE_ID = "price_1T8s0hCIw3L7DOwIuHk36Ly3";
 
 const NewUserPayment = () => {
   const [planType, setplanType] = useState<string | null>(null);
@@ -92,7 +92,7 @@ const NewUserPayment = () => {
   return (
     <>
       <Header />
-      <div style={{ ...styles.container, minHeight: height - 75 }}>
+      <div style={{ ...styles.container, height: height - 75 }}>
         <div style={styles.innerContainer}>
           {stageNum === 1 && (
             <PlanStage
@@ -136,10 +136,12 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     backgroundColor: "#f8fafc",
     display: "flex",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "center",
-    overflow: "auto",
-    padding: "40px 20px",
+    overflowY: "auto" as const,
+    overflowX: "hidden" as const,
+    padding: "20px 20px 40px",
+    boxSizing: "border-box" as const,
   },
   innerContainer: {
     width: "100%",

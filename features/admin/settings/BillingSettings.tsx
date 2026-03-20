@@ -6,7 +6,7 @@ import { IoCheckmark } from "react-icons/io5";
 import { parseDate } from "utils/dateFormatting";
 
 const STARTER_PRICE_ID = "price_1T8TIlCIw3L7DOwIDUpngIcI";
-const PROFESSIONAL_PRICE_ID = "price_1T8TJBCIw3L7DOwIlItWv4xo";
+const PROFESSIONAL_PRICE_ID = "price_1T8s0hCIw3L7DOwIuHk36Ly3";
 
 function BillingSettings() {
   const activePlan = activePlanState.use();
@@ -78,11 +78,11 @@ function BillingSettings() {
           )}
           <span style={{ ...styles.planName, color: activePlan === "starter" ? "#fff" : "#1a1a1a" }}>Starter</span>
           <div style={styles.priceRow}>
-            <span style={{ ...styles.planPrice, color: activePlan === "starter" ? "#fff" : "#1a1a1a" }}>$49</span>
+            <span style={{ ...styles.planPrice, color: activePlan === "starter" ? "#fff" : "#1a1a1a" }}>$29</span>
             <span style={{ ...styles.planPeriod, color: activePlan === "starter" ? "rgba(255,255,255,0.6)" : "#64748b" }}>/month</span>
           </div>
           <div style={styles.featuresContainer}>
-            {["Point of Sale", "1 Device", "Cloud-Based", "24/7 Support"].map((feature) => (
+            {["Point of Sale", "1 Device", "Cloud-Based", "24/7 Support", "Data Analytics"].map((feature) => (
               <div key={feature} style={styles.featureRow}>
                 <IoCheckmark size={16} color={activePlan === "starter" ? "#a5f3fc" : "#64748b"} />
                 <span style={{ ...styles.featureText, color: activePlan === "starter" ? "#e2e8f0" : "#334155" }}>
@@ -126,11 +126,11 @@ function BillingSettings() {
           )}
           <span style={{ ...styles.planName, color: activePlan === "professional" ? "#fff" : "#1a1a1a" }}>Professional</span>
           <div style={styles.priceRow}>
-            <span style={{ ...styles.planPrice, color: activePlan === "professional" ? "#fff" : "#1a1a1a" }}>$79</span>
+            <span style={{ ...styles.planPrice, color: activePlan === "professional" ? "#fff" : "#1a1a1a" }}>$69</span>
             <span style={{ ...styles.planPeriod, color: activePlan === "professional" ? "rgba(255,255,255,0.6)" : "#64748b" }}>/month</span>
           </div>
           <div style={styles.featuresContainer}>
-            {["Point of Sale", "Unlimited Devices", "Online Store Included", "Cloud-Based", "24/7 Support"].map((feature) => (
+            {["Point of Sale", "Unlimited Devices", "Online Store", "Table Management", "WooCommerce", "Cloud-Based", "24/7 Support"].map((feature) => (
               <div key={feature} style={styles.featureRow}>
                 <IoCheckmark size={16} color={activePlan === "professional" ? "#a5f3fc" : "#64748b"} />
                 <span style={{ ...styles.featureText, color: activePlan === "professional" ? "#e2e8f0" : "#334155" }}>

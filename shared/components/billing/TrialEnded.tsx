@@ -4,27 +4,27 @@ import { logout, createCheckoutSession } from "services/firebase/functions";
 import { useAlert } from "react-alert";
 
 const STARTER_PRICE_ID = "price_1T8TIlCIw3L7DOwIDUpngIcI";
-const PROFESSIONAL_PRICE_ID = "price_1T8TJBCIw3L7DOwIlItWv4xo";
+const PROFESSIONAL_PRICE_ID = "price_1T8s0hCIw3L7DOwIuHk36Ly3";
 
 const STARTER_FEATURES = [
-  "Data Analytics on your store",
-  "Universal Device Compatibility",
+  "1 Device",
+  "Data Analytics",
   "Personalize Your Products",
-  "1 station, and 1 location",
-  "24/7 support",
-  "We setup Your Store for You",
-  "Add an extra station for $10/month",
+  "Cloud-Based",
+  "24/7 Support",
+  "We Setup Your Store for You",
 ];
 
 const PROFESSIONAL_FEATURES = [
-  "Data Analytics on your store",
-  "Universal Device Compatibility",
+  "Unlimited Devices",
+  "Data Analytics",
   "Personalize Your Products",
-  "2 stations, and 1 location",
-  "24/7 Support",
   "Online Store Included",
-  "We setup Your Store for You",
-  "Add an extra station for $10/month",
+  "Table Management",
+  "WooCommerce Integration",
+  "Cloud-Based",
+  "24/7 Support",
+  "We Setup Your Store for You",
 ];
 
 const TrialEnded = () => {
@@ -71,7 +71,7 @@ const TrialEnded = () => {
               <span style={styles.planName}>Starter</span>
               <div style={styles.priceRow}>
                 <span style={styles.dollarSign}>$</span>
-                <span style={styles.planPrice}>49</span>
+                <span style={styles.planPrice}>29</span>
                 <span style={styles.perMonth}>/ month</span>
               </div>
             </div>
@@ -103,7 +103,7 @@ const TrialEnded = () => {
               <span style={styles.planName}>Professional</span>
               <div style={styles.priceRow}>
                 <span style={styles.dollarSign}>$</span>
-                <span style={styles.planPrice}>99</span>
+                <span style={styles.planPrice}>69</span>
                 <span style={styles.perMonth}>/ month</span>
               </div>
             </div>

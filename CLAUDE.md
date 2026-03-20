@@ -162,7 +162,7 @@ Divine POS/
 │   │   │   └── SavedCustomersModal/    # Customer search + details
 │   │   └── billing/
 │   │       ├── NewUserPayment.tsx       # Onboarding Stripe payment
-│   │       ├── TrialEnded.tsx          # Plan selection (Starter $49 / Pro $99)
+│   │       ├── TrialEnded.tsx          # Plan selection (Starter $29 / Pro $69)
 │   │       └── PaymentUpdateNotification.tsx  # Canceled/failed payment screen
 │   └── hooks/
 │       ├── useWindowSize.ts            # {width, height} from window resize
@@ -350,8 +350,8 @@ tableOrderTarget: TransListStateItem|null  — Table order being viewed
    - Platform prefixes: DD (DoorDash), UE (UberEats), SK (Skip), GH (Grubhub)
 
 ## Subscription & Billing
-- **Plans:** Free (1 device), Starter $49/mo (3 devices), Professional $99/mo (5 devices)
-- **Stripe Price IDs:** Starter=`price_1T8TIlCIw3L7DOwIDUpngIcI`, Professional=`price_1T8TJBCIw3L7DOwIlItWv4xo`
+- **Plans:** Free (1 device), Starter $29/mo (1 device), Professional $69/mo (unlimited devices)
+- **Stripe Price IDs:** Starter=`price_1T8TIlCIw3L7DOwIDUpngIcI`, Professional=`price_1T8s0hCIw3L7DOwIuHk36Ly3`
 - **Owner override:** `OWNER_OVERRIDE_UID` = "J6rAf2opwnSKAhefbOZW6HJdx1h2" (+3 free devices)
 - **Plan gating:** Tables + WooCommerce + delivery platforms = Professional only
 - **Online store:** Professional plan OR standalone "Online Store" subscription

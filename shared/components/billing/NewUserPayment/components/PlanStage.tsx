@@ -20,11 +20,11 @@ function PlanStage({ planType, setplanType }: PlanStageProps) {
           planPrice="0"
           planPeriodDesc="For 1 month"
           planDescription={`
-- Data Analytics on your store
-- Universal Device Compatibility
+- 1 Device
+- Data Analytics
 - Personalize Your Products
-- 1 station, and 1 location
-- 24/7 support
+- Cloud-Based
+- 24/7 Support
 `}
           selectPlan={() => {
             setplanType("freeTrial");
@@ -33,16 +33,15 @@ function PlanStage({ planType, setplanType }: PlanStageProps) {
         />
         <Plan
           planName="Starter"
-          planPrice="49"
+          planPrice="29"
           planPeriodDesc="Auto-renews unless cancelled"
           planDescription={`
-- Data Analytics on your store
-- Universal Device Compatibility
+- 1 Device
+- Data Analytics
 - Personalize Your Products
-- 1 station, and 1 location
-- 24/7 support
-- We setup Your Store for You
-- Add an extra station for $10/month
+- Cloud-Based
+- 24/7 Support
+- We Setup Your Store for You
 `}
           selectPlan={() => {
             setplanType("starter");
@@ -52,17 +51,18 @@ function PlanStage({ planType, setplanType }: PlanStageProps) {
         />
         <Plan
           planName="Professional"
-          planPrice="99"
+          planPrice="69"
           planPeriodDesc="Auto-renews unless cancelled"
           planDescription={`
-- Data Analytics on your store
-- Universal Device Compatibility
+- Unlimited Devices
+- Data Analytics
 - Personalize Your Products
-- 2 stations, and 1 location
-- 24/7 Support
 - Online Store Included
-- We setup Your Store for You
-- Add an extra station for $10/month
+- Table Management
+- WooCommerce Integration
+- Cloud-Based
+- 24/7 Support
+- We Setup Your Store for You
 `}
           selectPlan={() => {
             setplanType("professional");
@@ -91,7 +91,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "stretch",
     justifyContent: "center",
-    gap: 24,
+    gap: 16,
     flexWrap: "wrap",
   },
 };

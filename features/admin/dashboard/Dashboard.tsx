@@ -16,6 +16,7 @@ import {
   FiTrendingUp,
   FiStar,
 } from "react-icons/fi";
+// SetupChecklist removed — replaced by Walkthrough in AuthRoute
 
 // ------------------ Types ------------------
 interface ProductCount {
