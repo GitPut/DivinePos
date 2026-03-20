@@ -1,6 +1,5 @@
 import React from "react";
-import StageStepView from "./StageStepView";
-import StageIconBar from "./StageIconBar";
+import { FiCheck } from "react-icons/fi";
 
 interface SideBarProps {
   stageNum: number;
@@ -18,81 +17,87 @@ const SideBar = ({
   detailsFilledOut,
 }: SideBarProps) => {
   return (
-    <div style={styles.rightContainer}>
-      <div style={styles.inner}>
-        <StageIconBar stageNum={stageNum} />
-        <div style={styles.pageStatusTxtContainer}>
-          <StageStepView
-            step={1}
-            stageLbl="Subscription"
-            stageDesc="Plan Info"
-            stageNum={stageNum}
-          />
+    <div style={styles.container}>
+      <div style={styles.stepsRow}>
+        <div style={styles.stepItem}>
           <div
             style={{
-              height: 55,
-              width: 2,
-              backgroundColor: "rgba(155,155,155,1)",
-              marginLeft: 10,
-              marginBottom: 10,
+              ...styles.stepCircle,
+              ...(stageNum >= 1 ? styles.stepCircleActive : {}),
+              ...(stageNum > 1 ? styles.stepCircleCompleted : {}),
             }}
-          />
-          <StageStepView
-            step={2}
-            stageLbl="Store Setup"
-            stageDesc="Store Info"
-            stageNum={stageNum}
-          />
-        </div>
-        <div style={styles.priceAndBtnContainer}>
-          <div style={styles.group17}>
-            {stageNum === 1 ? (
-              <button
-                style={{
-                  ...styles.rect34,
-                  ...(planType !== null
-                    ? { backgroundColor: "rgba(20,112,239,1)" }
-                    : {}),
-                }}
-                disabled={!planType}
-                onClick={() => setstageNum(2)}
-              >
-                <span
-                  style={{
-                    ...styles.checkOut1,
-                    ...(planType !== null
-                      ? { opacity: 1, color: "white" }
-                      : {}),
-                  }}
-                >
-                  Next
-                </span>
-              </button>
+          >
+            {stageNum > 1 ? (
+              <FiCheck size={16} color="#fff" />
             ) : (
-              <button
-                style={{
-                  ...styles.rect34,
-                  ...(detailsFilledOut
-                    ? { backgroundColor: "rgba(20,112,239,1)" }
-                    : {}),
-                }}
-                disabled={!detailsFilledOut}
-                onClick={CheckOutFunc}
-              >
-                <span
-                  style={{
-                    ...styles.checkOut1,
-                    ...(detailsFilledOut
-                      ? { opacity: 1, color: "white" }
-                      : {}),
-                  }}
-                >
-                  Check Out
-                </span>
-              </button>
+              <span style={styles.stepNumber}>1</span>
             )}
           </div>
+          <span
+            style={{
+              ...styles.stepLabel,
+              ...(stageNum >= 1 ? { color: "#0f172a" } : {}),
+            }}
+          >
+            Plan
+          </span>
         </div>
+        <div
+          style={{
+            ...styles.stepLine,
+            backgroundColor: stageNum > 1 ? "#1470ef" : "#e2e8f0",
+          }}
+        />
+        <div style={styles.stepItem}>
+          <div
+            style={{
+              ...styles.stepCircle,
+              ...(stageNum >= 2 ? styles.stepCircleActive : {}),
+            }}
+          >
+            <span style={styles.stepNumber}>2</span>
+          </div>
+          <span
+            style={{
+              ...styles.stepLabel,
+              ...(stageNum >= 2 ? { color: "#0f172a" } : {}),
+            }}
+          >
+            Details
+          </span>
+        </div>
+      </div>
+
+      <div style={styles.buttonContainer}>
+        {stageNum === 1 ? (
+          <button
+            style={{
+              ...styles.primaryButton,
+              ...(planType === null ? styles.primaryButtonDisabled : {}),
+            }}
+            disabled={!planType}
+            onClick={() => setstageNum(2)}
+          >
+            <span style={styles.buttonText}>Continue</span>
+          </button>
+        ) : (
+          <div style={styles.buttonRow}>
+            <button style={styles.backButton} onClick={() => setstageNum(1)}>
+              <span style={styles.backButtonText}>Back</span>
+            </button>
+            <button
+              style={{
+                ...styles.primaryButton,
+                flex: 1,
+                ...(!detailsFilledOut ? styles.primaryButtonDisabled : {}),
+              }}
+              disabled={!detailsFilledOut}
+              onClick={CheckOutFunc}
+            >
+              <span style={styles.buttonText}>Complete Setup</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -101,83 +106,103 @@ const SideBar = ({
 export default SideBar;
 
 const styles: Record<string, React.CSSProperties> = {
-  rightContainer: {
-    width: "28%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    display: "flex",
-  },
-  inner: {
-    width: "96%",
-    height: "96%",
-    backgroundColor: "#1D294E",
-    boxShadow: "-3px -3px 5px rgba(85,85,85,0.2)",
-    justifyContent: "space-around",
-    alignItems: "center",
+  container: {
+    width: "100%",
+    maxWidth: 960,
     display: "flex",
     flexDirection: "column",
-    borderRadius: 10,
+    alignItems: "center",
+    gap: 32,
+    padding: "0 20px",
   },
-  pageStatusContainer: {
-    width: 279,
-    height: 65,
-  },
-  pageStatusTxtContainer: {
-    width: 315,
-    height: 252,
-  },
-  priceAndBtnContainer: {
-    width: 336,
-    height: 131,
-  },
-  group18: {
-    width: 336,
-    height: 38,
+  stepsRow: {
     flexDirection: "row",
     display: "flex",
+    alignItems: "center",
+    gap: 12,
   },
-  planPrice1: {
+  stepItem: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
+  },
+  stepCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#e2e8f0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepCircleActive: {
+    backgroundColor: "#1470ef",
+  },
+  stepCircleCompleted: {
+    backgroundColor: "#10b981",
+  },
+  stepNumber: {
+    color: "#fff",
+    fontSize: 14,
     fontWeight: "600",
-    color: "rgba(74,74,74,1)",
-    fontSize: 23,
   },
-  wooCommerce1: {
-    fontWeight: "600",
-    color: "rgba(255,255,255,1)",
-    fontSize: 25,
-    opacity: 0.44,
-    marginLeft: 16,
+  stepLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#94a3b8",
   },
-  planPrice1Row: {
-    height: 38,
+  stepLine: {
+    width: 60,
+    height: 2,
+    borderRadius: 1,
+    marginBottom: 24,
+  },
+  buttonContainer: {
     width: "100%",
+    maxWidth: 520,
+  },
+  buttonRow: {
     flexDirection: "row",
     display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 12,
+    width: "100%",
   },
-  group17: {
-    width: 288,
-    height: 60,
-    marginTop: 33,
-    marginLeft: 24,
-  },
-  rect34: {
-    width: 288,
-    height: 60,
-    backgroundColor: "rgba(155,155,155,0.68)",
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
+  primaryButton: {
+    backgroundColor: "#1470ef",
+    borderRadius: 10,
+    height: 48,
+    width: "100%",
     display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     border: "none",
     cursor: "pointer",
+    transition: "opacity 0.2s",
   },
-  checkOut1: {
+  primaryButtonDisabled: {
+    opacity: 0.4,
+    cursor: "not-allowed",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 15,
     fontWeight: "600",
-    color: "rgba(0,0,0,1)",
-    fontSize: 26,
-    opacity: 0.26,
+  },
+  backButton: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    height: 48,
+    padding: "0 28px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid #e2e8f0",
+    cursor: "pointer",
+  },
+  backButtonText: {
+    color: "#0f172a",
+    fontSize: 15,
+    fontWeight: "600",
   },
 };

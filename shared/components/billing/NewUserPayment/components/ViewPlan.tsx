@@ -9,7 +9,6 @@ const ViewPlan = ({ planType, setstageNum }: PlanProps) => {
   const [planName, setplanName] = useState<string | null>(null);
   const [planPrice, setplanPrice] = useState<string | null>(null);
   const [planPeriodDesc, setplanPeriodDesc] = useState<string | null>(null);
-  const [planDescription, setplanDescription] = useState<string | null>(null);
   const [recurence, setrecurence] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,84 +16,32 @@ const ViewPlan = ({ planType, setstageNum }: PlanProps) => {
       setplanName("Free Trial");
       setplanPrice("0");
       setplanPeriodDesc("For 1 month");
-      setplanDescription(
-        `
-- Data Analytics on your store
-- Universal Device Compatibility
-- Personalize Your Products
-- 1 station, and 1 location
-- 24/7 support
-`
-      );
       setrecurence(null);
     } else if (planType === "starter") {
-      setplanName("STARTER");
+      setplanName("Starter");
       setplanPrice("49");
       setplanPeriodDesc("Auto-renews unless cancelled");
-      setplanDescription(
-        `
-- Data Analytics on your store
-- Universal Device Compatibility
-- Personalize Your Products
-- 1 station, and 1 location
-- 24/7 support
-- We setup Your Store for You
-- Add an extra station for $10/month
-              `
-      );
-      setrecurence("/ Monthly");
+      setrecurence("/ month");
     } else if (planType === "professional") {
-      setplanName("PROFESSIONAL");
-      setplanPrice("79");
+      setplanName("Professional");
+      setplanPrice("99");
       setplanPeriodDesc("Auto-renews unless cancelled");
-      setplanDescription(
-        `
-- Data Analytics on your store
-- Universal Device Compatibility
-- Personalize Your Products
-- 2 stations, and 1 location
-- 24/7 Support
-- Online Store Included
-- We setup Your Store for You
-- Add an extra station for $10/month
-              `
-      );
-      setrecurence("/ Monthly");
+      setrecurence("/ month");
     }
   }, [planType]);
 
   return (
-    <div
-      style={{
-        ...styles.container,
-        height: 430,
-        borderTop: "10px solid #1D294E",
-      }}
-    >
-      <div
-        style={{
-          height: 250,
-          alignItems: "center",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div style={styles.planPriceDetailsGroup}>
-          <span style={styles.planName}>{planName}</span>
-          <div style={{ flexDirection: "row", display: "flex", alignItems: "flex-end" }}>
-            <span style={styles.planPrice}>${planPrice}</span>
-            <span style={styles.recurence}>{recurence}</span>
-          </div>
-          <span style={styles.planPeriodDesc}>{planPeriodDesc}</span>
-        </div>
-        <div style={styles.planDivider} />
-        <span style={styles.planDescription}>{planDescription}</span>
+    <div style={styles.container}>
+      <span style={styles.selectedLabel}>Selected Plan</span>
+      <div style={styles.priceRow}>
+        <span style={styles.dollarSign}>$</span>
+        <span style={styles.planPrice}>{planPrice}</span>
+        {recurence && <span style={styles.recurence}>{recurence}</span>}
       </div>
-      <button
-        style={{ ...styles.selectPlanBtn, backgroundColor: "#1c294e" }}
-        onClick={() => setstageNum(1)}
-      >
-        <span style={{ ...styles.selectPlan, color: "white" }}>Change Plan</span>
+      <span style={styles.planName}>{planName}</span>
+      <span style={styles.planPeriodDesc}>{planPeriodDesc}</span>
+      <button style={styles.changeBtn} onClick={() => setstageNum(1)}>
+        <span style={styles.changeBtnText}>Change Plan</span>
       </button>
     </div>
   );
@@ -102,73 +49,69 @@ const ViewPlan = ({ planType, setstageNum }: PlanProps) => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
-    justifyContent: "space-between",
+    borderRadius: 16,
+    border: "2px solid #1470ef",
+    backgroundColor: "#f8fafc",
+    display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
-    height: 384,
-    width: 275,
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-    padding: 20,
+    padding: "24px 20px",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
   },
-  planPriceDetailsGroup: {
-    height: 93,
-    justifyContent: "space-between",
+  selectedLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#1470ef",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  priceRow: {
+    flexDirection: "row",
+    display: "flex",
     alignItems: "flex-start",
-    display: "flex",
-    flexDirection: "column",
-    width: 220,
   },
-  planName: {
+  dollarSign: {
     fontWeight: "700",
-    color: "#1c294e",
-    fontSize: 25,
+    color: "#0f172a",
+    fontSize: 20,
+    marginTop: 4,
   },
   planPrice: {
     fontWeight: "700",
-    color: "#1c294e",
-    fontSize: 35,
+    color: "#0f172a",
+    fontSize: 36,
+    lineHeight: "1",
   },
   recurence: {
-    fontWeight: "700",
-    color: "#1c294e",
+    fontWeight: "500",
+    color: "#94a3b8",
+    fontSize: 14,
+    marginLeft: 4,
+    marginTop: 14,
+  },
+  planName: {
+    fontWeight: "600",
+    color: "#0f172a",
     fontSize: 16,
-    marginLeft: 2,
-    marginBottom: 5,
+    marginTop: 4,
   },
   planPeriodDesc: {
-    color: "#1c294e",
-    fontSize: 16,
+    color: "#94a3b8",
+    fontSize: 13,
+    marginTop: 2,
   },
-  planDivider: {
-    width: 257,
-    height: 1,
-    backgroundColor: "#E6E6E6",
-    marginTop: 20,
-  },
-  planDescription: {
-    color: "#121212",
-    width: 220,
-    lineHeight: "20px",
-    whiteSpace: "pre-wrap",
-  },
-  selectPlanBtn: {
-    width: 190,
-    height: 38,
-    backgroundColor: "#eef2ff",
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    display: "flex",
-    marginBottom: 6,
+  changeBtn: {
+    background: "none",
     border: "none",
     cursor: "pointer",
+    marginTop: 12,
+    padding: 0,
   },
-  selectPlan: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 22,
+  changeBtnText: {
+    color: "#1470ef",
+    fontSize: 14,
+    fontWeight: "500",
   },
 };
 

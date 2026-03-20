@@ -7,40 +7,35 @@ interface PlanStageProps {
   setplanType: (planType: string) => void;
 }
 
-function PlanStage({
-  planType,
-  setplanType,
-}: PlanStageProps) {
+function PlanStage({ planType, setplanType }: PlanStageProps) {
   return (
     <div style={styles.container}>
       <HeaderTxt
-        Txt="Step 1: Pick Your Plan"
-        SubTxt="Get started with a 1 month free trial"
+        Txt="Choose your plan"
+        SubTxt="Start with a free trial or pick the plan that works for you"
       />
-      <div style={styles.contentContainer}>
-        <div style={styles.topSectionOfContainer}>
-          <div style={styles.plansRow}>
-            <Plan
-              planName="Free Trial"
-              planPrice="0"
-              planPeriodDesc="For 1 month"
-              planDescription={`
+      <div style={styles.plansRow}>
+        <Plan
+          planName="Free Trial"
+          planPrice="0"
+          planPeriodDesc="For 1 month"
+          planDescription={`
 - Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
 - 1 station, and 1 location
 - 24/7 support
 `}
-              selectPlan={() => {
-                setplanType("freeTrial");
-              }}
-              isPlanSelected={planType === "freeTrial"}
-            />
-            <Plan
-              planName="STARTER"
-              planPrice="49"
-              planPeriodDesc="Auto-renews unless cancelled"
-              planDescription={`
+          selectPlan={() => {
+            setplanType("freeTrial");
+          }}
+          isPlanSelected={planType === "freeTrial"}
+        />
+        <Plan
+          planName="Starter"
+          planPrice="49"
+          planPeriodDesc="Auto-renews unless cancelled"
+          planDescription={`
 - Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
@@ -48,18 +43,18 @@ function PlanStage({
 - 24/7 support
 - We setup Your Store for You
 - Add an extra station for $10/month
-              `}
-              selectPlan={() => {
-                setplanType("starter");
-              }}
-              isPlanSelected={planType === "starter"}
-              recurence="/ Monthly"
-            />
-            <Plan
-              planName="PROFESSIONAL"
-              planPrice="79"
-              planPeriodDesc="Auto-renews unless cancelled"
-              planDescription={`
+`}
+          selectPlan={() => {
+            setplanType("starter");
+          }}
+          isPlanSelected={planType === "starter"}
+          recurence="/ month"
+        />
+        <Plan
+          planName="Professional"
+          planPrice="99"
+          planPeriodDesc="Auto-renews unless cancelled"
+          planDescription={`
 - Data Analytics on your store
 - Universal Device Compatibility
 - Personalize Your Products
@@ -68,16 +63,14 @@ function PlanStage({
 - Online Store Included
 - We setup Your Store for You
 - Add an extra station for $10/month
-              `}
-              selectPlan={() => {
-                setplanType("professional");
-              }}
-              isPlanSelected={planType === "professional"}
-              recurence="/ Monthly"
-              isRecommended
-            />
-          </div>
-        </div>
+`}
+          selectPlan={() => {
+            setplanType("professional");
+          }}
+          isPlanSelected={planType === "professional"}
+          recurence="/ month"
+          isRecommended
+        />
       </div>
     </div>
   );
@@ -89,37 +82,17 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "flex-start",
     display: "flex",
     flexDirection: "column",
-    width: 898,
-  },
-  headerTxt: {
-    height: 74,
-    width: 378,
-    marginBottom: 10,
-  },
-  contentContainer: {
-    width: 898,
-    height: 550,
-    alignItems: "center",
-    justifyContent: "space-around",
-    display: "flex",
-    backgroundColor: "rgba(255,255,255,1)",
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.1)",
-    borderRadius: 10,
-  },
-  topSectionOfContainer: {
-    width: 860,
-    height: 500,
-    justifyContent: "center",
-    alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
+    width: "100%",
+    maxWidth: 960,
   },
   plansRow: {
-    width: 860,
+    width: "100%",
     flexDirection: "row",
     display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "stretch",
+    justifyContent: "center",
+    gap: 24,
+    flexWrap: "wrap",
   },
 };
 

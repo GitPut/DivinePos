@@ -1,27 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
-import { FiChevronLeft, FiArrowLeft } from "react-icons/fi";
 import Axios from "axios";
 import { useAlert } from "react-alert";
-import useWindowSize from "shared/hooks/useWindowSize";
-import backgroundImg from "assets/images/background.png";
 import logoImg from "assets/dpos-logo-black.png";
 
 function ResetPassword() {
   const [email, setEmail] = useState("");
   const history = useHistory();
-  const { width } = useWindowSize();
-  const [useSmallDesign, setuseSmallDesign] = useState(width < 1024);
   const alertP = useAlert();
-
-  useEffect(() => {
-    const third = width / 3;
-    if (third < 200) {
-      setuseSmallDesign(true);
-    } else {
-      setuseSmallDesign(false);
-    }
-  }, [width]);
 
   const submit = () => {
     if (email === "") {
@@ -59,85 +45,48 @@ function ResetPassword() {
   };
 
   return (
-    <div
-      style={{
-        ...styles.container,
-        backgroundImage: `url(${backgroundImg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-      key={"background"}
-    >
-      <div
-        style={{
-          ...styles.headerContainer,
-          ...(useSmallDesign ? { width: "90%" } : {}),
-        }}
-      >
-        <button
-          onClick={() => history.push("/log-in")}
-          style={{
-            position: "absolute",
-            left: 0,
-            bottom: 24,
-            background: "none",
-            border: "none",
-            padding: 0,
-            cursor: "pointer",
-          }}
-        >
-          <div style={styles.backBtn}>
-            {useSmallDesign ? (
-              <FiChevronLeft style={styles.leftIcon} />
-            ) : (
-              <FiArrowLeft style={styles.leftIcon} />
-            )}
-            {!useSmallDesign && <span style={styles.backTxt}>Back</span>}
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <div style={styles.logoContainer}>
+          <a href="https://divinepos.com" style={{ textDecoration: "none" }}>
+            <img src={logoImg} style={styles.logo} alt="Divine POS" />
+          </a>
+        </div>
+
+        <div style={styles.titleContainer}>
+          <span style={styles.title}>Reset password</span>
+          <span style={styles.subtitle}>
+            Enter your email to receive a reset link
+          </span>
+        </div>
+
+        <div style={styles.form}>
+          <div style={styles.fieldGroup}>
+            <span style={styles.label}>Email</span>
+            <input
+              style={styles.input}
+              placeholder="Enter your email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value.replace(/\s/g, ""))}
+              onKeyDown={handleKeyDown}
+            />
           </div>
-        </button>
-        <a href="https://divinepos.com" style={{ textDecoration: "none" }}>
-          <img
-            src={logoImg}
-            style={styles.logo}
-            key={"logo"}
-            alt=""
-          />
-        </a>
-      </div>
-      <div style={styles.mainPageContainer}>
-        <div
-          style={{
-            ...styles.resetPasswordContainer,
-            ...(useSmallDesign ? { width: "90%" } : {}),
-          }}
-        >
-          <span style={styles.resetPassword}>Reset password</span>
-          <div style={styles.bottomContainer}>
-            <div style={styles.inputsContainer}>
-              <span style={styles.txt}>
-                Please enter in your account email and we will send you a
-                password reset link to your email
-              </span>
-              <div style={styles.emailInputGroup}>
-                <span style={styles.emailAddress}>Email address</span>
-                <input
-                  style={styles.emailInput}
-                  placeholder="Enter email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) =>
-                    setEmail(e.target.value.replace(/\s/g, ""))
-                  }
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
-            </div>
-            <div style={styles.btnBottomContainer}>
-              <button style={styles.submitBtn} onClick={submit}>
-                <span style={styles.submit}>Submit</span>
-              </button>
-            </div>
-          </div>
+
+          <button style={styles.primaryButton} onClick={submit}>
+            <span style={styles.primaryButtonText}>Send Reset Link</span>
+          </button>
+        </div>
+
+        <div style={styles.footer}>
+          <span style={styles.footerText}>
+            <button
+              onClick={() => history.push("/log-in")}
+              style={styles.linkButton}
+            >
+              <span style={styles.link}>Back to login</span>
+            </button>
+          </span>
         </div>
       </div>
     </div>
@@ -145,146 +94,121 @@ function ResetPassword() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "center",
-    height: "100%",
+  page: {
+    minHeight: "100vh",
     width: "100%",
     display: "flex",
-    flexDirection: "column",
-  },
-  mainPageContainer: {
-    width: "90%",
-    justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: 100,
-    display: "flex",
-    flexDirection: "column",
-  },
-  headerContainer: {
-    width: "70%",
-    height: "15%",
-    flexDirection: "row",
     justifyContent: "center",
-    alignItems: "flex-end",
-    display: "flex",
-    position: "relative",
-  },
-  headerInnerContainer: {
-    width: "60%",
-    height: 68,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  backBtn: {
-    width: 72,
-    height: 30,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  leftIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 30,
-  },
-  backTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 16,
-  },
-  logo: {
-    height: 68,
-    width: 196,
-    objectFit: "contain",
-  },
-  resetPasswordContainer: {
-    width: 423,
-    height: 408,
-    justifyContent: "space-between",
-    alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
-  },
-  resetPassword: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 36,
-  },
-  bottomContainer: {
-    width: "100%",
-    height: 318,
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  inputsContainer: {
-    width: "100%",
-    height: 159,
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  txt: {
-    display: "block",
-    color: "#121212",
-    fontSize: 16,
-    width: "100%",
-    height: 48,
-    textAlign: "justify",
-  },
-  emailInputGroup: {
-    width: "100%",
-    height: 80,
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  emailAddress: {
-    fontWeight: "700",
-    color: "#333333",
-    fontSize: 15,
-  },
-  emailInput: {
-    width: "100%",
-    height: 51,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    borderStyle: "solid",
-    padding: 10,
+    background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)",
+    padding: 20,
     boxSizing: "border-box",
   },
-  btnBottomContainer: {
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+    padding: 40,
+    maxWidth: 420,
     width: "100%",
-    height: 109,
-    justifyContent: "space-between",
-    alignItems: "center",
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
+    gap: 28,
   },
-  submitBtn: {
+  logoContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  logo: {
+    height: 52,
+    width: 160,
+    objectFit: "contain",
+  },
+  titleContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#94a3b8",
+    textAlign: "center",
+  },
+  form: {
     width: "100%",
-    height: 44,
-    backgroundColor: "#1c294e",
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    width: "100%",
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+  },
+  input: {
+    height: 48,
+    border: "1px solid #e2e8f0",
     borderRadius: 10,
-    flexDirection: "row",
+    padding: "0 16px",
+    fontSize: 15,
+    color: "#0f172a",
+    width: "100%",
+    boxSizing: "border-box",
+    outline: "none",
+    backgroundColor: "#fff",
+  },
+  primaryButton: {
+    backgroundColor: "#1470ef",
+    borderRadius: 10,
+    height: 48,
+    width: "100%",
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    display: "flex",
     border: "none",
     cursor: "pointer",
+    marginTop: 4,
   },
-  submit: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 16,
+  primaryButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  linkButton: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
+  },
+  link: {
+    color: "#1470ef",
+    fontWeight: "500",
+    fontSize: 14,
+  },
+  footer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 4,
+  },
+  footerText: {
+    fontSize: 14,
+    color: "#64748b",
   },
 };
 

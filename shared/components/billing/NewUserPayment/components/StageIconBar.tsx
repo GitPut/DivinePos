@@ -1,7 +1,7 @@
 import React from "react";
 import { IoPerson } from "react-icons/io5";
 import { MdStore } from "react-icons/md";
-import { FiLink } from "react-icons/fi";
+import { FiCheck } from "react-icons/fi";
 
 interface StageIconBarProps {
   stageNum: number;
@@ -9,50 +9,36 @@ interface StageIconBarProps {
 
 const StageIconBar = ({ stageNum }: StageIconBarProps) => {
   return (
-    <div
-      style={{
-        flexDirection: "row",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <div style={styles.container}>
       <div
         style={
-          1 <= stageNum
-            ? styles.ActiveIconContainer
-            : styles.notActiveIconContainer
+          stageNum > 1
+            ? styles.completedIconContainer
+            : stageNum >= 1
+            ? styles.activeIconContainer
+            : styles.inactiveIconContainer
         }
       >
-        <IoPerson size={35} color="rgba(255,255,255,1)" />
+        {stageNum > 1 ? (
+          <FiCheck size={20} color="#fff" />
+        ) : (
+          <IoPerson size={20} color="#fff" />
+        )}
       </div>
       <div
-        style={
-          2 <= stageNum ? styles.greyDivider : styles.darkGreyDivider
-        }
+        style={{
+          ...styles.divider,
+          backgroundColor: stageNum > 1 ? "#1470ef" : "#e2e8f0",
+        }}
       />
       <div
         style={
-          2 <= stageNum
-            ? styles.ActiveIconContainer
-            : styles.notActiveIconContainer
+          stageNum >= 2
+            ? styles.activeIconContainer
+            : styles.inactiveIconContainer
         }
       >
-        <MdStore size={35} color="rgba(255,255,255,1)" />
-      </div>
-      <div
-        style={
-          3 <= stageNum ? styles.greyDivider : styles.darkGreyDivider
-        }
-      />
-      <div
-        style={
-          3 <= stageNum
-            ? styles.ActiveIconContainer
-            : styles.notActiveIconContainer
-        }
-      >
-        <FiLink size={35} color="rgba(255,255,255,1)" />
+        <MdStore size={20} color="#fff" />
       </div>
     </div>
   );
@@ -61,39 +47,43 @@ const StageIconBar = ({ stageNum }: StageIconBarProps) => {
 export default StageIconBar;
 
 const styles: Record<string, React.CSSProperties> = {
-  ActiveIconContainer: {
-    width: 66,
-    height: 66,
-    backgroundColor: "rgba(51,81,243,1)",
-    borderRadius: 33,
-    boxShadow: "3px 3px 30px rgba(0,0,0,0.54)",
+  container: {
+    flexDirection: "row",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 0,
+  },
+  activeIconContainer: {
+    width: 40,
+    height: 40,
+    backgroundColor: "#1470ef",
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     display: "flex",
   },
-  icon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 35,
-  },
-  notActiveIconContainer: {
-    width: 66,
-    height: 66,
-    backgroundColor: "rgba(208,213,243,1)",
-    borderRadius: 33,
-    boxShadow: "3px 3px 50px rgba(0,0,0,0.61)",
+  completedIconContainer: {
+    width: 40,
+    height: 40,
+    backgroundColor: "#10b981",
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     display: "flex",
   },
-  greyDivider: {
-    width: 71,
-    height: 5,
-    backgroundColor: "rgba(155,155,155,1)",
+  inactiveIconContainer: {
+    width: 40,
+    height: 40,
+    backgroundColor: "#cbd5e1",
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    display: "flex",
   },
-  darkGreyDivider: {
-    width: 71,
-    height: 5,
-    backgroundColor: "rgba(155,155,155,1)",
-    opacity: 0.15,
+  divider: {
+    width: 60,
+    height: 2,
+    borderRadius: 1,
   },
 };

@@ -5,7 +5,7 @@ interface HeaderTxtProps {
   SubTxt: string;
 }
 
-function HeaderTxt({Txt, SubTxt} : HeaderTxtProps) {
+function HeaderTxt({ Txt, SubTxt }: HeaderTxtProps) {
   return (
     <div style={styles.container}>
       <span style={styles.text}>{Txt}</span>
@@ -16,22 +16,24 @@ function HeaderTxt({Txt, SubTxt} : HeaderTxtProps) {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     display: "flex",
     flexDirection: "column",
-    height: 74,
-    marginBottom: 10,
+    gap: 8,
+    marginBottom: 32,
   },
   text: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 38,
+    color: "#0f172a",
+    fontSize: 26,
+    textAlign: "center",
   },
   subTxt: {
-    fontWeight: "700",
-    color: "#1c294e",
-    fontSize: 22,
+    fontWeight: "400",
+    color: "#94a3b8",
+    fontSize: 14,
+    textAlign: "center",
   },
 };
 

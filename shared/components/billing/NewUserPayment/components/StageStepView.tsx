@@ -9,43 +9,43 @@ interface StageStepViewProps {
 }
 
 const StageStepView = ({ step, stageLbl, stageDesc, stageNum }: StageStepViewProps) => {
+  const isCompleted = step < stageNum;
+  const isActive = step <= stageNum;
+
   return (
-    <div style={{ flexDirection: "row", display: "flex" }}>
-      <span
+    <div style={{ flexDirection: "row", display: "flex", alignItems: "center", gap: 12 }}>
+      <div
         style={{
-          fontWeight: "600",
-          color: "rgba(255,255,255,1)",
-          fontSize: 30,
-          opacity: step <= stageNum ? 1 : 0.5,
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          backgroundColor: isCompleted ? "#10b981" : isActive ? "#1470ef" : "#e2e8f0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        {step}
-      </span>
-      <div style={styles.subscription1StackStack}>
-        <div style={{ flexDirection: "row", display: "flex" }}>
-          <span
-            style={{
-              fontWeight: "600",
-              color: "rgba(255,255,255,1)",
-              fontSize: 25,
-              marginRight: 25,
-              opacity: step <= stageNum ? 1 : 0.5,
-            }}
-          >
-            {stageLbl}
-          </span>
-          {step < stageNum && (
-            <div style={styles.stageChecked}>
-              <FiCheck size={18} color="rgba(255,255,255,1)" />
-            </div>
-          )}
-        </div>
+        {isCompleted ? (
+          <FiCheck size={14} color="#fff" />
+        ) : (
+          <span style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>{step}</span>
+        )}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column" }}>
         <span
           style={{
-            fontWeight: "500",
-            color: "rgba(155,155,155,1)",
-            fontSize: 22,
-            opacity: step <= stageNum ? 1 : 0.5,
+            fontWeight: "600",
+            color: isActive ? "#0f172a" : "#94a3b8",
+            fontSize: 14,
+          }}
+        >
+          {stageLbl}
+        </span>
+        <span
+          style={{
+            fontWeight: "400",
+            color: "#94a3b8",
+            fontSize: 12,
           }}
         >
           {stageDesc}
@@ -56,25 +56,3 @@ const StageStepView = ({ step, stageLbl, stageDesc, stageNum }: StageStepViewPro
 };
 
 export default StageStepView;
-
-const styles: Record<string, React.CSSProperties> = {
-  subscription1StackStack: {
-    width: 252,
-    height: 50,
-    marginLeft: 42,
-  },
-  stageChecked: {
-    width: 26,
-    height: 26,
-    backgroundColor: "rgba(10,188,27,1)",
-    borderRadius: 13,
-    boxShadow: "3px 3px 30px rgba(0,0,0,0.54)",
-    justifyContent: "center",
-    alignItems: "center",
-    display: "flex",
-  },
-  checkedIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
-  },
-};

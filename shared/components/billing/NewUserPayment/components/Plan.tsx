@@ -1,4 +1,5 @@
 import React from "react";
+import { IoCheckmark } from "react-icons/io5";
 
 interface PlanProps {
   planName: string;
@@ -21,121 +22,170 @@ const Plan = ({
   isPlanSelected,
   isRecommended,
 }: PlanProps) => {
+  const features = planDescription
+    .split("\n")
+    .map((line) => line.replace(/^-\s*/, "").trim())
+    .filter((line) => line.length > 0);
+
   return (
-    <div
+    <button
       style={{
         ...styles.container,
-        ...(isRecommended
-          ? {
-              height: 430,
-              borderTop: "10px solid #1D294E",
-            }
-          : {}),
+        border: isPlanSelected ? "2px solid #1470ef" : "1px solid #e2e8f0",
+        backgroundColor: isPlanSelected ? "#f8fafc" : "#fff",
       }}
+      onClick={selectPlan}
     >
+      {isRecommended && (
+        <div style={styles.recommendedBadge}>
+          <span style={styles.recommendedText}>Recommended</span>
+        </div>
+      )}
+      <div style={styles.topSection}>
+        <span style={styles.planName}>{planName}</span>
+        <div style={styles.priceRow}>
+          <span style={styles.dollarSign}>$</span>
+          <span style={styles.planPrice}>{planPrice}</span>
+          {recurence && <span style={styles.recurence}>{recurence}</span>}
+        </div>
+        <span style={styles.planPeriodDesc}>{planPeriodDesc}</span>
+      </div>
+      <div style={styles.divider} />
+      <div style={styles.featuresContainer}>
+        {features.map((feature, index) => (
+          <div key={index} style={styles.featureRow}>
+            <IoCheckmark size={16} color="#10b981" style={{ flexShrink: 0, marginTop: 2 }} />
+            <span style={styles.featureText}>{feature}</span>
+          </div>
+        ))}
+      </div>
       <div
         style={{
-          height: 250,
-          alignItems: "center",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div style={styles.planPriceDetailsGroup}>
-          <span style={styles.planName}>{planName}</span>
-          <div style={{ flexDirection: "row", display: "flex", alignItems: "flex-end" }}>
-            <span style={styles.planPrice}>${planPrice}</span>
-            <span style={styles.recurence}>{recurence}</span>
-          </div>
-          <span style={styles.planPeriodDesc}>{planPeriodDesc}</span>
-        </div>
-        <div style={styles.planDivider} />
-        <span style={styles.planDescription}>{planDescription}</span>
-      </div>
-      <button
-        style={{
           ...styles.selectPlanBtn,
-          ...(isPlanSelected ? { backgroundColor: "#1c294e" } : {}),
+          backgroundColor: isPlanSelected ? "#1470ef" : "#f1f5f9",
         }}
-        onClick={selectPlan}
       >
-        <span style={{ ...styles.selectPlan, ...(isPlanSelected ? { color: "white" } : {}) }}>
-          Select Plan
+        <span
+          style={{
+            ...styles.selectPlanText,
+            color: isPlanSelected ? "#fff" : "#0f172a",
+          }}
+        >
+          {isPlanSelected ? "Selected" : "Select Plan"}
         </span>
-      </button>
-    </div>
+      </div>
+    </button>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
-    justifyContent: "space-between",
+    borderRadius: 16,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    width: 280,
+    padding: "28px 24px 24px",
+    cursor: "pointer",
+    position: "relative",
+    background: "none",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+    transition: "border-color 0.2s, background-color 0.2s",
+  },
+  recommendedBadge: {
+    position: "absolute",
+    top: -14,
+    backgroundColor: "#1470ef",
+    borderRadius: 20,
+    padding: "5px 16px",
+  },
+  recommendedText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  topSection: {
     alignItems: "center",
     display: "flex",
     flexDirection: "column",
-    height: 410,
-    width: 275,
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-    padding: 20,
-  },
-  planPriceDetailsGroup: {
-    height: 93,
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    display: "flex",
-    flexDirection: "column",
-    width: 220,
+    gap: 4,
+    width: "100%",
   },
   planName: {
+    fontWeight: "600",
+    color: "#64748b",
+    fontSize: 13,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  priceRow: {
+    flexDirection: "row",
+    display: "flex",
+    alignItems: "flex-start",
+    marginTop: 4,
+  },
+  dollarSign: {
     fontWeight: "700",
-    color: "#1c294e",
-    fontSize: 25,
+    color: "#0f172a",
+    fontSize: 20,
+    marginTop: 4,
   },
   planPrice: {
     fontWeight: "700",
-    color: "#1c294e",
-    fontSize: 35,
+    color: "#0f172a",
+    fontSize: 36,
+    lineHeight: "1",
   },
   recurence: {
-    fontWeight: "700",
-    color: "#1c294e",
-    fontSize: 16,
-    marginLeft: 2,
-    marginBottom: 5,
+    fontWeight: "500",
+    color: "#94a3b8",
+    fontSize: 14,
+    marginLeft: 4,
+    marginTop: 14,
   },
   planPeriodDesc: {
-    color: "#1c294e",
-    fontSize: 16,
+    color: "#94a3b8",
+    fontSize: 13,
+    marginTop: 2,
   },
-  planDivider: {
-    width: 257,
+  divider: {
+    width: "100%",
     height: 1,
-    backgroundColor: "#E6E6E6",
-    marginTop: 20,
+    backgroundColor: "#e2e8f0",
+    margin: "20px 0",
   },
-  planDescription: {
-    color: "#121212",
-    width: 220,
-    lineHeight: "20px",
-    whiteSpace: "pre-wrap",
+  featuresContainer: {
+    width: "100%",
+    gap: 10,
+    display: "flex",
+    flexDirection: "column",
+    flex: 1,
+  },
+  featureRow: {
+    flexDirection: "row",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  featureText: {
+    color: "#334155",
+    fontSize: 13,
+    lineHeight: "1.4",
+    textAlign: "left",
   },
   selectPlanBtn: {
-    width: 190,
-    height: 38,
-    backgroundColor: "#eef2ff",
-    borderRadius: 30,
+    width: "100%",
+    height: 42,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
-    marginBottom: 6,
-    border: "none",
-    cursor: "pointer",
+    marginTop: 20,
+    transition: "background-color 0.2s",
   },
-  selectPlan: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 22,
+  selectPlanText: {
+    fontWeight: "600",
+    fontSize: 14,
   },
 };
 

@@ -19,12 +19,12 @@ function PeriodSlider({ setpaymentTerm, paymentTerm }: PeriodSliderProps) {
     <div style={styles.container}>
       <div
         style={{
-          backgroundColor: "#1c294e",
-          borderRadius: 30,
-          width: 166,
-          height: 50,
+          backgroundColor: "#1470ef",
+          borderRadius: 10,
+          width: 155,
+          height: 40,
           position: "absolute",
-          left: sliderLeft,
+          left: sliderLeft + 4,
           zIndex: 1,
           transition: "left 0.3s ease",
         }}
@@ -57,13 +57,14 @@ function PeriodSlider({ setpaymentTerm, paymentTerm }: PeriodSliderProps) {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 30,
-    border: "1px solid #d9d9d9",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#f8fafc",
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
     height: 48,
-    width: 310,
+    width: 318,
     position: "relative",
   },
   periodLblRow: {
@@ -76,13 +77,13 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 10000,
   },
   term: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 19,
+    fontWeight: "600",
+    color: "#0f172a",
+    fontSize: 14,
   },
   btn: {
     width: 155,
-    height: 50,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
     display: "flex",

@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { signUp } from "services/firebase/functions";
 import { useHistory } from "react-router-dom";
-import { FiChevronLeft, FiArrowLeft, FiEyeOff, FiEye } from "react-icons/fi";
+import { FiEyeOff, FiEye } from "react-icons/fi";
 import { useAlert } from "react-alert";
-import useWindowSize from "shared/hooks/useWindowSize";
-import backgroundImg from "assets/images/background.png";
 import logoImg from "assets/dpos-logo-black.png";
 
 function Signup() {
@@ -13,19 +11,8 @@ function Signup() {
   const [name, setname] = useState("");
   const [phoneNumber, setphoneNumber] = useState("");
   const history = useHistory();
-  const { width } = useWindowSize();
-  const [useSmallDesign, setuseSmallDesign] = useState(width < 1024);
   const [secureEntry, setsecureEntry] = useState(true);
   const alertP = useAlert();
-
-  useEffect(() => {
-    const third = width / 3;
-    if (third < 200) {
-      setuseSmallDesign(true);
-    } else {
-      setuseSmallDesign(false);
-    }
-  }, [width]);
 
   const attemptSignUp = () => {
     if (email && password) {
@@ -44,151 +31,112 @@ function Signup() {
   };
 
   return (
-    <div
-      style={{
-        ...styles.container,
-        backgroundImage: `url(${backgroundImg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-      key={"background"}
-    >
-      <div style={styles.scrollContainer}>
-        <div
-          style={{
-            ...styles.headerContainer,
-            ...(useSmallDesign ? { width: "90%" } : {}),
-            height: 110,
-          }}
-        >
-          <button
-            onClick={() => history.push("/log-in")}
-            style={{
-              position: "absolute",
-              left: 0,
-              bottom: 24,
-              background: "none",
-              border: "none",
-              padding: 0,
-              cursor: "pointer",
-            }}
-          >
-            <div style={styles.backBtn}>
-              {useSmallDesign ? (
-                <FiChevronLeft style={styles.leftIcon} />
-              ) : (
-                <FiArrowLeft style={styles.leftIcon} />
-              )}
-              {!useSmallDesign && <span style={styles.backTxt}>Back</span>}
-            </div>
-          </button>
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <div style={styles.logoContainer}>
           <a href="https://divinepos.com" style={{ textDecoration: "none" }}>
-            <img
-              src={logoImg}
-              style={styles.logo}
-              key={"logo"}
-              alt=""
-            />
+            <img src={logoImg} style={styles.logo} alt="Divine POS" />
           </a>
         </div>
-        <div style={styles.mainPageContainer}>
-          <div
-            style={{
-              ...styles.logInContainer,
-              ...(useSmallDesign ? { width: "90%" } : {}),
-            }}
-          >
-            <span style={styles.logIn}>Sign Up</span>
-            <div style={styles.bottomContainer}>
-              <div style={styles.inputsContainer}>
-                <div style={styles.emailInputGroup}>
-                  <span style={styles.emailAddress}>Full name</span>
-                  <input
-                    style={styles.emailInput}
-                    placeholder="Enter name"
-                    autoComplete="name"
-                    value={name}
-                    onChange={(e) => setname(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                  />
-                </div>
-                <div style={styles.emailInputGroup}>
-                  <span style={styles.emailAddress}>Phone number</span>
-                  <input
-                    style={styles.emailInput}
-                    placeholder="Enter phone number"
-                    autoComplete="tel"
-                    value={phoneNumber}
-                    onChange={(e) =>
-                      setphoneNumber(e.target.value.replace(/\s/g, ""))
-                    }
-                    onKeyDown={handleKeyDown}
-                  />
-                </div>
-                <div style={styles.emailInputGroup}>
-                  <span style={styles.emailAddress}>Email address</span>
-                  <input
-                    style={styles.emailInput}
-                    placeholder="Enter email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) =>
-                      setEmail(e.target.value.replace(/\s/g, ""))
-                    }
-                    onKeyDown={handleKeyDown}
-                  />
-                </div>
-                <div style={styles.emailInputGroup}>
-                  <span style={styles.password}>Password</span>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      style={styles.passwordInput}
-                      placeholder="Enter password"
-                      type={secureEntry ? "password" : "text"}
-                      autoComplete="new-password"
-                      value={password}
-                      onChange={(e) =>
-                        setPassword(e.target.value.replace(/\s/g, ""))
-                      }
-                      onKeyDown={handleKeyDown}
-                    />
-                    <button
-                      onClick={() => setsecureEntry(!secureEntry)}
-                      style={{
-                        position: "absolute",
-                        right: 15,
-                        top: 15,
-                        background: "none",
-                        border: "none",
-                        padding: 0,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {secureEntry ? (
-                        <FiEyeOff style={{ fontSize: 20, color: "#333333" }} />
-                      ) : (
-                        <FiEye style={{ fontSize: 20, color: "#333333" }} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div style={styles.btnBottomContainer}>
-                <a
-                  href="https://divinepos.com/terms-conditions/"
-                  style={{ textDecoration: "none", marginBottom: 25 }}
-                >
-                  <span style={styles.signUpTxt}>
-                    By creating an account, I agree to Divine POS&apos;s terms
-                    of service
-                  </span>
-                </a>
-                <button style={styles.loginBtn} onClick={attemptSignUp}>
-                  <span style={styles.loginTxt}>Sign Up</span>
-                </button>
-              </div>
+
+        <div style={styles.titleContainer}>
+          <span style={styles.title}>Create your account</span>
+          <span style={styles.subtitle}>Start your free trial today</span>
+        </div>
+
+        <div style={styles.form}>
+          <div style={styles.fieldGroup}>
+            <span style={styles.label}>Name</span>
+            <input
+              style={styles.input}
+              placeholder="Enter your full name"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setname(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+
+          <div style={styles.fieldGroup}>
+            <span style={styles.label}>Phone Number</span>
+            <input
+              style={styles.input}
+              placeholder="Enter your phone number"
+              autoComplete="tel"
+              value={phoneNumber}
+              onChange={(e) =>
+                setphoneNumber(e.target.value.replace(/\s/g, ""))
+              }
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+
+          <div style={styles.fieldGroup}>
+            <span style={styles.label}>Email</span>
+            <input
+              style={styles.input}
+              placeholder="Enter your email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value.replace(/\s/g, ""))}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+
+          <div style={styles.fieldGroup}>
+            <span style={styles.label}>Password</span>
+            <div style={{ position: "relative" }}>
+              <input
+                style={styles.input}
+                placeholder="Create a password"
+                type={secureEntry ? "password" : "text"}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value.replace(/\s/g, ""))
+                }
+                onKeyDown={handleKeyDown}
+              />
+              <button
+                onClick={() => setsecureEntry(!secureEntry)}
+                style={styles.eyeButton}
+              >
+                {secureEntry ? (
+                  <FiEyeOff style={{ fontSize: 18, color: "#94a3b8" }} />
+                ) : (
+                  <FiEye style={{ fontSize: 18, color: "#94a3b8" }} />
+                )}
+              </button>
             </div>
           </div>
+
+          <button style={styles.primaryButton} onClick={attemptSignUp}>
+            <span style={styles.primaryButtonText}>Create Account</span>
+          </button>
+        </div>
+
+        <div style={styles.footer}>
+          <span style={styles.footerText}>
+            Already have an account?{" "}
+            <button
+              onClick={() => history.push("/log-in")}
+              style={styles.linkButton}
+            >
+              <span style={styles.link}>Log in</span>
+            </button>
+          </span>
+        </div>
+
+        <div style={styles.terms}>
+          <span style={styles.termsText}>
+            By signing up you agree to our{" "}
+            <a
+              href="https://divinepos.com/terms-conditions/"
+              style={{ color: "#1470ef", fontWeight: "500", textDecoration: "none" }}
+            >
+              Terms of Service
+            </a>
+          </span>
         </div>
       </div>
     </div>
@@ -196,174 +144,145 @@ function Signup() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    justifyContent: "flex-start",
+  page: {
+    minHeight: "100vh",
+    width: "100%",
+    display: "flex",
     alignItems: "center",
-    minHeight: "100%",
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    overflow: "auto",
+    justifyContent: "center",
+    background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)",
+    padding: 20,
+    boxSizing: "border-box",
   },
-  scrollContainer: {
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+    padding: 40,
+    maxWidth: 420,
     width: "100%",
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
+    gap: 28,
+  },
+  logoContainer: {
+    display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    flex: 1,
-  },
-  mainPageContainer: {
-    width: "100%",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingTop: 50,
-    display: "flex",
-    flexDirection: "column",
-  },
-  headerContainer: {
-    width: "70%",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    display: "flex",
-    position: "relative",
-  },
-  headerInnerContainer: {
-    width: "60%",
-    height: 68,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  backBtn: {
-    width: 72,
-    height: 30,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  leftIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 30,
-  },
-  backTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 16,
   },
   logo: {
-    height: 68,
-    width: 196,
+    height: 52,
+    width: 160,
     objectFit: "contain",
   },
-  logInContainer: {
-    width: 423,
-    justifyContent: "space-between",
-    alignItems: "center",
+  titleContainer: {
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
   },
-  logIn: {
+  title: {
+    fontSize: 26,
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 36,
+    color: "#0f172a",
   },
-  bottomContainer: {
+  subtitle: {
+    fontSize: 14,
+    color: "#94a3b8",
+  },
+  form: {
     width: "100%",
-    alignItems: "center",
-    justifyContent: "space-between",
     display: "flex",
     flexDirection: "column",
+    gap: 18,
   },
-  inputsContainer: {
-    width: "100%",
-    justifyContent: "space-between",
-    alignItems: "center",
+  fieldGroup: {
     display: "flex",
     flexDirection: "column",
-  },
-  emailInputGroup: {
+    gap: 6,
     width: "100%",
-    height: 80,
-    justifyContent: "space-between",
-    marginBottom: 25,
-    display: "flex",
-    flexDirection: "column",
   },
-  emailAddress: {
-    fontWeight: "700",
-    color: "#333333",
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+  },
+  input: {
+    height: 48,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "0 16px",
     fontSize: 15,
-  },
-  emailInput: {
+    color: "#0f172a",
     width: "100%",
-    height: 51,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    borderStyle: "solid",
-    padding: 10,
     boxSizing: "border-box",
+    outline: "none",
+    backgroundColor: "#fff",
   },
-  passwordInputGroup: {
-    width: "100%",
-    height: 80,
-    justifyContent: "space-between",
+  eyeButton: {
+    position: "absolute",
+    right: 14,
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
     display: "flex",
-    flexDirection: "column",
-  },
-  password: {
-    fontWeight: "700",
-    color: "#333333",
-    fontSize: 15,
-  },
-  passwordInput: {
-    width: "100%",
-    height: 51,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    borderStyle: "solid",
-    padding: 10,
-    boxSizing: "border-box",
-  },
-  btnBottomContainer: {
-    width: "100%",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: 25,
-    display: "flex",
-    flexDirection: "column",
-  },
-  loginBtn: {
-    width: "100%",
-    height: 44,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  primaryButton: {
+    backgroundColor: "#1470ef",
+    borderRadius: 10,
+    height: 48,
+    width: "100%",
     display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     border: "none",
     cursor: "pointer",
+    marginTop: 4,
   },
-  loginTxt: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 16,
+  primaryButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
   },
-  signUpTxt: {
-    color: "#313b47",
-    fontSize: 16,
+  linkButton: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
   },
-  forgotPassword: {
-    color: "#313b47",
-    fontSize: 16,
+  link: {
+    color: "#1470ef",
+    fontWeight: "500",
+    fontSize: 14,
+  },
+  footer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 4,
+    borderTop: "1px solid #f1f5f9",
+    width: "100%",
+  },
+  footerText: {
+    fontSize: 14,
+    color: "#64748b",
+    paddingTop: 16,
+  },
+  terms: {
+    display: "flex",
+    justifyContent: "center",
+  },
+  termsText: {
+    fontSize: 12,
+    color: "#94a3b8",
+    textAlign: "center",
   },
 };
 

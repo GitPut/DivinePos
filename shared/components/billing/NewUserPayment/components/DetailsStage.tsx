@@ -1,11 +1,10 @@
 import React from "react";
 import HeaderTxt from "./HeaderTxt";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
-
 import { GooglePlacesStyles } from "utils/googlePlacesStyles";
-import ViewPlan from "./ViewPlan";
 import InputWithLabel from "shared/components/ui/InputWithLabel";
 import { AddressType } from "types";
+
 const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 
 interface DetailsStageProps {
@@ -28,72 +27,65 @@ function DetailsStage({
   setwebsite,
   setaddress,
   address,
-  planType,
   storeName,
   phoneNumber,
   website,
 }: DetailsStageProps) {
   return (
     <div style={styles.container}>
+      <button style={styles.backLink} onClick={() => setstageNum(1)}>
+        <span style={styles.backLinkText}>Back to plan selection</span>
+      </button>
       <HeaderTxt
-        Txt="Step 2: Enter Store Details"
-        SubTxt="Fill in your store's information!"
+        Txt="Set up your store"
+        SubTxt="Enter your store details to get started"
       />
-      <div style={styles.contentContainer}>
-        <div style={styles.topSectionOfContainer}>
-          <div style={styles.plansRow}>
-            <ViewPlan
-              planType={planType}
-              setstageNum={setstageNum}
+      <div style={styles.card}>
+        <div style={styles.formContainer}>
+          <div style={styles.inputGroup}>
+            <span style={styles.inputLabel}>Store Name *</span>
+            <input
+              style={styles.input}
+              placeholder="Enter store name"
+              value={storeName}
+              onChange={(e) => setstoreName(e.target.value)}
             />
-            <div
-              style={{
-                width: 320,
-                height: 384,
-                justifyContent: "space-between",
-                display: "flex",
-                flexDirection: "column",
+          </div>
+          <div style={styles.inputGroup}>
+            <span style={styles.inputLabel}>Phone Number *</span>
+            <input
+              style={styles.input}
+              placeholder="Enter store phone number"
+              value={phoneNumber}
+              onChange={(e) => setphoneNumber(e.target.value)}
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <span style={styles.inputLabel}>Address *</span>
+            <GooglePlacesAutocomplete
+              apiOptions={{
+                region: "CA",
               }}
-            >
-              <InputWithLabel
-                lbl="Store Name *"
-                placeholder="Enter store name"
-                value={storeName}
-                onChangeText={(val) => setstoreName(val)}
-              />
-              <InputWithLabel
-                lbl="Phone Number *"
-                placeholder="Enter store phone #"
-                value={phoneNumber}
-                onChangeText={(val) => setphoneNumber(val)}
-              />
-              <InputWithLabel
-                lbl="Website"
-                placeholder="Enter store website url (Optional)"
-                value={website}
-                onChangeText={(val) => setwebsite(val)}
-              />
-              <InputWithLabel
-                lbl="Address *"
-                CustomInput={() => (
-                  <GooglePlacesAutocomplete
-                    apiOptions={{
-                      region: "CA",
-                    }}
-                    debounce={800}
-                    apiKey={GOOGLE_API_KEY}
-                    selectProps={{
-                      value: address,
-                      onChange: setaddress,
-                      defaultValue: address,
-                      placeholder: "Enter store address",
-                      menuPortalTarget: document.body,
-                      styles: GooglePlacesStyles,
-                    }}
-                  />
-                )}
-              />
-            </div>
+              debounce={800}
+              apiKey={GOOGLE_API_KEY}
+              selectProps={{
+                value: address,
+                onChange: setaddress,
+                defaultValue: address,
+                placeholder: "Enter store address",
+                menuPortalTarget: document.body,
+                styles: GooglePlacesStyles,
+              }}
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <span style={styles.inputLabel}>Website</span>
+            <input
+              style={styles.input}
+              placeholder="Enter store website (optional)"
+              value={website}
+              onChange={(e) => setwebsite(e.target.value)}
+            />
           </div>
         </div>
       </div>
@@ -107,58 +99,57 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "flex-start",
     display: "flex",
     flexDirection: "column",
-    width: 898,
+    width: "100%",
+    maxWidth: 520,
   },
-  contentContainer: {
-    width: 898,
-    height: 550,
-    alignItems: "center",
-    justifyContent: "space-around",
-    display: "flex",
-    backgroundColor: "rgba(255,255,255,1)",
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.1)",
-    borderRadius: 10,
+  backLink: {
+    alignSelf: "flex-start",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    marginBottom: 16,
   },
-  topSectionOfContainer: {
-    width: 860,
-    height: 500,
-    justifyContent: "center",
-    alignItems: "center",
+  backLinkText: {
+    color: "#1470ef",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  card: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+    padding: "32px 28px",
+  },
+  formContainer: {
     display: "flex",
     flexDirection: "column",
+    gap: 20,
+    width: "100%",
   },
-  plansRow: {
-    width: 700,
-    flexDirection: "row",
+  inputGroup: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "column",
+    gap: 6,
+    width: "100%",
   },
-  plan: {
-    height: 384,
-    width: 275,
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
   },
-  plan2: {
-    height: 384,
-    width: 275,
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-  },
-  plan3: {
-    height: 384,
-    width: 275,
-    boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-  },
-  buttonRow: {
-    height: 50,
-    alignItems: "flex-end",
-    justifyContent: "flex-end",
-    display: "flex",
-    width: 860,
-  },
-  nextBtn: {
-    height: 50,
-    width: 143,
+  input: {
+    height: 48,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "0 16px",
+    fontSize: 15,
+    color: "#0f172a",
+    outline: "none",
+    boxSizing: "border-box",
+    width: "100%",
   },
 };
 
