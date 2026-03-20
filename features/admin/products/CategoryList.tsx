@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { FiSearch, FiPlus, FiEdit3, FiTrash2 } from "react-icons/fi";
+import { MdDragIndicator } from "react-icons/md";
 import {
   onlineStoreState,
   updateStoreProductsState,
@@ -20,6 +21,9 @@ function CategoryList() {
   const [editCategoryModal, setEditCategoryModal] = useState<string | null>(
     null
   );
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragCounter = useRef(0);
 
   const confirmText = (category: string) => {
     Swal.fire({
@@ -58,6 +62,26 @@ function CategoryList() {
     });
   };
 
+  const saveCategories = (newCategories: string[]) => {
+    db.collection("users").doc(auth.currentUser?.uid).update({
+      categories: newCategories,
+    });
+    if (onlineStoreDetails.onlineStoreSetUp) {
+      db.collection("public").doc(auth.currentUser?.uid).update({
+        categories: newCategories,
+      });
+    }
+    updateStoreProductsState({ categories: newCategories });
+  };
+
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const newCategories = [...catalog.categories];
+    const [moved] = newCategories.splice(dragIndex, 1);
+    newCategories.splice(targetIndex, 0, moved);
+    saveCategories(newCategories);
+  };
+
   const filteredCategories = useMemo(() => {
     if (!searchFilterValue) return catalog.categories;
     const query = searchFilterValue.toLowerCase().trim();
@@ -65,6 +89,8 @@ function CategoryList() {
       category.toLowerCase().includes(query)
     );
   }, [catalog.categories, searchFilterValue]);
+
+  const isSearching = searchFilterValue.trim().length > 0;
 
   const getProductCount = (category: string) =>
     catalog.products.filter((p) => p.category === category).length;
@@ -76,7 +102,9 @@ function CategoryList() {
         <div>
           <span style={styles.title}>Category Management</span>
           <span style={styles.subtitle}>
-            Organize your menu with categories
+            {isSearching
+              ? "Drag to reorder is disabled while searching"
+              : "Drag categories to reorder them"}
           </span>
         </div>
         <div style={styles.headerActions}>
@@ -104,7 +132,7 @@ function CategoryList() {
         <div style={styles.card}>
           {/* Table Header */}
           <div style={styles.tableHeader}>
-            <span style={{ ...styles.tableHeaderTxt, flex: 0, width: 50, marginRight: 16 }}>
+            <span style={{ ...styles.tableHeaderTxt, flex: 0, width: 70, marginRight: 8 }}>
               #
             </span>
             <span style={{ ...styles.tableHeaderTxt, flex: 1 }}>
@@ -123,19 +151,66 @@ function CategoryList() {
             filteredCategories.map((category, i) => {
               const count = getProductCount(category);
               const originalIndex = catalog.categories.indexOf(category);
+              const isDragging = dragIndex === originalIndex;
+              const isDragOver = dragOverIndex === originalIndex && dragIndex !== originalIndex;
               return (
                 <div
                   key={category}
+                  draggable={!isSearching}
+                  onDragStart={(ev) => {
+                    setDragIndex(originalIndex);
+                    ev.dataTransfer.effectAllowed = "move";
+                    // Make the drag image semi-transparent
+                    if (ev.currentTarget instanceof HTMLElement) {
+                      ev.dataTransfer.setDragImage(ev.currentTarget, 0, 0);
+                    }
+                  }}
+                  onDragEnter={() => {
+                    dragCounter.current++;
+                    setDragOverIndex(originalIndex);
+                  }}
+                  onDragLeave={() => {
+                    dragCounter.current--;
+                    if (dragCounter.current === 0) {
+                      setDragOverIndex(null);
+                    }
+                  }}
+                  onDragOver={(ev) => {
+                    ev.preventDefault();
+                    ev.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(ev) => {
+                    ev.preventDefault();
+                    dragCounter.current = 0;
+                    handleDrop(originalIndex);
+                    setDragIndex(null);
+                    setDragOverIndex(null);
+                  }}
+                  onDragEnd={() => {
+                    setDragIndex(null);
+                    setDragOverIndex(null);
+                    dragCounter.current = 0;
+                  }}
                   style={{
                     ...styles.tableRow,
                     ...(i < filteredCategories.length - 1
                       ? { borderBottom: "1px solid #f1f5f9" }
                       : {}),
+                    ...(isDragging ? { opacity: 0.4 } : {}),
+                    ...(isDragOver
+                      ? { borderTop: "2px solid #1470ef", marginTop: -1 }
+                      : {}),
+                    ...(!isSearching ? { cursor: "grab" } : {}),
                   }}
                 >
-                  <span style={{ ...styles.positionNum, width: 50, flex: 0, flexShrink: 0, marginRight: 16 }}>
-                    {originalIndex + 1}
-                  </span>
+                  <div style={{ width: 70, flex: 0, flexShrink: 0, display: "flex", flexDirection: "row", alignItems: "center", gap: 6, marginRight: 8 }}>
+                    {!isSearching && (
+                      <MdDragIndicator size={16} color="#cbd5e1" />
+                    )}
+                    <span style={styles.positionNum}>
+                      {originalIndex + 1}
+                    </span>
+                  </div>
                   <div style={{ flex: 1, display: "flex", flexDirection: "row", alignItems: "center", gap: 10 }}>
                     <span style={styles.categoryName}>{category}</span>
                   </div>
@@ -323,6 +398,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "center",
     padding: "14px 20px",
+    transition: "background-color 0.15s",
   },
   positionNum: {
     fontSize: 13,

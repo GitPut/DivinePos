@@ -16,46 +16,31 @@ const ClockInModal = () => {
     >
       <div style={{ cursor: "default" }} onClick={(e) => e.stopPropagation()}>
         <div style={styles.container}>
-          <div style={styles.closeIconContainer}>
+          {/* Header */}
+          <div style={styles.header}>
+            <span style={styles.title}>Employee Clock-In</span>
             <button
               onClick={() => updatePosState({ clockinModal: false })}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              style={styles.closeBtn}
             >
               <IoClose style={styles.closeIcon} />
             </button>
           </div>
-          <div style={styles.secondAreaContainer}>
-            <span style={styles.employeesClockIn}>
-              Employee&#39;s Clock-In
-            </span>
-            <div style={styles.employeesScrollView}>
-              <div
-                style={{
-                  overflow: "auto",
-                  height: "100%",
-                  width: 421,
-                  alignItems: "center",
-                  paddingTop: 3,
-                  paddingRight: 25,
-                  marginLeft: 25,
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                {employees.map((employee) => {
-                  const isClockedIn = employee.clockedIn?.startTime;
 
-                  return (
-                    <EmployeeClockInItem
-                      key={employee.id}
-                      employee={employee}
-                      employees={employees}
-                      isClockedIn={isClockedIn ? true : false}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+          {/* Employee list */}
+          <div style={styles.listContainer}>
+            {employees.map((employee) => {
+              const isClockedIn = employee.clockedIn?.startTime;
+
+              return (
+                <EmployeeClockInItem
+                  key={employee.id}
+                  employee={employee}
+                  employees={employees}
+                  isClockedIn={isClockedIn ? true : false}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
@@ -65,45 +50,53 @@ const ClockInModal = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    justifyContent: "flex-start",
-    alignItems: "center",
-    width: 540,
-    height: 609,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+    width: 480,
+    maxHeight: 600,
     display: "flex",
     flexDirection: "column",
+    overflow: "hidden",
   },
-  closeIconContainer: {
-    width: 540,
-    height: 58,
+  header: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "flex-start",
     display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "20px 24px 16px 24px",
+    borderBottom: "1px solid #e2e8f0",
+    flexShrink: 0,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  closeBtn: {
+    width: 34,
+    height: 34,
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
   },
   closeIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 40,
-    margin: 20,
+    fontSize: 18,
+    color: "#64748b",
   },
-  secondAreaContainer: {
-    width: 421,
-    height: 523,
-    justifyContent: "space-between",
-    alignItems: "center",
+  listContainer: {
+    overflow: "auto",
+    padding: "16px 24px 24px 24px",
     display: "flex",
     flexDirection: "column",
-  },
-  employeesClockIn: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
-    display: "block",
-  },
-  employeesScrollView: {
-    height: 460,
-    margin: 0,
+    gap: 10,
+    flex: 1,
   },
 };
 

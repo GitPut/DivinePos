@@ -1255,9 +1255,529 @@ const DoublePizzaCombo = {
   hasImage: true,
 };
 
+// ===== COFFEE & DRINKS =====
+
+const CoffeeTemplate = {
+  id: "templateCoffee001",
+  name: "Coffee",
+  description: "Freshly brewed coffee with customizable size and add-ons",
+  category: "Coffee & Drinks",
+  price: "3.50",
+  options: [
+    {
+      id: "cofSize1", label: "Size", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      defaultValue: { label: "Medium", id: "cofSm2", priceIncrease: null },
+      optionsList: [
+        { id: "cofSm1", label: "Small", priceIncrease: "-0.50", selected: false },
+        { id: "cofSm2", label: "Medium", priceIncrease: null, selected: true },
+        { id: "cofSm3", label: "Large", priceIncrease: "1.00" },
+      ],
+    },
+    {
+      id: "cofMilk1", label: "Milk", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "cofMk1", label: "Regular", priceIncrease: null },
+        { id: "cofMk2", label: "2%", priceIncrease: null },
+        { id: "cofMk3", label: "Oat Milk", priceIncrease: "0.75" },
+        { id: "cofMk4", label: "Almond Milk", priceIncrease: "0.75" },
+        { id: "cofMk5", label: "No Milk", priceIncrease: null },
+      ],
+    },
+    {
+      id: "cofExtra1", label: "Extras", optionType: "Quantity Dropdown", isRequired: false,
+      numOfSelectable: null, selectedCaseList: [],
+      optionsList: [
+        { id: "cofEx1", label: "Extra Shot", priceIncrease: "0.75" },
+        { id: "cofEx2", label: "Vanilla Syrup", priceIncrease: "0.50" },
+        { id: "cofEx3", label: "Caramel Syrup", priceIncrease: "0.50" },
+        { id: "cofEx4", label: "Hazelnut Syrup", priceIncrease: "0.50" },
+        { id: "cofEx5", label: "Whipped Cream", priceIncrease: "0.50" },
+      ],
+    },
+  ],
+};
+
+const IcedLatteTemplate = {
+  id: "templateLatte001",
+  name: "Iced Latte",
+  description: "Espresso over ice with your choice of milk",
+  category: "Coffee & Drinks",
+  price: "5.25",
+  options: [
+    {
+      id: "latSize1", label: "Size", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      defaultValue: { label: "Medium", id: "latSz2", priceIncrease: null },
+      optionsList: [
+        { id: "latSz1", label: "Small", priceIncrease: "-0.75" },
+        { id: "latSz2", label: "Medium", priceIncrease: null, selected: true },
+        { id: "latSz3", label: "Large", priceIncrease: "1.25" },
+      ],
+    },
+    {
+      id: "latMilk1", label: "Milk", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      defaultValue: { label: "2%", id: "latMk1", priceIncrease: null },
+      optionsList: [
+        { id: "latMk1", label: "2%", priceIncrease: null, selected: true },
+        { id: "latMk2", label: "Whole", priceIncrease: null },
+        { id: "latMk3", label: "Oat", priceIncrease: "0.75" },
+        { id: "latMk4", label: "Almond", priceIncrease: "0.75" },
+        { id: "latMk5", label: "Coconut", priceIncrease: "0.75" },
+      ],
+    },
+    {
+      id: "latFlavor1", label: "Flavor", optionType: "Quantity Dropdown", isRequired: false,
+      numOfSelectable: null, selectedCaseList: [],
+      optionsList: [
+        { id: "latFl1", label: "Vanilla", priceIncrease: "0.50" },
+        { id: "latFl2", label: "Caramel", priceIncrease: "0.50" },
+        { id: "latFl3", label: "Mocha", priceIncrease: "0.75" },
+        { id: "latFl4", label: "Lavender", priceIncrease: "0.75" },
+      ],
+    },
+  ],
+};
+
+const SmoothieTemplate = {
+  id: "templateSmoothie001",
+  name: "Smoothie",
+  description: "Fresh fruit smoothie blended to order",
+  category: "Coffee & Drinks",
+  price: "6.50",
+  options: [
+    {
+      id: "smBase1", label: "Base", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "smBs1", label: "Mango", priceIncrease: null },
+        { id: "smBs2", label: "Strawberry Banana", priceIncrease: null },
+        { id: "smBs3", label: "Mixed Berry", priceIncrease: null },
+        { id: "smBs4", label: "Tropical", priceIncrease: null },
+        { id: "smBs5", label: "Green", priceIncrease: "0.50" },
+      ],
+    },
+    {
+      id: "smAdd1", label: "Add-ons", optionType: "Quantity Dropdown", isRequired: false,
+      numOfSelectable: null, selectedCaseList: [],
+      optionsList: [
+        { id: "smAd1", label: "Protein Powder", priceIncrease: "1.50" },
+        { id: "smAd2", label: "Peanut Butter", priceIncrease: "1.00" },
+        { id: "smAd3", label: "Chia Seeds", priceIncrease: "0.75" },
+        { id: "smAd4", label: "Spinach", priceIncrease: "0.50" },
+      ],
+    },
+  ],
+};
+
+// ===== BURGERS =====
+
+const ClassicBurgerTemplate = {
+  id: "templateBurger001",
+  name: "Classic Burger",
+  description: "Beef patty with your choice of toppings",
+  category: "Burgers",
+  price: "10.99",
+  options: [
+    {
+      id: "brgPatty1", label: "Patty", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      defaultValue: { label: "Single", id: "brgPt1", priceIncrease: null },
+      optionsList: [
+        { id: "brgPt1", label: "Single", priceIncrease: null, selected: true },
+        { id: "brgPt2", label: "Double", priceIncrease: "3.50" },
+        { id: "brgPt3", label: "Beyond Meat", priceIncrease: "2.00" },
+      ],
+    },
+    {
+      id: "brgCheese1", label: "Cheese", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "brgCh1", label: "American", priceIncrease: null },
+        { id: "brgCh2", label: "Cheddar", priceIncrease: null },
+        { id: "brgCh3", label: "Swiss", priceIncrease: null },
+        { id: "brgCh4", label: "Pepper Jack", priceIncrease: "0.50" },
+        { id: "brgCh5", label: "No Cheese", priceIncrease: null },
+      ],
+    },
+    {
+      id: "brgTop1", label: "Toppings", optionType: "Quantity Dropdown", isRequired: false,
+      numOfSelectable: null, selectedCaseList: [],
+      optionsList: [
+        { id: "brgTp1", label: "Lettuce", priceIncrease: null },
+        { id: "brgTp2", label: "Tomato", priceIncrease: null },
+        { id: "brgTp3", label: "Onion", priceIncrease: null },
+        { id: "brgTp4", label: "Pickles", priceIncrease: null },
+        { id: "brgTp5", label: "Bacon", priceIncrease: "1.50" },
+        { id: "brgTp6", label: "Mushrooms", priceIncrease: "1.00" },
+        { id: "brgTp7", label: "Avocado", priceIncrease: "1.50" },
+        { id: "brgTp8", label: "Jalapenos", priceIncrease: "0.50" },
+      ],
+    },
+    {
+      id: "brgSauce1", label: "Sauce", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "brgSc1", label: "Ketchup", priceIncrease: null },
+        { id: "brgSc2", label: "Mayo", priceIncrease: null },
+        { id: "brgSc3", label: "BBQ", priceIncrease: null },
+        { id: "brgSc4", label: "Chipotle Mayo", priceIncrease: null },
+        { id: "brgSc5", label: "Hot Sauce", priceIncrease: null },
+      ],
+    },
+  ],
+};
+
+// ===== SANDWICHES =====
+
+const SubSandwichTemplate = {
+  id: "templateSub001",
+  name: "Sub Sandwich",
+  description: "Build your own sub with fresh ingredients",
+  category: "Sandwiches",
+  price: "8.99",
+  options: [
+    {
+      id: "subBread1", label: "Bread", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "subBr1", label: "White", priceIncrease: null },
+        { id: "subBr2", label: "Whole Wheat", priceIncrease: null },
+        { id: "subBr3", label: "Italian Herb", priceIncrease: null },
+        { id: "subBr4", label: "Wrap", priceIncrease: null },
+      ],
+    },
+    {
+      id: "subSize1", label: "Size", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      defaultValue: { label: "Regular (6\")", id: "subSz1", priceIncrease: null },
+      optionsList: [
+        { id: "subSz1", label: "Regular (6\")", priceIncrease: null, selected: true },
+        { id: "subSz2", label: "Large (12\")", priceIncrease: "4.00" },
+      ],
+    },
+    {
+      id: "subMeat1", label: "Protein", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "subMt1", label: "Turkey", priceIncrease: null },
+        { id: "subMt2", label: "Ham", priceIncrease: null },
+        { id: "subMt3", label: "Chicken", priceIncrease: null },
+        { id: "subMt4", label: "Tuna", priceIncrease: null },
+        { id: "subMt5", label: "Veggie", priceIncrease: null },
+        { id: "subMt6", label: "Steak", priceIncrease: "2.00" },
+      ],
+    },
+    {
+      id: "subTop1", label: "Toppings", optionType: "Quantity Dropdown", isRequired: false,
+      numOfSelectable: null, selectedCaseList: [],
+      optionsList: [
+        { id: "subTp1", label: "Lettuce", priceIncrease: null },
+        { id: "subTp2", label: "Tomato", priceIncrease: null },
+        { id: "subTp3", label: "Onion", priceIncrease: null },
+        { id: "subTp4", label: "Peppers", priceIncrease: null },
+        { id: "subTp5", label: "Olives", priceIncrease: null },
+        { id: "subTp6", label: "Extra Cheese", priceIncrease: "1.00" },
+        { id: "subTp7", label: "Avocado", priceIncrease: "1.50" },
+      ],
+    },
+  ],
+};
+
+// ===== SALADS =====
+
+const SaladTemplate = {
+  id: "templateSalad001",
+  name: "Build Your Own Salad",
+  description: "Fresh salad with your choice of greens, protein, and dressing",
+  category: "Salads",
+  price: "9.99",
+  options: [
+    {
+      id: "salBase1", label: "Base", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "salBs1", label: "Romaine", priceIncrease: null },
+        { id: "salBs2", label: "Mixed Greens", priceIncrease: null },
+        { id: "salBs3", label: "Spinach", priceIncrease: null },
+        { id: "salBs4", label: "Kale", priceIncrease: null },
+      ],
+    },
+    {
+      id: "salProt1", label: "Protein", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "salPr1", label: "Grilled Chicken", priceIncrease: "3.00" },
+        { id: "salPr2", label: "Crispy Chicken", priceIncrease: "3.00" },
+        { id: "salPr3", label: "Shrimp", priceIncrease: "4.00" },
+        { id: "salPr4", label: "Steak", priceIncrease: "4.50" },
+        { id: "salPr5", label: "Tofu", priceIncrease: "2.00" },
+      ],
+    },
+    {
+      id: "salTop1", label: "Toppings", optionType: "Quantity Dropdown", isRequired: false,
+      numOfSelectable: null, selectedCaseList: [],
+      optionsList: [
+        { id: "salTp1", label: "Tomatoes", priceIncrease: null },
+        { id: "salTp2", label: "Cucumber", priceIncrease: null },
+        { id: "salTp3", label: "Red Onion", priceIncrease: null },
+        { id: "salTp4", label: "Croutons", priceIncrease: null },
+        { id: "salTp5", label: "Cheese", priceIncrease: "0.75" },
+        { id: "salTp6", label: "Avocado", priceIncrease: "1.50" },
+        { id: "salTp7", label: "Bacon Bits", priceIncrease: "1.00" },
+        { id: "salTp8", label: "Hard Boiled Egg", priceIncrease: "1.00" },
+      ],
+    },
+    {
+      id: "salDress1", label: "Dressing", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "salDr1", label: "Caesar", priceIncrease: null },
+        { id: "salDr2", label: "Ranch", priceIncrease: null },
+        { id: "salDr3", label: "Italian", priceIncrease: null },
+        { id: "salDr4", label: "Balsamic", priceIncrease: null },
+        { id: "salDr5", label: "Oil & Vinegar", priceIncrease: null },
+      ],
+    },
+  ],
+};
+
+// ===== BREAKFAST =====
+
+const BreakfastSandwichTemplate = {
+  id: "templateBreak001",
+  name: "Breakfast Sandwich",
+  description: "Egg sandwich on your choice of bread",
+  category: "Breakfast",
+  price: "5.99",
+  options: [
+    {
+      id: "brkBread1", label: "Bread", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "brkBr1", label: "Bagel", priceIncrease: null },
+        { id: "brkBr2", label: "English Muffin", priceIncrease: null },
+        { id: "brkBr3", label: "Croissant", priceIncrease: "0.50" },
+        { id: "brkBr4", label: "Wrap", priceIncrease: null },
+      ],
+    },
+    {
+      id: "brkEgg1", label: "Egg Style", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "brkEg1", label: "Scrambled", priceIncrease: null },
+        { id: "brkEg2", label: "Fried", priceIncrease: null },
+        { id: "brkEg3", label: "Egg White", priceIncrease: null },
+      ],
+    },
+    {
+      id: "brkMeat1", label: "Meat", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "brkMt1", label: "Bacon", priceIncrease: "1.50" },
+        { id: "brkMt2", label: "Sausage", priceIncrease: "1.50" },
+        { id: "brkMt3", label: "Ham", priceIncrease: "1.50" },
+        { id: "brkMt4", label: "Turkey Bacon", priceIncrease: "1.50" },
+        { id: "brkMt5", label: "No Meat", priceIncrease: null },
+      ],
+    },
+    {
+      id: "brkCheese1", label: "Cheese", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "brkCh1", label: "American", priceIncrease: null },
+        { id: "brkCh2", label: "Cheddar", priceIncrease: null },
+        { id: "brkCh3", label: "Swiss", priceIncrease: null },
+        { id: "brkCh4", label: "No Cheese", priceIncrease: null },
+      ],
+    },
+  ],
+};
+
+// ===== SIDES =====
+
+const FriesTemplate = {
+  id: "templateFries001",
+  name: "Fries",
+  description: "Crispy fries with optional toppings",
+  category: "Sides",
+  price: "4.49",
+  options: [
+    {
+      id: "frySize1", label: "Size", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      defaultValue: { label: "Regular", id: "frySz1", priceIncrease: null },
+      optionsList: [
+        { id: "frySz1", label: "Regular", priceIncrease: null, selected: true },
+        { id: "frySz2", label: "Large", priceIncrease: "1.50" },
+      ],
+    },
+    {
+      id: "fryStyle1", label: "Style", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "frySt1", label: "Classic", priceIncrease: null },
+        { id: "frySt2", label: "Curly", priceIncrease: "0.50" },
+        { id: "frySt3", label: "Sweet Potato", priceIncrease: "1.00" },
+        { id: "frySt4", label: "Loaded", priceIncrease: "2.50" },
+      ],
+    },
+  ],
+};
+
+// ===== DESSERTS =====
+
+const MilkshakeTemplate = {
+  id: "templateShake001",
+  name: "Milkshake",
+  description: "Thick and creamy milkshake",
+  category: "Desserts",
+  price: "6.99",
+  options: [
+    {
+      id: "shakeFlav1", label: "Flavor", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "shFl1", label: "Chocolate", priceIncrease: null },
+        { id: "shFl2", label: "Vanilla", priceIncrease: null },
+        { id: "shFl3", label: "Strawberry", priceIncrease: null },
+        { id: "shFl4", label: "Cookies & Cream", priceIncrease: "0.50" },
+        { id: "shFl5", label: "Peanut Butter", priceIncrease: "0.50" },
+      ],
+    },
+    {
+      id: "shakeTop1", label: "Toppings", optionType: "Quantity Dropdown", isRequired: false,
+      numOfSelectable: null, selectedCaseList: [],
+      optionsList: [
+        { id: "shTp1", label: "Whipped Cream", priceIncrease: null },
+        { id: "shTp2", label: "Sprinkles", priceIncrease: "0.25" },
+        { id: "shTp3", label: "Cherry", priceIncrease: null },
+        { id: "shTp4", label: "Extra Thick", priceIncrease: "0.50" },
+      ],
+    },
+  ],
+};
+
+// ===== BOWLS =====
+
+const PokeBowlTemplate = {
+  id: "templatePoke001",
+  name: "Poke Bowl",
+  description: "Build your own poke bowl with fresh ingredients",
+  category: "Bowls",
+  price: "13.99",
+  options: [
+    {
+      id: "pokeBase1", label: "Base", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "pokBs1", label: "Sushi Rice", priceIncrease: null },
+        { id: "pokBs2", label: "Brown Rice", priceIncrease: null },
+        { id: "pokBs3", label: "Mixed Greens", priceIncrease: null },
+        { id: "pokBs4", label: "Half & Half", priceIncrease: null },
+      ],
+    },
+    {
+      id: "pokeProt1", label: "Protein", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "pokPr1", label: "Salmon", priceIncrease: null },
+        { id: "pokPr2", label: "Tuna", priceIncrease: null },
+        { id: "pokPr3", label: "Shrimp", priceIncrease: null },
+        { id: "pokPr4", label: "Tofu", priceIncrease: "-1.00" },
+        { id: "pokPr5", label: "Chicken", priceIncrease: "-1.00" },
+      ],
+    },
+    {
+      id: "pokeTop1", label: "Toppings", optionType: "Quantity Dropdown", isRequired: false,
+      numOfSelectable: "6", selectedCaseList: [],
+      optionsList: [
+        { id: "pokTp1", label: "Avocado", priceIncrease: null },
+        { id: "pokTp2", label: "Edamame", priceIncrease: null },
+        { id: "pokTp3", label: "Cucumber", priceIncrease: null },
+        { id: "pokTp4", label: "Seaweed", priceIncrease: null },
+        { id: "pokTp5", label: "Mango", priceIncrease: null },
+        { id: "pokTp6", label: "Corn", priceIncrease: null },
+        { id: "pokTp7", label: "Crispy Onion", priceIncrease: null },
+        { id: "pokTp8", label: "Masago", priceIncrease: "1.00" },
+      ],
+    },
+    {
+      id: "pokeSauce1", label: "Sauce", optionType: "Row", isRequired: false,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "pokSc1", label: "Soy Sauce", priceIncrease: null },
+        { id: "pokSc2", label: "Spicy Mayo", priceIncrease: null },
+        { id: "pokSc3", label: "Ponzu", priceIncrease: null },
+        { id: "pokSc4", label: "Sesame", priceIncrease: null },
+      ],
+    },
+  ],
+};
+
+// ===== SIMPLE ITEMS (no options) =====
+
+const WaterTemplate = {
+  id: "templateWater001",
+  name: "Bottled Water",
+  description: "500ml bottled water",
+  category: "Simple Items",
+  price: "1.99",
+  options: [],
+};
+
+const CookieTemplate = {
+  id: "templateCookie001",
+  name: "Cookie",
+  description: "Freshly baked cookie",
+  category: "Simple Items",
+  price: "2.49",
+  options: [
+    {
+      id: "cookFlav1", label: "Flavor", optionType: "Row", isRequired: true,
+      numOfSelectable: "1", selectedCaseList: [],
+      optionsList: [
+        { id: "ckFl1", label: "Chocolate Chip", priceIncrease: null },
+        { id: "ckFl2", label: "Double Chocolate", priceIncrease: null },
+        { id: "ckFl3", label: "Oatmeal Raisin", priceIncrease: null },
+        { id: "ckFl4", label: "Macadamia Nut", priceIncrease: "0.50" },
+      ],
+    },
+  ],
+};
+
 const productTemplateCatalog = {
-  products: [BuildYourOwnPizza, DoublePizzaCombo],
-  categories: ["Pizza", "Combos"],
+  products: [
+    BuildYourOwnPizza,
+    DoublePizzaCombo,
+    CoffeeTemplate,
+    IcedLatteTemplate,
+    SmoothieTemplate,
+    ClassicBurgerTemplate,
+    SubSandwichTemplate,
+    SaladTemplate,
+    BreakfastSandwichTemplate,
+    FriesTemplate,
+    MilkshakeTemplate,
+    PokeBowlTemplate,
+    WaterTemplate,
+    CookieTemplate,
+  ],
+  categories: [
+    "Pizza",
+    "Combos",
+    "Coffee & Drinks",
+    "Burgers",
+    "Sandwiches",
+    "Salads",
+    "Breakfast",
+    "Sides",
+    "Desserts",
+    "Bowls",
+    "Simple Items",
+  ],
 };
 
 export default productTemplateCatalog;

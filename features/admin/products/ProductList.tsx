@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import ProductOptionBox from "./components/ProductOptionBox";
-import { FiSearch, FiPlus, FiLayers } from "react-icons/fi";
+import { FiSearch, FiPlus, FiLayers, FiGrid, FiList } from "react-icons/fi";
 import {
   onlineStoreState,
   updateStoreProductsState,
@@ -25,6 +25,7 @@ function ProductList() {
   const [isProductTemplate, setIsProductTemplate] = useState<boolean>(false);
   const [productTemplatesModalVisible, setProductTemplatesModalVisible] =
     useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   const confirmText = (ProductID: string) => {
     Swal.fire({
@@ -98,6 +99,28 @@ function ProductList() {
               onChange={(e) => setSearchFilterValue(e.target.value)}
             />
           </div>
+          <div style={styles.viewToggle}>
+            <button
+              style={{
+                ...styles.viewToggleBtn,
+                ...(viewMode === "list" ? styles.viewToggleBtnActive : {}),
+              }}
+              onClick={() => setViewMode("list")}
+              title="List view"
+            >
+              <FiList size={16} color={viewMode === "list" ? "#fff" : "#64748b"} />
+            </button>
+            <button
+              style={{
+                ...styles.viewToggleBtn,
+                ...(viewMode === "grid" ? styles.viewToggleBtnActive : {}),
+              }}
+              onClick={() => setViewMode("grid")}
+              title="Grid view"
+            >
+              <FiGrid size={16} color={viewMode === "grid" ? "#fff" : "#64748b"} />
+            </button>
+          </div>
           <button
             style={styles.templateBtn}
             onClick={() => setProductTemplatesModalVisible(true)}
@@ -121,18 +144,14 @@ function ProductList() {
           <button
             style={{
               ...styles.categoryPill,
-              ...(selectedCategory === null
-                ? styles.categoryPillActive
-                : {}),
+              ...(selectedCategory === null ? styles.categoryPillActive : {}),
             }}
             onClick={() => setSelectedCategory(null)}
           >
             <span
               style={{
                 ...styles.categoryPillTxt,
-                ...(selectedCategory === null
-                  ? styles.categoryPillTxtActive
-                  : {}),
+                ...(selectedCategory === null ? styles.categoryPillTxtActive : {}),
               }}
             >
               All
@@ -143,9 +162,7 @@ function ProductList() {
               key={category}
               style={{
                 ...styles.categoryPill,
-                ...(selectedCategory === category
-                  ? styles.categoryPillActive
-                  : {}),
+                ...(selectedCategory === category ? styles.categoryPillActive : {}),
               }}
               onClick={() =>
                 setSelectedCategory((prev) =>
@@ -156,9 +173,7 @@ function ProductList() {
               <span
                 style={{
                   ...styles.categoryPillTxt,
-                  ...(selectedCategory === category
-                    ? styles.categoryPillTxtActive
-                    : {}),
+                  ...(selectedCategory === category ? styles.categoryPillTxtActive : {}),
                 }}
               >
                 {category}
@@ -168,20 +183,47 @@ function ProductList() {
         </div>
       )}
 
-      {/* Product Grid */}
+      {/* Product List/Grid */}
       <div style={styles.scrollArea}>
         {filteredProducts.length > 0 ? (
-          <div style={styles.grid}>
-            {filteredProducts.map((product) => (
-              <ProductOptionBox
-                key={product.id}
-                product={product}
-                editMode={true}
-                deleteProduct={() => confirmText(product.id)}
-                setexistingProduct={setExistingProduct}
-              />
-            ))}
-          </div>
+          viewMode === "list" ? (
+            <div style={styles.tableCard}>
+              {/* Table Header */}
+              <div style={styles.tableHeader}>
+                <span style={{ ...styles.tableHeaderTxt, width: 52 }} />
+                <span style={{ ...styles.tableHeaderTxt, flex: 1 }}>Product</span>
+                <span style={{ ...styles.tableHeaderTxt, width: 90, textAlign: "center" }}>Price</span>
+                <span style={{ ...styles.tableHeaderTxt, width: 120, textAlign: "center" }}>Category</span>
+                <span style={{ ...styles.tableHeaderTxt, width: 80, textAlign: "center" }}>Options</span>
+                <span style={{ ...styles.tableHeaderTxt, width: 80, textAlign: "center" }}>Stock</span>
+                <span style={{ ...styles.tableHeaderTxt, width: 90, textAlign: "center" }}>Actions</span>
+              </div>
+              {filteredProducts.map((product, i) => (
+                <ProductOptionBox
+                  key={product.id}
+                  product={product}
+                  editMode={true}
+                  deleteProduct={() => confirmText(product.id)}
+                  setexistingProduct={setExistingProduct}
+                  viewMode="list"
+                  isLast={i === filteredProducts.length - 1}
+                />
+              ))}
+            </div>
+          ) : (
+            <div style={styles.grid}>
+              {filteredProducts.map((product) => (
+                <ProductOptionBox
+                  key={product.id}
+                  product={product}
+                  editMode={true}
+                  deleteProduct={() => confirmText(product.id)}
+                  setexistingProduct={setExistingProduct}
+                  viewMode="grid"
+                />
+              ))}
+            </div>
+          )
         ) : (
           <div style={styles.emptyState}>
             <span style={styles.emptyTitle}>
@@ -208,23 +250,15 @@ function ProductList() {
       </div>
 
       {/* Add/Edit Product Modal */}
-      <Modal
-        isVisible={!!(addProductModal || existingProduct)}
-        onBackdropPress={() => {
-          setAddProductModal(false);
-          setExistingProduct(null);
-        }}
-      >
-        <div style={styles.modalWrap}>
-          <AddProductModal
-            addProductModal={addProductModal}
-            setaddProductModal={setAddProductModal}
-            existingProduct={existingProduct}
-            setexistingProduct={setExistingProduct}
-            isProductTemplate={isProductTemplate}
-            setisProductTemplate={setIsProductTemplate}
-          />
-        </div>
+      <Modal isVisible={!!(addProductModal || existingProduct)}>
+        <AddProductModal
+          addProductModal={addProductModal}
+          setaddProductModal={setAddProductModal}
+          existingProduct={existingProduct}
+          setexistingProduct={setExistingProduct}
+          isProductTemplate={isProductTemplate}
+          setisProductTemplate={setIsProductTemplate}
+        />
       </Modal>
 
       {/* Templates Modal */}
@@ -308,6 +342,27 @@ const styles: Record<string, React.CSSProperties> = {
     outline: "none",
     lineHeight: "40px",
   },
+  viewToggle: {
+    display: "flex",
+    flexDirection: "row",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  viewToggleBtn: {
+    width: 36,
+    height: 38,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#fff",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+  },
+  viewToggleBtnActive: {
+    backgroundColor: "#0f172a",
+  },
   templateBtn: {
     height: 40,
     backgroundColor: "#fff",
@@ -376,6 +431,30 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "auto",
     paddingBottom: 20,
   },
+  // Table view
+  tableCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    overflow: "hidden",
+  },
+  tableHeader: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: "10px 20px",
+    backgroundColor: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+    gap: 12,
+  },
+  tableHeaderTxt: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#94a3b8",
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+  },
+  // Grid view
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
@@ -418,9 +497,6 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     height: "100%",
     width: "100%",
-    position: "absolute",
-    left: 0,
-    top: 0,
     justifyContent: "center",
     alignItems: "center",
   },

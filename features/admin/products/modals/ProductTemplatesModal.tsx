@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { IoClose } from "react-icons/io5";
+import React, { useMemo, useState } from "react";
+import { FiX, FiSearch, FiLayers } from "react-icons/fi";
 import productTemplates from "../components/productTemplates";
-import ProductOptionBox from "../components/ProductOptionBox";
 import { ProductProp } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
 
@@ -18,234 +17,368 @@ function ProductTemplatesModal({
 }: ProductTemplatesModalProps) {
   const { width, height } = useWindowSize();
   const catalog = productTemplates;
-  const [selectedCategory, setselectedCategory] = useState<string | null>();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    catalog.products.map((product) => {
-      if (product.category === selectedCategory) {
-        const getItem = document.getElementById(product.id);
-        if (getItem) {
-          getItem.style.display = "flex";
-        }
-      } else if (!selectedCategory) {
-        const getItem = document.getElementById(product.id);
-        if (getItem) {
-          getItem.style.display = "flex";
-        }
-      } else {
-        const getItem = document.getElementById(product.id);
-        if (getItem) {
-          getItem.style.display = "none";
-        }
-      }
+  const close = () => {
+    setproductTemplatesModalVisible(false);
+    setisProductTemplate(false);
+  };
+
+  const filteredProducts = useMemo(() => {
+    const query = search.toLowerCase().trim();
+    return catalog.products.filter((product) => {
+      const matchesCategory = !selectedCategory || product.category === selectedCategory;
+      const matchesSearch = !query || product.name.toLowerCase().includes(query);
+      return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory]);
+  }, [catalog.products, selectedCategory, search]);
+
+  const handleSelect = (product: any) => {
+    const newProduct: ProductProp = {
+      ...product,
+      isTemplate: true,
+      id: Math.random().toString(36).substr(2, 9),
+      name: product.name,
+      price: product.price,
+      options: product.options ?? [],
+      description: product.description,
+    };
+    setexistingProduct(newProduct);
+    setisProductTemplate(true);
+    setproductTemplatesModalVisible(false);
+  };
 
   return (
-    <button
-      onClick={() => {
-        setproductTemplatesModalVisible(false);
-        setisProductTemplate(false);
-      }}
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: height,
-        width: width,
-        border: "none",
-        background: "none",
-        cursor: "default",
-        padding: 0,
-      }}
-    >
+    <div style={styles.outerWrap}>
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ cursor: "default" }}
+        style={{
+          ...styles.panel,
+          height: Math.min(height - 60, 700),
+          width: Math.min(width * 0.7, 860),
+        }}
       >
-        <div
-          style={{
-            ...styles.container,
-            height: height * 0.9,
-            width: width * 0.7,
-            padding: 20,
-          }}
-        >
-          <div style={styles.topRow}>
-            <span style={styles.productManagementTxt}>
-              Product Management
-            </span>
-            <button
-              style={styles.templateBtn}
-              onClick={() => {
-                setproductTemplatesModalVisible(false);
-                setisProductTemplate(false);
-              }}
-            >
-              <IoClose style={styles.chevronDownIcon} />
-            </button>
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.headerLeft}>
+            <div style={styles.iconWrap}>
+              <FiLayers size={18} color="#1470ef" />
+            </div>
+            <div>
+              <span style={styles.title}>Product Templates</span>
+              <span style={styles.subtitle}>Start with a pre-built product and customize it</span>
+            </div>
           </div>
-          <div style={styles.categoriesScrollView}>
-            <div
-              style={styles.categoriesScrollView_contentContainerStyle}
+          <button style={styles.closeBtn} onClick={close}>
+            <FiX size={18} color="#64748b" />
+          </button>
+        </div>
+
+        {/* Search + Category Filter */}
+        <div style={styles.filterBar}>
+          <div style={styles.searchWrap}>
+            <FiSearch size={15} color="#94a3b8" style={styles.searchIcon} />
+            <input
+              style={styles.searchInput}
+              placeholder="Search templates..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div style={styles.categoryRow}>
+            <button
+              style={{
+                ...styles.categoryPill,
+                ...(selectedCategory === null ? styles.categoryPillActive : {}),
+              }}
+              onClick={() => setSelectedCategory(null)}
             >
-              {catalog.categories.map((category, index) => (
+              <span style={{
+                ...styles.categoryPillTxt,
+                ...(selectedCategory === null ? styles.categoryPillTxtActive : {}),
+              }}>All</span>
+            </button>
+            {catalog.categories.map((category) => (
+              <button
+                key={category}
+                style={{
+                  ...styles.categoryPill,
+                  ...(selectedCategory === category ? styles.categoryPillActive : {}),
+                }}
+                onClick={() => setSelectedCategory((prev) => prev === category ? null : category)}
+              >
+                <span style={{
+                  ...styles.categoryPillTxt,
+                  ...(selectedCategory === category ? styles.categoryPillTxtActive : {}),
+                }}>{category}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product Grid */}
+        <div style={styles.scrollArea}>
+          {filteredProducts.length > 0 ? (
+            <div style={styles.grid}>
+              {filteredProducts.map((product, index) => (
                 <button
                   key={index}
-                  style={{
-                    marginRight: 35,
-                    ...(selectedCategory === category
-                      ? { borderBottom: "2px solid black" }
-                      : { borderBottom: "2px solid grey" }),
-                    background: "none",
-                    border: "none",
-                    borderBottomStyle: "solid",
-                    borderBottomWidth: 2,
-                    borderBottomColor:
-                      selectedCategory === category ? "black" : "grey",
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                  onClick={() =>
-                    setselectedCategory((prev) =>
-                      prev === category ? null : category ?? null
-                    )
-                  }
+                  style={styles.templateCard}
+                  onClick={() => handleSelect(product)}
                 >
-                  <span
-                    style={{
-                      ...styles.categoryOpt1Txt,
-                      color:
-                        selectedCategory === category ? "black" : "grey",
-                    }}
-                  >
-                    {category}
-                  </span>
+                  <div style={styles.cardTop}>
+                    <span style={styles.cardName}>{product.name}</span>
+                    <span style={styles.cardPrice}>${product.price}</span>
+                  </div>
+                  {product.description && (
+                    <span style={styles.cardDesc}>{product.description}</span>
+                  )}
+                  <div style={styles.cardMeta}>
+                    {product.category && (
+                      <span style={styles.cardCategory}>{product.category}</span>
+                    )}
+                    {product.options && product.options.length > 0 && (
+                      <span style={styles.cardOptions}>
+                        {product.options.length} option{product.options.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <span style={styles.useBtn}>Use Template</span>
                 </button>
               ))}
             </div>
-          </div>
-          <div style={styles.scrollArea}>
-            <div
-              style={{
-                ...styles.scrollArea_contentContainerStyle,
-                overflow: "auto",
-                height: "100%",
-              }}
-            >
-              <div style={styles.productsMap}>
-                {catalog.products.map((product, index) => {
-                  const newProduct: ProductProp = {
-                    ...product,
-                    isTemplate: true,
-                    id: Math.random().toString(36).substr(2, 9),
-                    name: product.name,
-                    price: product.price,
-                    options: product.options ?? [],
-                    description: product.description,
-                  };
-
-                  return (
-                    <div key={index} id={product.id}>
-                      <ProductOptionBox
-                        style={styles.productOptionBox}
-                        product={newProduct}
-                        setexistingProduct={(val) => {
-                          setexistingProduct(val);
-                          setisProductTemplate(true);
-                          setproductTemplatesModalVisible(false);
-                        }}
-                        isTemplate={true}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+          ) : (
+            <div style={styles.emptyState}>
+              <span style={styles.emptyTitle}>No templates found</span>
+              <span style={styles.emptySubtitle}>Try a different search or category</span>
             </div>
-          </div>
+          )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    border: "1px solid #e6e6e6",
+  outerWrap: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    height: "100%",
+  },
+  panel: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "space-around",
+    overflow: "hidden",
   },
-  topRow: {
-    width: "95%",
-    height: 49,
+  header: {
     display: "flex",
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
+    padding: "20px 24px 16px",
+    borderBottom: "1px solid #e2e8f0",
+    flexShrink: 0,
   },
-  productManagementTxt: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 16,
+  headerLeft: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
-  templateBtn: {
+  iconWrap: {
     width: 40,
     height: 40,
-    backgroundColor: "#1c294e",
-    borderRadius: 20,
+    borderRadius: 10,
+    backgroundColor: "#eff6ff",
     display: "flex",
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    border: "none",
+    flexShrink: 0,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0f172a",
+    display: "block",
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 1,
+    display: "block",
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
     cursor: "pointer",
     padding: 0,
   },
-  chevronDownIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 30,
-  },
-  categoriesScrollView: {
-    width: "85%",
-    marginBottom: 30,
-    overflow: "auto",
-  },
-  categoriesScrollView_contentContainerStyle: {
-    width: "100%",
+  filterBar: {
     display: "flex",
     flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: "12px 24px",
+    borderBottom: "1px solid #f1f5f9",
+    flexShrink: 0,
+    flexWrap: "wrap",
   },
-  categoryOpt1Txt: {
-    color: "grey",
-    padding: 10,
-    display: "inline-block",
+  searchWrap: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: 10,
+    pointerEvents: "none" as const,
+  },
+  searchInput: {
+    height: 36,
+    width: 200,
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    paddingLeft: 32,
+    paddingRight: 10,
+    fontSize: 13,
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
+  },
+  categoryRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  categoryPill: {
+    padding: "5px 12px",
+    borderRadius: 20,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+  },
+  categoryPillActive: {
+    backgroundColor: "#0f172a",
+    borderColor: "#0f172a",
+  },
+  categoryPillTxt: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#64748b",
+  },
+  categoryPillTxtActive: {
+    color: "#fff",
   },
   scrollArea: {
     flex: 1,
-    width: "95%",
-    overflow: "hidden",
+    overflow: "auto",
+    padding: 24,
   },
-  scrollArea_contentContainerStyle: {
-    flexGrow: 1,
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+    gap: 14,
+  },
+  templateCard: {
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
+    padding: 16,
     display: "flex",
-    justifyContent: "flex-start",
+    flexDirection: "column",
+    gap: 8,
+    cursor: "pointer",
+    textAlign: "left",
+    transition: "border-color 0.15s",
   },
-  productsMap: {
-    width: "100%",
+  cardTop: {
     display: "flex",
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 8,
   },
-  productOptionBox: {
-    height: 285,
-    width: 215,
-    marginLeft: 0,
-    marginBottom: 30,
-    marginRight: 30,
+  cardName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+    flex: 1,
+  },
+  cardPrice: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0f172a",
+    flexShrink: 0,
+  },
+  cardDesc: {
+    fontSize: 12,
+    color: "#94a3b8",
+    lineHeight: "1.4",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical" as const,
+    overflow: "hidden",
+  },
+  cardMeta: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 6,
+    flexWrap: "wrap",
+    marginTop: 2,
+  },
+  cardCategory: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "#64748b",
+    backgroundColor: "#f1f5f9",
+    padding: "2px 8px",
+    borderRadius: 4,
+  },
+  cardOptions: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "#1470ef",
+    backgroundColor: "#eff6ff",
+    padding: "2px 8px",
+    borderRadius: 4,
+  },
+  useBtn: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#1470ef",
+    marginTop: 4,
+  },
+  emptyState: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "60px 20px",
+    gap: 6,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
   },
 };
 

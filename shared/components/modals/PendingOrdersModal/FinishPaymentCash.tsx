@@ -146,36 +146,46 @@ function FinishPaymentCash({
 
   return (
     <div style={styles.container}>
-      <span style={styles.paymentDetailsLabel}>Payment Details</span>
-      <div style={styles.mainPartGroup}>
-        <span style={styles.orderTotal}>
-          Total: ${parseFloat(total ?? "0").toFixed(2)}
+      <span style={styles.title}>Payment Details</span>
+
+      <div style={styles.totalRow}>
+        <span style={styles.totalLabel}>Order Total</span>
+        <span style={styles.totalValue}>
+          ${parseFloat(total ?? "0").toFixed(2)}
         </span>
+      </div>
+
+      <div style={styles.fieldGroup}>
+        <span style={styles.label}>Cash Received</span>
         <input
-          style={styles.amountPaidTxtInput}
-          placeholder="Enter Cash Recieved"
+          style={styles.input}
+          placeholder="Enter amount"
           value={cash}
           onChange={(e) => setCash(e.target.value)}
         />
-        <div style={styles.changeDueRow}>
-          <span style={styles.changeDue}>Change Due:</span>
-          <span style={styles.changeDueValue}>
-            $
-            {isNaN(parseFloat(cash))
-              ? -total
-              : (parseFloat(total) - parseFloat(cash)).toFixed(2)}
-          </span>
-        </div>
       </div>
+
+      <div style={styles.changeDueRow}>
+        <span style={styles.changeDueLabel}>Change Due</span>
+        <span style={styles.changeDueValue}>
+          $
+          {isNaN(parseFloat(cash))
+            ? -total
+            : (parseFloat(total) - parseFloat(cash)).toFixed(2)}
+        </span>
+      </div>
+
+      <div style={styles.divider} />
+
       <div style={styles.btnsGroup}>
-        <button style={styles.finishPaymentBtn} onClick={PayByCash}>
-          <span style={styles.finishPayment}>Finish Payment</span>
+        <button style={styles.payCashBtn} onClick={PayByCash}>
+          Pay Cash
         </button>
-        <button style={styles.payByCardBtn} onClick={PayByCard}>
-          <span style={styles.payByCard}>Pay By Card</span>
+        <button style={styles.payCardBtn} onClick={PayByCard}>
+          Pay By Card
         </button>
         <button style={styles.cancelBtn} onClick={() => fadeOut(false)}>
-          <span style={styles.cancel}>Cancel</span>
+          Cancel
         </button>
       </div>
     </div>
@@ -184,119 +194,130 @@ function FinishPaymentCash({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
+    display: "flex",
+    flexDirection: "column",
+    flex: 1,
+    padding: 28,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 24,
+  },
+  totalRow: {
+    display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    justifyContent: "flex-start",
-    width: 540,
-    height: 609,
-    display: "flex",
-    flexDirection: "column",
-  },
-  paymentDetailsLabel: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
-    marginTop: 55,
-    display: "block",
-  },
-  mainPartGroup: {
-    width: 441,
-    height: 157,
-    justifyContent: "space-between",
-    marginTop: 20,
-    display: "flex",
-    flexDirection: "column",
-  },
-  orderTotal: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 23,
-    display: "block",
-  },
-  amountPaidTxtInput: {
-    height: 53,
-    backgroundColor: "rgba(255,255,255,1)",
+    backgroundColor: "#f8fafc",
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#a3a3a3",
-    borderStyle: "solid" as const,
-    padding: 10,
-    width: "100%",
+    padding: "16px 0",
+    marginBottom: 20,
+  },
+  totalLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+    marginBottom: 4,
+  },
+  totalValue: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+  },
+  input: {
+    height: 44,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "0 14px",
+    fontSize: 15,
+    color: "#0f172a",
     boxSizing: "border-box" as const,
+    outline: "none",
+    width: "100%",
   },
   changeDueRow: {
-    height: 24,
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
     display: "flex",
-  },
-  changeDue: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
-    marginRight: 10,
-  },
-  changeDueValue: {
-    color: "#121212",
-    fontSize: 18,
-  },
-  btnsGroup: {
-    width: 283,
-    height: 185,
+    flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 50,
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    padding: "12px 16px",
+    marginBottom: 20,
+  },
+  changeDueLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#344054",
+  },
+  changeDueValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e2e8f0",
+    marginBottom: 20,
+  },
+  btnsGroup: {
     display: "flex",
     flexDirection: "column",
+    gap: 10,
   },
-  finishPaymentBtn: {
-    width: 283,
+  payCashBtn: {
+    width: "100%",
     height: 44,
-    backgroundColor: "#1d284e",
+    backgroundColor: "#10b981",
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    display: "flex",
     border: "none",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
     cursor: "pointer",
-  },
-  finishPayment: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 20,
-  },
-  payByCardBtn: {
-    width: 283,
-    height: 44,
-    backgroundColor: "#edf1fe",
-    borderRadius: 10,
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    display: "flex",
-    border: "none",
-    cursor: "pointer",
   },
-  payByCard: {
-    fontWeight: "700",
-    color: "rgba(0,0,0,1)",
-    fontSize: 20,
+  payCardBtn: {
+    width: "100%",
+    height: 44,
+    backgroundColor: "#1470ef",
+    borderRadius: 10,
+    border: "none",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   cancelBtn: {
-    width: 283,
+    width: "100%",
     height: 44,
-    backgroundColor: "#edf1fe",
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
     borderRadius: 10,
+    color: "#344054",
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    display: "flex",
-    border: "none",
-    cursor: "pointer",
-  },
-  cancel: {
-    fontWeight: "700",
-    color: "rgba(0,0,0,1)",
-    fontSize: 20,
   },
 };
 

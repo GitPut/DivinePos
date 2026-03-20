@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 
 interface ModalProps {
   isVisible: boolean;
@@ -71,7 +72,7 @@ const Modal = ({
     contentEnd = "none";
   }
 
-  return (
+  const modalContent = (
     <div
       ref={backdropRef}
       onClick={(e) => {
@@ -117,6 +118,9 @@ const Modal = ({
       </div>
     </div>
   );
+
+  // Use portal to render at document.body, escaping all stacking contexts
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default Modal;

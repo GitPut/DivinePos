@@ -21,89 +21,91 @@ function EmployeeClockInItem({
 
   return (
     <div style={styles.container}>
-      <div style={styles.leftSideGroup}>
-        <MdPerson style={styles.personIcon} />
+      <div style={styles.leftSide}>
+        <div style={styles.iconCircle}>
+          <MdPerson style={styles.personIcon} />
+        </div>
         <span style={styles.employeeName}>{employee.name}</span>
       </div>
-      <div style={styles.rightSideGroup}>
-        <div style={styles.textInputRow}>
-          <input
-            style={styles.textInput}
-            placeholder="PIN"
-            onChange={(e) => setenteredPin(e.target.value)}
-            value={enteredPin}
-          />
-          <button
-            style={{
-              ...styles.button,
-              ...(isClockedIn && { backgroundColor: "#FF0000" }),
-            }}
-            onClick={() => {
-              if (enteredPin !== employee.pin && employee.pin)
-                return alertP.error("Wrong PIN");
-              const date = new Date();
-              if (isClockedIn) {
-                const endTime = `${date.getHours()}:${
-                  date.getMinutes() < 10
-                    ? "0" + date.getMinutes()
-                    : date.getMinutes()
-                }`;
-                db.collection("users")
-                  .doc(auth?.currentUser?.uid)
-                  .collection("employees")
-                  .doc(employee.id)
-                  .collection("hours")
-                  .add({
-                    date: employee.clockedIn?.date,
-                    startTime: employee.clockedIn?.startTime,
-                    endTime: endTime,
-                  })
-                  .then(() => {
-                    db.collection("users")
-                      .doc(auth?.currentUser?.uid)
-                      .collection("employees")
-                      .doc(employee.id)
-                      .update({
-                        clockedIn: false,
-                      });
+      <div style={styles.rightSide}>
+        <input
+          style={styles.pinInput}
+          placeholder="PIN"
+          onChange={(e) => setenteredPin(e.target.value)}
+          value={enteredPin}
+        />
+        <button
+          style={{
+            ...styles.clockBtn,
+            ...(isClockedIn
+              ? { backgroundColor: "#ef4444" }
+              : { backgroundColor: "#10b981" }),
+          }}
+          onClick={() => {
+            if (enteredPin !== employee.pin && employee.pin)
+              return alertP.error("Wrong PIN");
+            const date = new Date();
+            if (isClockedIn) {
+              const endTime = `${date.getHours()}:${
+                date.getMinutes() < 10
+                  ? "0" + date.getMinutes()
+                  : date.getMinutes()
+              }`;
+              db.collection("users")
+                .doc(auth?.currentUser?.uid)
+                .collection("employees")
+                .doc(employee.id)
+                .collection("hours")
+                .add({
+                  date: employee.clockedIn?.date,
+                  startTime: employee.clockedIn?.startTime,
+                  endTime: endTime,
+                })
+                .then(() => {
+                  db.collection("users")
+                    .doc(auth?.currentUser?.uid)
+                    .collection("employees")
+                    .doc(employee.id)
+                    .update({
+                      clockedIn: false,
+                    });
 
-                    const prev = [...employees];
-                    prev[employees.indexOf(employee)].clockedIn = undefined;
-                    setEmployeesState(prev);
-                  });
-                setenteredPin("");
-              } else {
-                const startTime = `${date.getHours()}:${
-                  date.getMinutes() < 10
-                    ? "0" + date.getMinutes()
-                    : date.getMinutes()
-                }`;
-                db.collection("users")
-                  .doc(auth?.currentUser?.uid)
-                  .collection("employees")
-                  .doc(employee.id)
-                  .update({
-                    clockedIn: {
-                      startTime: startTime,
-                      date: date,
-                    },
-                  });
+                  const prev = [...employees];
+                  prev[employees.indexOf(employee)].clockedIn = undefined;
+                  setEmployeesState(prev);
+                });
+              setenteredPin("");
+            } else {
+              const startTime = `${date.getHours()}:${
+                date.getMinutes() < 10
+                  ? "0" + date.getMinutes()
+                  : date.getMinutes()
+              }`;
+              db.collection("users")
+                .doc(auth?.currentUser?.uid)
+                .collection("employees")
+                .doc(employee.id)
+                .update({
+                  clockedIn: {
+                    startTime: startTime,
+                    date: date,
+                  },
+                });
 
-                const prev = [...employees];
-                prev[employees.indexOf(employee)].clockedIn = {
-                  startTime: startTime,
-                  date: date,
-                };
-                setEmployeesState(prev);
-                setenteredPin("");
-              }
-            }}
-          >
-            <span style={styles.clockInLabel}>
-              {isClockedIn ? "Clock Out" : "Clock In"}
-            </span>
-          </button>
-        </div>
+              const prev = [...employees];
+              prev[employees.indexOf(employee)].clockedIn = {
+                startTime: startTime,
+                date: date,
+              };
+              setEmployeesState(prev);
+              setenteredPin("");
+            }
+          }}
+        >
+          <span style={styles.clockBtnLabel}>
+            {isClockedIn ? "Clock Out" : "Clock In"}
+          </span>
+        </button>
       </div>
     </div>
   );
@@ -111,77 +113,73 @@ function EmployeeClockInItem({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: "#edf1fe",
-    borderRadius: 10,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
     flexDirection: "row",
-    boxShadow: "3px 3px 3px rgba(0,0,0,0.2)",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 84,
-    width: 415,
-    marginBottom: 30,
+    padding: "12px 16px",
     display: "flex",
   },
-  leftSideGroup: {
-    width: 114,
-    height: 55,
+  leftSide: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    margin: 15,
     display: "flex",
+    gap: 12,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#f1f5f9",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
   personIcon: {
-    color: "#1c294e",
-    fontSize: 55,
+    color: "#64748b",
+    fontSize: 22,
   },
   employeeName: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
+    fontWeight: "600",
+    color: "#0f172a",
+    fontSize: 15,
   },
-  rightSideGroup: {
-    width: 183,
-    height: 49,
-    margin: 15,
+  rightSide: {
     flexDirection: "row",
     display: "flex",
-  },
-  textInput: {
-    width: 85,
-    height: 35,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#b4b5b8",
-    borderStyle: "solid" as const,
-    marginTop: 7,
-    textAlign: "center" as const,
-    boxSizing: "border-box" as const,
-  },
-  button: {
-    width: 92,
-    height: 49,
-    backgroundColor: "#03c551",
-    borderRadius: 10,
-    justifyContent: "center",
     alignItems: "center",
-    marginLeft: 7,
-    display: "flex",
+    gap: 8,
+  },
+  pinInput: {
+    width: 80,
+    height: 36,
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    textAlign: "center" as const,
+    fontSize: 14,
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
+  },
+  clockBtn: {
+    height: 36,
+    borderRadius: 8,
+    paddingLeft: 14,
+    paddingRight: 14,
     border: "none",
     cursor: "pointer",
-  },
-  clockInLabel: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 16,
-  },
-  textInputRow: {
-    height: 49,
-    flexDirection: "row",
-    flex: 1,
-    marginRight: -1,
     display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clockBtnLabel: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 13,
+    whiteSpace: "nowrap" as const,
   },
 };
 

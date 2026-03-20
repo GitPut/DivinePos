@@ -1,61 +1,40 @@
 import React from "react";
-import ProductImage from "shared/components/ui/ProductImage";
+import { FiImage } from "react-icons/fi";
 import { ProductProp } from "types";
 
-const ItemNoOptionsView = ({ product }: { product: ProductProp }) => {
+interface ItemNoOptionsViewProps {
+  product: ProductProp;
+  imageUrl?: string | null;
+}
+
+const ItemNoOptionsView = ({ product, imageUrl }: ItemNoOptionsViewProps) => {
+  const hasImage = imageUrl || product.imageUrl;
+  const imgSrc = imageUrl || product.imageUrl || "";
+
   return (
-    <div style={{ marginTop: 50 }}>
-      {product.hasImage ? (
-        <div style={styles.container}>
-          <ProductImage
-            source={product.imageUrl ?? ""}
-            style={styles.itemImg}
-          />
-          <div style={styles.rightSide}>
-            <span style={styles.familyCombo}>
-              {product.name ? product.name : "Product Name..."}
-            </span>
-            <span style={styles.price}>
-              ${product.price ? product.price : "Product Price..."}
-            </span>
-            <div style={styles.openBtnRow}></div>
-          </div>
-        </div>
+    <div style={styles.card}>
+      {hasImage ? (
+        <img src={imgSrc} alt="" style={styles.image} />
       ) : (
-        <div
-          style={{
-            backgroundColor: "#ffffff",
-            borderRadius: 20,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            padding: 20,
-            height: 160,
-            width: 290,
-            marginBottom: 30,
-          }}
-        >
-          <div>
-            <span style={styles.familyCombo}>
-              {product.name ? product.name : "Product Name..."}
-            </span>
-            <span style={styles.price}>
-              ${product.price ? product.price : "0"}
-            </span>
-            <div
-              style={{
-                ...styles.openBtnRow,
-                width: 250,
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "flex-end",
-                alignItems: "flex-end",
-              }}
-            ></div>
-          </div>
+        <div style={styles.imagePlaceholder}>
+          <FiImage size={32} color="#cbd5e1" />
+          <span style={styles.placeholderTxt}>No image</span>
         </div>
       )}
+      <div style={styles.info}>
+        <span style={styles.name}>
+          {product.name || "Product Name"}
+        </span>
+        {product.description && (
+          <span style={styles.description}>{product.description}</span>
+        )}
+        <span style={styles.price}>
+          ${product.price ? parseFloat(product.price).toFixed(2) : "0.00"}
+        </span>
+        {product.category && (
+          <span style={styles.category}>{product.category}</span>
+        )}
+      </div>
     </div>
   );
 };
@@ -63,54 +42,65 @@ const ItemNoOptionsView = ({ product }: { product: ProductProp }) => {
 export default ItemNoOptionsView;
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    backgroundColor: "#ffffff",
-    borderRadius: 20,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    height: 160,
-    width: 290,
-    marginBottom: 30,
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    overflow: "hidden",
   },
-  itemImg: {
-    height: 133,
-    width: 117,
-    margin: 6,
+  image: {
+    width: "100%",
+    height: 180,
+    objectFit: "contain" as const,
+    backgroundColor: "#f8fafc",
   },
-  rightSide: {
-    width: "40%",
+  imagePlaceholder: {
+    width: "100%",
+    height: 180,
+    backgroundColor: "#f8fafc",
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    margin: 6,
-    alignSelf: "stretch",
-    marginTop: 12,
-    marginRight: 11,
-    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
-  familyCombo: {
+  placeholderTxt: {
+    fontSize: 13,
+    color: "#cbd5e1",
+    fontWeight: "500",
+  },
+  info: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "20px 16px",
+    gap: 6,
+  },
+  name: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 18,
-    height: 42,
-    alignSelf: "stretch",
-    paddingBottom: 50,
-    display: "block",
+    color: "#0f172a",
+    fontSize: 20,
+    textAlign: "center" as const,
+  },
+  description: {
+    color: "#94a3b8",
+    fontSize: 13,
+    textAlign: "center" as const,
+    maxWidth: "90%",
   },
   price: {
     fontWeight: "700",
-    color: "#00c93b",
-    fontSize: 18,
-    height: 24,
-    alignSelf: "stretch",
-    display: "block",
+    color: "#0f172a",
+    fontSize: 22,
+    marginTop: 4,
   },
-  openBtnRow: {
-    height: 42,
-    display: "flex",
-    alignItems: "flex-end",
-    alignSelf: "stretch",
+  category: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#64748b",
+    backgroundColor: "#f1f5f9",
+    padding: "4px 12px",
+    borderRadius: 20,
+    marginTop: 2,
   },
 };

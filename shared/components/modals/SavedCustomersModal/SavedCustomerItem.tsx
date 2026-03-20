@@ -1,6 +1,5 @@
 import React from "react";
-import { IoPerson } from "react-icons/io5";
-import { FiChevronRight } from "react-icons/fi";
+import { FiUser, FiChevronRight } from "react-icons/fi";
 
 interface SavedCustomerItemProps {
   style?: React.CSSProperties;
@@ -10,46 +9,53 @@ interface SavedCustomerItemProps {
 function SavedCustomerItem({ style, customerName }: SavedCustomerItemProps) {
   return (
     <div style={{ ...styles.container, ...style }}>
-      <div style={styles.leftSide1}>
-        <IoPerson style={styles.savedCustomerIcon1} />
-        <span style={styles.savedCustomerName1}>{customerName}</span>
+      <div style={styles.left}>
+        <div style={styles.avatar}>
+          <FiUser size={16} color="#64748b" />
+        </div>
+        <span style={styles.name}>{customerName}</span>
       </div>
-      <FiChevronRight style={styles.onpressCustomerDetailsIcon2} />
+      <FiChevronRight size={18} color="#94a3b8" />
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: "#edf1fe",
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    padding: "10px 14px",
     display: "flex",
   },
-  leftSide1: {
-    width: 377,
-    height: 44,
+  left: {
+    display: "flex",
     flexDirection: "row",
-    justifyContent: "flex-start",
     alignItems: "center",
-    paddingLeft: 12,
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: "#f1f5f9",
     display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
-  savedCustomerIcon1: {
-    color: "#1c294e",
-    fontSize: 40,
-    paddingRight: 15,
-  },
-  savedCustomerName1: {
-    fontWeight: "700",
-    color: "#000000",
-    fontSize: 20,
-  },
-  onpressCustomerDetailsIcon2: {
-    color: "#0f0f0f",
-    fontSize: 40,
+  name: {
+    fontWeight: "600",
+    color: "#0f172a",
+    fontSize: 14,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
   },
 };
 

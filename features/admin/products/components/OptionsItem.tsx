@@ -56,9 +56,12 @@ function OptionsItem({
       obj &&
       typeof obj === "object" &&
       "label" in obj &&
+      typeof obj.label === "string" &&
+      obj.label.trim().length > 0 &&
       Array.isArray(obj.optionsList) &&
       "id" in obj &&
       "optionType" in obj &&
+      typeof obj.optionType === "string" &&
       Array.isArray(obj.selectedCaseList) &&
       "isRequired" in obj
     );

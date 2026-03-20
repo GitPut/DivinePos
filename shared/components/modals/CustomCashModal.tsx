@@ -206,6 +206,11 @@ const CustomcustomCashModal = () => {
     }
   };
 
+  const isCompleteDisabled = !(parseFloat(total) > 0 && parseFloat(cash) > 0);
+  const isRegisterDisabled =
+    storeDetails.settingsPassword?.length > 0 &&
+    managerCodeEntered.length < 1;
+
   return (
     <Modal
       isVisible={customCashModal}
@@ -216,124 +221,97 @@ const CustomcustomCashModal = () => {
     >
       <div style={{ cursor: "default" }} onClick={(e) => e.stopPropagation()}>
         <div style={styles.container}>
-          <span style={styles.paymentDetailsLabel}>
-            Custom Payment Details
-          </span>
-          <div style={styles.mainPartGroup}>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <span style={styles.changeDue}>Total:</span>
-              <input
-                style={styles.amountPaidTxtInput}
-                placeholder="Enter Total"
-                value={total}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const re = /^-?\d*\.?\d*$/;
+          <span style={styles.title}>Custom Payment</span>
 
-                  if (re.test(val)) {
-                    setTotal(val.toString());
-                  } else if (!val) {
-                    setTotal("");
-                  }
-                }}
-                onKeyDown={handleKeyDown}
-              />
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <span style={styles.changeDue}>Recieved:</span>
-              <input
-                style={styles.amountPaidTxtInput}
-                placeholder="Enter Cash Recieved"
-                value={cash}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const re = /^-?\d*\.?\d*$/;
+          <div style={styles.formRow}>
+            <span style={styles.label}>Total</span>
+            <input
+              style={styles.input}
+              placeholder="Enter Total"
+              value={total}
+              onChange={(e) => {
+                const val = e.target.value;
+                const re = /^-?\d*\.?\d*$/;
 
-                  if (re.test(val)) {
-                    setCash(val.toString());
-                  } else if (!val) {
-                    setCash("");
-                  }
-                }}
-                onKeyDown={handleKeyDown}
-              />
-            </div>
-            <div style={styles.changeDueRow}>
-              <span style={styles.changeDue}>Change Due:</span>
-              <span style={styles.changeDueValue}>
-                $
-                {parseFloat(cash) > 0 && parseFloat(total) > 0
-                  ? (parseFloat(total) - parseFloat(cash)).toFixed(2)
-                  : total}
-              </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
+                if (re.test(val)) {
+                  setTotal(val.toString());
+                } else if (!val) {
+                  setTotal("");
+                }
               }}
-            >
-              <span style={styles.changeDue}>Manager Code:</span>
-              <input
-                style={styles.amountPaidTxtInput}
-                placeholder="Enter Manger Code"
-                value={managerCodeEntered}
-                onChange={(e) => {
-                  setmanagerCodeEntered(e.target.value);
-                }}
-                onKeyDown={handleKeyDown}
-              />
-            </div>
+              onKeyDown={handleKeyDown}
+            />
           </div>
+
+          <div style={styles.formRow}>
+            <span style={styles.label}>Cash Received</span>
+            <input
+              style={styles.input}
+              placeholder="Enter Cash Received"
+              value={cash}
+              onChange={(e) => {
+                const val = e.target.value;
+                const re = /^-?\d*\.?\d*$/;
+
+                if (re.test(val)) {
+                  setCash(val.toString());
+                } else if (!val) {
+                  setCash("");
+                }
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+
+          <div style={styles.changeDueRow}>
+            <span style={styles.changeDueLabel}>Change Due</span>
+            <span style={styles.changeDueValue}>
+              $
+              {parseFloat(cash) > 0 && parseFloat(total) > 0
+                ? (parseFloat(total) - parseFloat(cash)).toFixed(2)
+                : total}
+            </span>
+          </div>
+
+          <div style={styles.formRow}>
+            <span style={styles.label}>Manager Code</span>
+            <input
+              style={styles.input}
+              placeholder="Enter Manager Code"
+              value={managerCodeEntered}
+              onChange={(e) => {
+                setmanagerCodeEntered(e.target.value);
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+
+          <div style={styles.divider} />
+
           <div style={styles.btnsGroup}>
             <button
               style={{
-                ...styles.finishPaymentBtn,
-                ...(!(parseFloat(total) > 0 && parseFloat(cash) > 0) && {
-                  opacity: 0.8,
-                }),
+                ...styles.completeBtn,
+                ...(isCompleteDisabled && { opacity: 0.5, cursor: "not-allowed" }),
               }}
               onClick={() => {
                 CompletePayment();
               }}
-              disabled={!(parseFloat(total) > 0 && parseFloat(cash) > 0)}
+              disabled={isCompleteDisabled}
             >
-              <span style={styles.finishPayment}>Finish Payment</span>
+              Complete Payment
             </button>
             <button
               style={{
-                ...styles.finishPaymentBtn,
-                ...(storeDetails.settingsPassword?.length > 0 &&
-                  managerCodeEntered.length < 1 && { opacity: 0.8 }),
+                ...styles.openRegisterBtn,
+                ...(isRegisterDisabled && { opacity: 0.5, cursor: "not-allowed" }),
               }}
               onClick={() => {
                 OpenRegister();
               }}
-              disabled={
-                storeDetails.settingsPassword?.length > 0 &&
-                managerCodeEntered.length < 1
-              }
+              disabled={isRegisterDisabled}
             >
-              <span style={styles.finishPayment}>Open Register</span>
+              Open Register
             </button>
             <button
               style={styles.cancelBtn}
@@ -342,7 +320,7 @@ const CustomcustomCashModal = () => {
                 Reset();
               }}
             >
-              <span style={styles.cancel}>Cancel</span>
+              Cancel
             </button>
           </div>
         </div>
@@ -355,100 +333,117 @@ export default CustomcustomCashModal;
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    width: 540,
-    height: 609,
-    backgroundColor: "white",
+    width: 440,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+    padding: 28,
     display: "flex",
     flexDirection: "column",
   },
-  paymentDetailsLabel: {
+  title: {
+    fontSize: 18,
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
-    marginTop: 55,
-    display: "block",
+    color: "#0f172a",
+    marginBottom: 24,
   },
-  mainPartGroup: {
-    width: 441,
+  formRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginBottom: 16,
+    gap: 16,
   },
-  orderTotal: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 23,
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+    whiteSpace: "nowrap",
+    minWidth: 100,
   },
-  amountPaidTxtInput: {
-    height: 53,
-    backgroundColor: "rgba(255,255,255,1)",
+  input: {
+    height: 44,
+    border: "1px solid #e2e8f0",
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#a3a3a3",
-    borderStyle: "solid" as const,
-    padding: 10,
-    width: "60%",
+    padding: "0 14px",
+    fontSize: 15,
+    color: "#0f172a",
     boxSizing: "border-box" as const,
+    outline: "none",
+    flex: 1,
   },
   changeDueRow: {
-    height: 24,
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    marginBottom: 20,
     display: "flex",
-  },
-  changeDue: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
-    marginRight: 10,
-  },
-  changeDueValue: {
-    color: "#121212",
-    fontSize: 18,
-  },
-  btnsGroup: {
-    width: 283,
+    flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 50,
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    padding: "12px 16px",
+    marginBottom: 16,
+  },
+  changeDueLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#344054",
+  },
+  changeDueValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e2e8f0",
+    marginBottom: 20,
+  },
+  btnsGroup: {
     display: "flex",
     flexDirection: "column",
+    gap: 10,
   },
-  finishPaymentBtn: {
-    width: 283,
+  completeBtn: {
+    width: "100%",
     height: 44,
-    backgroundColor: "#1d284e",
+    backgroundColor: "#10b981",
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    display: "flex",
     border: "none",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
     cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  finishPayment: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 20,
+  openRegisterBtn: {
+    width: "100%",
+    height: 44,
+    backgroundColor: "#1470ef",
+    borderRadius: 10,
+    border: "none",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   cancelBtn: {
-    width: 283,
+    width: "100%",
     height: 44,
-    backgroundColor: "#edf1fe",
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
     borderRadius: 10,
+    color: "#344054",
+    fontSize: 14,
+    fontWeight: "600",
+    cursor: "pointer",
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    display: "flex",
-    border: "none",
-    cursor: "pointer",
-  },
-  cancel: {
-    fontWeight: "700",
-    color: "rgba(0,0,0,1)",
-    fontSize: 20,
   },
 };

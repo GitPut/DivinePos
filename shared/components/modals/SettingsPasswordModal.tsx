@@ -80,69 +80,56 @@ const SettingsPasswordModal = () => {
     >
       <div style={{ cursor: "default" }} onClick={(e) => e.stopPropagation()}>
         <div style={styles.container}>
-          <div style={styles.topLabelSectionContainer}>
-            <span style={styles.settingsLabel}>Settings</span>
-            <span style={styles.authorizationLabel}>Authorization</span>
+          <div style={styles.header}>
+            <span style={styles.title}>Settings</span>
+            <span style={styles.subtitle}>Authorization</span>
           </div>
-          <div style={{ position: "relative" }}>
-            <input
-              placeholder="Enter Password"
-              style={{
-                ...styles.passwordTxtInput,
-                ...(!showPassword &&
-                  password.length !== 0 && { fontFamily: "Password" }),
-              }}
-              value={password}
-              onChange={(e) => setpassword(e.target.value)}
-              onKeyDown={handleKeyDown}
-              autoFocus={true}
-            />
-            <div
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                position: "absolute",
-                right: 5,
-                top: 0,
-                display: "flex",
-              }}
-            >
-              {!showPassword ? (
-                <button
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                >
-                  <IoEye size={32} color="rgba(74,74,74,1)" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                >
-                  <IoEyeOff size={32} color="rgba(74,74,74,1)" />
-                </button>
-              )}
+          <div style={styles.inputSection}>
+            <span style={styles.label}>Password</span>
+            <div style={styles.inputWrapper}>
+              <input
+                placeholder="Enter password"
+                style={{
+                  ...styles.input,
+                  ...(!showPassword &&
+                    password.length !== 0 && { fontFamily: "Password" }),
+                }}
+                value={password}
+                onChange={(e) => setpassword(e.target.value)}
+                onKeyDown={handleKeyDown}
+                autoFocus={true}
+              />
+              <button
+                onClick={() => setShowPassword((prev) => !prev)}
+                style={styles.eyeButton}
+              >
+                {!showPassword ? (
+                  <IoEye size={20} color="#94a3b8" />
+                ) : (
+                  <IoEyeOff size={20} color="#94a3b8" />
+                )}
+              </button>
             </div>
+            {inccorectPass && (
+              <span style={styles.errorText}>
+                Password is incorrect
+              </span>
+            )}
           </div>
-          {inccorectPass && (
-            <span style={{ marginBottom: 10, display: "block" }}>
-              Password is inccorect!
-            </span>
-          )}
-          <div style={styles.bottomSectionContainer}>
+          <div style={styles.bottomSection}>
             <button
               onClick={tryAuthorize}
               style={{
-                ...styles.goBtn,
-                ...(password.length < 1 && { opacity: 0.8 }),
+                ...styles.enterBtn,
+                ...(password.length < 1 && { opacity: 0.5 }),
               }}
               disabled={password.length < 1}
             >
-              <span style={styles.goBtnTxt}>Go</span>
+              <span style={styles.enterBtnTxt}>Enter</span>
             </button>
             <button
               onClick={SendEmail}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              style={styles.forgotButton}
             >
               <span style={styles.forgotPasswordTxt}>
                 Forgot Password?
@@ -159,70 +146,105 @@ export default SettingsPasswordModal;
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,1)",
-    justifyContent: "space-between",
-    width: 366,
-    height: 288,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+    width: 380,
+    padding: 28,
     display: "flex",
     flexDirection: "column",
+    gap: 24,
   },
-  topLabelSectionContainer: {
-    width: 87,
-    height: 51,
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 29,
+  header: {
     display: "flex",
     flexDirection: "column",
+    gap: 4,
   },
-  settingsLabel: {
+  title: {
+    fontSize: 20,
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 24,
+    color: "#0f172a",
   },
-  authorizationLabel: {
-    color: "#5f5f5f",
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
   },
-  passwordTxtInput: {
-    width: 294,
-    height: 36,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderWidth: 1,
-    borderColor: "#a4a4a4",
-    borderRadius: 10,
-    padding: 10,
-    borderStyle: "solid" as const,
-    boxSizing: "border-box" as const,
-  },
-  bottomSectionContainer: {
-    width: 132,
-    height: 65,
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
+  inputSection: {
     display: "flex",
     flexDirection: "column",
+    gap: 6,
   },
-  goBtn: {
-    width: 132,
-    height: 36,
-    backgroundColor: "#1d284e",
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+  },
+  inputWrapper: {
+    position: "relative",
     display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  input: {
+    width: "100%",
+    height: 44,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "0 40px 0 14px",
+    fontSize: 15,
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
+  },
+  eyeButton: {
+    background: "none",
     border: "none",
     cursor: "pointer",
+    padding: 0,
+    position: "absolute",
+    right: 12,
+    top: "50%",
+    transform: "translateY(-50%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  goBtnTxt: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 20,
+  errorText: {
+    fontSize: 13,
+    color: "#ef4444",
+  },
+  bottomSection: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+  },
+  enterBtn: {
+    width: "100%",
+    height: 44,
+    backgroundColor: "#1470ef",
+    borderRadius: 10,
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  enterBtnTxt: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 15,
+  },
+  forgotButton: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
   },
   forgotPasswordTxt: {
-    color: "#8b8484",
+    fontSize: 13,
+    color: "#94a3b8",
     textDecoration: "underline",
   },
 };

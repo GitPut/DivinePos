@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MdPerson, MdHistory } from "react-icons/md";
-import { IoClose } from "react-icons/io5";
-import { FaPhone } from "react-icons/fa";
+import { FiUser, FiPhone, FiX, FiUsers } from "react-icons/fi";
 import {
   customersState,
   setCustomersState,
@@ -52,99 +50,44 @@ const PhoneOrderModal = () => {
   );
   const alertP = useAlert();
 
-  function calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number,
-  ) {
+  function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-    return distance;
+    return R * c;
   }
 
   async function getLatLng(placeId: string) {
-    const response = await fetch(
-      "https://us-central1-posmate-5fc0a.cloudfunctions.net/getLatLng",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          placeId: placeId,
-        }),
-      },
-    );
-
+    const response = await fetch("https://us-central1-posmate-5fc0a.cloudfunctions.net/getLatLng", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ placeId }),
+    });
     try {
       const responseData = await response.json();
-
-      if (response.ok && responseData.success) {
-        return responseData.data;
-      }
-    } catch (jsonError) {
-      // ignore JSON parse errors
-    }
+      if (response.ok && responseData.success) return responseData.data;
+    } catch { /* ignore */ }
   }
 
-  async function calculateDistanceBetweenAddresses(
-    address1: string,
-    address2: string,
-  ) {
+  async function calculateDistanceBetweenAddresses(address1: string, address2: string) {
     try {
       const { lat: lat1, lng: lon1 } = await getLatLng(address1);
       const { lat: lat2, lng: lon2 } = await getLatLng(address2);
-      const distance = calculateDistance(lat1, lon1, lat2, lon2);
-      return distance;
-    } catch (error) {
-      return null;
-    }
+      return calculateDistance(lat1, lon1, lat2, lon2);
+    } catch { return null; }
   }
 
   const SaveCustomer = () => {
     addCustomerDetailsToDb({
-      name: name,
-      phone: phone,
-      address: address ? address : null,
-      buzzCode: buzzCode ? buzzCode : null,
-      unitNumber: unitNumber ? unitNumber : null,
-      orders: [],
-      id: "",
+      name, phone, address: address ? address : null, buzzCode: buzzCode ? buzzCode : null,
+      unitNumber: unitNumber ? unitNumber : null, orders: [], id: "",
     }).then((docRef) => {
       updatePosState({
-        savedCustomerDetails: {
-          name: name,
-          phone: phone,
-          address: address ? address : null,
-          buzzCode: buzzCode ? buzzCode : null,
-          unitNumber: unitNumber ? unitNumber : null,
-          orders: [],
-          id: docRef.id,
-        },
+        savedCustomerDetails: { name, phone, address: address ? address : null, buzzCode: buzzCode ? buzzCode : null, unitNumber: unitNumber ? unitNumber : null, orders: [], id: docRef.id },
       });
-
-      setCustomersState([
-        ...customers,
-        {
-          name: name,
-          phone: phone,
-          address: address ? address : null,
-          buzzCode: buzzCode ? buzzCode : null,
-          unitNumber: unitNumber ? unitNumber : null,
-          orders: [],
-          id: docRef.id,
-        },
-      ]);
+      setCustomersState([...customers, { name, phone, address: address ? address : null, buzzCode: buzzCode ? buzzCode : null, unitNumber: unitNumber ? unitNumber : null, orders: [], id: docRef.id }]);
     });
   };
 
@@ -153,263 +96,133 @@ const PhoneOrderModal = () => {
     if (address.value?.reference && storeDetails?.address?.value?.reference) {
       setlocalAddress(address);
       try {
-        calculateDistanceBetweenAddresses(
-          storeDetails?.address?.value?.reference,
-          address.value?.reference,
-        ).then((distance) => {
-          if (distance !== null) {
-            if (storeDetails.deliveryRange) {
-              if (
-                distance > parseFloat(storeDetails.deliveryRange) &&
-                deliveryChecked
-              ) {
-                alertP.error("The delivery address is out of range");
-              }
-            }
+        calculateDistanceBetweenAddresses(storeDetails?.address?.value?.reference, address.value?.reference).then((distance) => {
+          if (distance !== null && storeDetails.deliveryRange && distance > parseFloat(storeDetails.deliveryRange) && deliveryChecked) {
+            alertP.error("The delivery address is out of range");
           }
         });
-      } catch {
-        alertP.error("Error calculating distance between addresses");
-      }
+      } catch { alertP.error("Error calculating distance between addresses"); }
     }
   }, []);
 
   useEffect(() => {
     if (!localAddress) return;
-    if (
-      localAddress.value?.reference &&
-      storeDetails.address?.value?.reference
-    ) {
+    if (localAddress.value?.reference && storeDetails.address?.value?.reference) {
       updatePosState({ address: localAddress });
       try {
-        calculateDistanceBetweenAddresses(
-          storeDetails.address.value.reference,
-          localAddress.value.reference,
-        ).then((distance) => {
-          if (distance !== null) {
-            if (storeDetails.deliveryRange) {
-              if (
-                distance > parseFloat(storeDetails.deliveryRange) &&
-                deliveryChecked
-              ) {
-                alertP.error("The delivery address is out of range");
-              }
-            }
+        calculateDistanceBetweenAddresses(storeDetails.address.value.reference, localAddress.value.reference).then((distance) => {
+          if (distance !== null && storeDetails.deliveryRange && distance > parseFloat(storeDetails.deliveryRange) && deliveryChecked) {
+            alertP.error("The delivery address is out of range");
           }
         });
-      } catch {
-        alertP.error("Error calculating distance between addresses");
-      }
+      } catch { alertP.error("Error calculating distance between addresses"); }
     }
   }, [localAddress]);
 
+  const closeModal = () => {
+    if (ongoingDelivery || updatingOrder) {
+      updatePosState({ deliveryModal: false });
+    } else {
+      updatePosState({ deliveryModal: false, ongoingDelivery: false, name: "", phone: "", address: null, buzzCode: "", unitNumber: "", deliveryChecked: false });
+    }
+  };
+
   return (
-    <Modal
-      isVisible={deliveryModal}
-      onBackdropPress={() => {
-        if (ongoingDelivery || updatingOrder) {
-          updatePosState({ deliveryModal: false });
-        } else {
-          updatePosState({
-            deliveryModal: false,
-            ongoingDelivery: false,
-            name: "",
-            phone: "",
-            address: null,
-            buzzCode: "",
-            unitNumber: "",
-            deliveryChecked: false,
-          });
-        }
-      }}
-    >
+    <Modal isVisible={deliveryModal} onBackdropPress={closeModal}>
       <div style={{ cursor: "default" }} onClick={(e) => e.stopPropagation()}>
         <div style={styles.container}>
-          <div style={styles.topHeaderAndCloseGroup}>
-            <div style={styles.closeRow}>
-              <button
-                onClick={() => {
-                  if (ongoingDelivery || updatingOrder) {
-                    updatePosState({ deliveryModal: false });
-                  } else {
-                    updatePosState({
-                      deliveryModal: false,
-                      ongoingDelivery: false,
-                      name: "",
-                      phone: "",
-                      address: null,
-                      buzzCode: "",
-                      unitNumber: "",
-                      deliveryChecked: false,
-                    });
-                  }
-                }}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              >
-                <IoClose style={styles.escapeIcon} />
-              </button>
-            </div>
-            <span style={styles.phoneOrder}>Phone Order</span>
+          {/* Header */}
+          <div style={styles.header}>
+            <span style={styles.title}>Phone Order</span>
+            <button style={styles.closeBtn} onClick={closeModal}>
+              <FiX size={16} color="#64748b" />
+            </button>
           </div>
-          <div style={styles.middleGroup}>
-            <div style={styles.customerNameRow}>
-              <MdPerson style={styles.customerIcon} />
-              <input
-                placeholder="Enter name"
-                style={styles.namedTxtBox}
-                value={name}
-                onChange={(e) => {
-                  updatePosState({ name: e.target.value });
-                }}
-              />
+
+          {/* Form */}
+          <div style={styles.form}>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Customer Name</span>
+              <div style={styles.inputRow}>
+                <FiUser size={16} color="#94a3b8" />
+                <input style={styles.input} placeholder="Enter name" value={name} onChange={(e) => updatePosState({ name: e.target.value })} />
+              </div>
             </div>
-            <div style={styles.customerPhoneRow}>
-              <FaPhone style={styles.numberIcon} />
-              <input
-                placeholder="Enter phone number"
-                style={styles.phoneNumberTxtBox}
-                value={phone}
-                onChange={(e) => {
-                  updatePosState({ phone: e.target.value });
-                }}
-              />
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Phone Number</span>
+              <div style={styles.inputRow}>
+                <FiPhone size={16} color="#94a3b8" />
+                <input style={styles.input} placeholder="Enter phone number" value={phone} onChange={(e) => updatePosState({ phone: e.target.value })} />
+              </div>
             </div>
+
             {!savedCustomerDetails && (
-              <div style={styles.saveCustomerRow}>
-                <span style={styles.savedCustomersTxt}>
-                  Would you like to save customer?
-                </span>
-                <Switch
-                  isActive={saveCustomerChecked}
-                  toggleSwitch={() =>
-                    setsaveCustomerChecked(!saveCustomerChecked)
-                  }
-                />
+              <div style={styles.toggleRow}>
+                <span style={styles.toggleLabel}>Save customer for future orders</span>
+                <Switch isActive={saveCustomerChecked} toggleSwitch={() => setsaveCustomerChecked(!saveCustomerChecked)} />
               </div>
             )}
+
             {storeDetails.acceptDelivery ? (
-              <div style={styles.deliveryRow}>
-                <span style={styles.delivery}>Delivery</span>
-                <Switch
-                  isActive={deliveryChecked ?? false}
-                  toggleSwitch={() =>
-                    updatePosState({
-                      deliveryChecked: !deliveryChecked,
-                    })
-                  }
-                />
+              <div style={styles.toggleRow}>
+                <span style={styles.toggleLabel}>Delivery</span>
+                <Switch isActive={deliveryChecked ?? false} toggleSwitch={() => updatePosState({ deliveryChecked: !deliveryChecked })} />
               </div>
             ) : (
-              <span>
-                You do not accept delivery. (If you would like to please go to
-                settings and switch accept delivery to true)
-              </span>
+              <div style={styles.hintBox}>
+                <span style={styles.hintText}>Delivery is not enabled. Turn it on in Settings.</span>
+              </div>
             )}
+
             {storeDetails.acceptDelivery && deliveryChecked && (
-              <div style={styles.addressTxtBox}>
-                <div style={{ width: "60%", height: "100%" }}>
-                  <GooglePlacesAutocomplete
-                    apiOptions={{
-                      region: "CA",
-                    }}
-                    debounce={800}
-                    apiKey={GOOGLE_API_KEY}
-                    selectProps={{
-                      value: localAddress,
-                      onChange: setlocalAddress,
-                      placeholder: "Enter customer address",
-                      defaultValue: address,
-                      menuPortalTarget: document.body,
-                      styles: GooglePlacesStyles,
-                    }}
-                  />
+              <div style={styles.addressSection}>
+                <span style={styles.fieldLabel}>Delivery Address</span>
+                <div style={styles.addressRow}>
+                  <div style={{ flex: 1 }}>
+                    <GooglePlacesAutocomplete
+                      apiOptions={{ region: "CA" }}
+                      debounce={800}
+                      apiKey={GOOGLE_API_KEY}
+                      selectProps={{
+                        value: localAddress,
+                        onChange: setlocalAddress,
+                        placeholder: "Enter customer address",
+                        defaultValue: address,
+                        menuPortalTarget: document.body,
+                        styles: GooglePlacesStyles,
+                      }}
+                    />
+                  </div>
+                  <input style={styles.smallInput} placeholder="Unit #" value={unitNumber ?? ""} onChange={(e) => updatePosState({ unitNumber: e.target.value })} />
+                  <input style={styles.smallInput} placeholder="Buzz #" value={buzzCode ?? ""} onChange={(e) => updatePosState({ buzzCode: e.target.value })} />
                 </div>
-                <input
-                  placeholder="Unit #"
-                  style={{
-                    width: "18%",
-                    height: "100%",
-                    backgroundColor: "rgba(255,255,255,1)",
-                    borderWidth: 1,
-                    borderColor: "#000000",
-                    borderRadius: 10,
-                    padding: 10,
-                    borderStyle: "solid" as const,
-                    boxSizing: "border-box" as const,
-                  }}
-                  value={unitNumber ?? ""}
-                  onChange={(e) => {
-                    updatePosState({ unitNumber: e.target.value });
-                  }}
-                />
-                <input
-                  placeholder="Buzz #"
-                  style={{
-                    width: "18%",
-                    height: "100%",
-                    backgroundColor: "rgba(255,255,255,1)",
-                    borderWidth: 1,
-                    borderColor: "#000000",
-                    borderRadius: 10,
-                    padding: 10,
-                    borderStyle: "solid" as const,
-                    boxSizing: "border-box" as const,
-                  }}
-                  value={buzzCode ?? ""}
-                  onChange={(e) => {
-                    updatePosState({ buzzCode: e.target.value });
-                  }}
-                />
               </div>
             )}
           </div>
-          <div style={styles.bottomGroup}>
+
+          {/* Footer */}
+          <div style={styles.footer}>
             <button
-              style={{
-                ...styles.orderButton,
-                ...((!name || !phone) && { opacity: 0.8 }),
-              }}
+              style={{ ...styles.orderBtn, ...(!name || !phone ? { opacity: 0.5 } : {}) }}
               disabled={!name || !phone}
               onClick={() => {
                 if (name && phone) {
-                  updatePosState({
-                    deliveryModal: false,
-                    ongoingDelivery: true,
-                  });
-                  if (saveCustomerChecked) {
-                    SaveCustomer();
-                  }
+                  updatePosState({ deliveryModal: false, ongoingDelivery: true });
+                  if (saveCustomerChecked) SaveCustomer();
                 }
               }}
             >
-              <span style={styles.orderButtonTxt}>
-                {ongoingDelivery ? "Update" : "Order"}
-              </span>
+              <span style={styles.orderBtnTxt}>{ongoingDelivery ? "Update Order" : "Start Order"}</span>
             </button>
             <button
-              style={styles.viewSavedCustomersRow}
+              style={styles.savedCustomersBtn}
               onClick={() => {
                 setsaveCustomerChecked(false);
-                updatePosState({
-                  ongoingDelivery: false,
-                  name: "",
-                  phone: "",
-                  address: null,
-                  buzzCode: "",
-                  unitNumber: "",
-                  deliveryChecked: false,
-                  deliveryModal: false,
-                  saveCustomerModal: true,
-                });
+                updatePosState({ ongoingDelivery: false, name: "", phone: "", address: null, buzzCode: "", unitNumber: "", deliveryChecked: false, deliveryModal: false, saveCustomerModal: true });
               }}
             >
-              <MdHistory style={styles.savedCustomersIcon} />
-              <span style={styles.savedCustomers}>Saved Customers</span>
+              <FiUsers size={15} color="#1470ef" />
+              <span style={styles.savedCustomersTxt}>Saved Customers</span>
             </button>
           </div>
         </div>
@@ -422,170 +235,160 @@ export default PhoneOrderModal;
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: 540,
-    height: 608,
-    backgroundColor: "rgba(255,255,255,1)",
+    width: 480,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
     display: "flex",
     flexDirection: "column",
+    overflow: "hidden",
   },
-  topHeaderAndCloseGroup: {
-    width: 495,
-    height: 64,
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
+  header: {
     display: "flex",
-    flexDirection: "column",
-  },
-  closeRow: {
-    height: 36,
     flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "flex-start",
-    alignSelf: "stretch",
-    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "18px 24px",
+    borderBottom: "1px solid #e2e8f0",
   },
-  escapeIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 40,
-  },
-  phoneOrder: {
+  title: {
+    fontSize: 18,
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
-    display: "block",
+    color: "#0f172a",
   },
-  middleGroup: {
-    width: 400,
-    height: 285,
-    justifyContent: "space-between",
-    alignItems: "center",
+  closeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
     display: "flex",
-    flexDirection: "column",
-  },
-  customerNameRow: {
-    width: 400,
-    height: 52,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  customerIcon: {
-    color: "#1d284e",
-    fontSize: 45,
-  },
-  namedTxtBox: {
-    width: 344,
-    height: 52,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#000000",
-    borderStyle: "solid" as const,
-    padding: 10,
-    boxSizing: "border-box" as const,
-  },
-  customerPhoneRow: {
-    width: 394,
-    height: 52,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  numberIcon: {
-    color: "#1c294e",
-    fontSize: 42,
-  },
-  phoneNumberTxtBox: {
-    width: 344,
-    height: 52,
-    backgroundColor: "rgba(255,255,255,1)",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#000000",
-    borderStyle: "solid" as const,
-    padding: 10,
-    boxSizing: "border-box" as const,
-  },
-  saveCustomerRow: {
-    width: 396,
-    height: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  savedCustomersTxt: {
-    color: "#121212",
-    fontSize: 15,
-  },
-  deliveryRow: {
-    width: 395,
-    height: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  delivery: {
-    color: "#121212",
-    fontSize: 15,
-  },
-  addressTxtBox: {
-    width: 394,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-  },
-  bottomGroup: {
-    width: 283,
-    height: 110,
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 22,
-    display: "flex",
-    flexDirection: "column",
-  },
-  orderButton: {
-    width: 283,
-    height: 43,
-    backgroundColor: "#1c294e",
-    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    display: "flex",
-    border: "none",
     cursor: "pointer",
+    padding: 0,
   },
-  orderButtonTxt: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 20,
+  form: {
+    padding: "20px 24px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
   },
-  viewSavedCustomersRow: {
-    width: 153,
-    height: 30,
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
+  },
+  inputRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    height: 44,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "0 14px",
+  },
+  input: {
+    flex: 1,
+    height: 42,
+    border: "none",
+    outline: "none",
+    fontSize: 15,
+    color: "#0f172a",
+    backgroundColor: "transparent",
+  },
+  toggleRow: {
+    display: "flex",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    padding: "10px 14px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    border: "1px solid #f1f5f9",
+  },
+  toggleLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#0f172a",
+  },
+  hintBox: {
+    padding: "10px 14px",
+    backgroundColor: "#fef2f2",
+    borderRadius: 10,
+    border: "1px solid #fee2e2",
+  },
+  hintText: {
+    fontSize: 13,
+    color: "#ef4444",
+  },
+  addressSection: {
     display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  addressRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  smallInput: {
+    width: 80,
+    height: 44,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "0 10px",
+    fontSize: 14,
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
+    textAlign: "center" as const,
+  },
+  footer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    padding: "16px 24px 20px",
+    borderTop: "1px solid #f1f5f9",
+  },
+  orderBtn: {
+    width: "100%",
+    height: 44,
+    backgroundColor: "#1470ef",
+    borderRadius: 10,
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  },
+  orderBtnTxt: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 15,
+  },
+  savedCustomersBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     background: "none",
     border: "none",
     cursor: "pointer",
     padding: 0,
   },
-  savedCustomersIcon: {
-    color: "rgba(2,2,2,1)",
-    fontSize: 30,
-  },
-  savedCustomers: {
-    color: "#797272",
-    fontSize: 15,
+  savedCustomersTxt: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#1470ef",
   },
 };

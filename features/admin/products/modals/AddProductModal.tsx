@@ -5,7 +5,7 @@ import React, {
   useState,
 } from "react";
 import { IoCopy } from "react-icons/io5";
-import { FiUpload, FiX } from "react-icons/fi";
+import { FiUpload, FiX, FiPlus, FiClipboard, FiEye, FiEyeOff } from "react-icons/fi";
 import OptionsItem from "../components/OptionsItem";
 import {
   onlineStoreState,
@@ -73,23 +73,35 @@ function AddProductModal({
   const [scrollY, setScrollY] = useState(0);
   const scrollViewRef = useRef<HTMLDivElement>(null);
   const [selectedID, setselectedID] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const alertP = useAlert();
 
-  const confirmText = () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You will lose your new product!",
-      showCancelButton: true,
-      confirmButtonColor: "#1470ef",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, discard!",
-    }).then(function (t) {
-      if (t.value) {
-        setaddProductModal(false);
-        setexistingProduct(null);
-        setisProductTemplate(false);
-      }
-    });
+  const closeModal = () => {
+    setaddProductModal(false);
+    setexistingProduct(null);
+    setisProductTemplate(false);
+  };
+
+  const confirmDiscard = () => {
+    const hasChanges = existingProduct
+      ? JSON.stringify(existingProduct) !== JSON.stringify(newProduct)
+      : newProduct.name.length > 0;
+
+    if (hasChanges) {
+      Swal.fire({
+        title: "Discard changes?",
+        text: "You have unsaved changes that will be lost.",
+        showCancelButton: true,
+        confirmButtonColor: "#1470ef",
+        cancelButtonColor: "#94a3b8",
+        confirmButtonText: "Discard",
+        cancelButtonText: "Keep editing",
+      }).then(function (t) {
+        if (t.value) closeModal();
+      });
+    } else {
+      closeModal();
+    }
   };
 
   useEffect(() => {
@@ -120,6 +132,33 @@ function AddProductModal({
     });
   }, [newProductOptions]);
 
+  // Clean up incomplete options, selections, and visibility rules before saving
+  function cleanOptions(options: typeof newProductOptions) {
+    return options
+      .filter((opt) => opt.label && opt.label.trim().length > 0)
+      .map((opt) => {
+        const cleaned = { ...opt };
+        // Remove selections without a name
+        cleaned.optionsList = (cleaned.optionsList ?? []).filter(
+          (sel) => sel.label && sel.label.trim().length > 0
+        );
+        // Remove incomplete visibility rules
+        if (cleaned.selectedCaseList) {
+          cleaned.selectedCaseList = cleaned.selectedCaseList.filter(
+            (rule: any) => rule.selectedCaseKey && rule.selectedCaseValue
+          );
+          if (cleaned.selectedCaseList.length === 0) {
+            cleaned.selectedCaseList = [];
+          }
+        }
+        // Default optionType to "Row" if missing
+        if (!cleaned.optionType) {
+          cleaned.optionType = "Row";
+        }
+        return cleaned;
+      });
+  }
+
   function handleDataUpdate() {
     if (!newProduct.name) {
       alertP.error("Please enter a product name");
@@ -130,11 +169,14 @@ function AddProductModal({
       return;
     }
 
+    // Clean options before saving
+    const cleanedOptions = cleanOptions(newProductOptions);
+
     if (existingProduct && !isProductTemplate) {
       const copy = structuredClone(catalog.products);
       const newProductUseRef: ProductProp = {
         ...newProduct,
-        options: newProductOptions,
+        options: cleanedOptions,
       };
       const findIndex = copy.findIndex((e) => e.id === existingProduct.id);
 
@@ -150,123 +192,66 @@ function AddProductModal({
               .then((url) => {
                 newProductUseRef.hasImage = true;
                 newProductUseRef.imageUrl = url;
-                if (
-                  newProductUseRef.hasImage &&
-                  !selectedFile &&
-                  !currentImgUrl
-                ) {
-                  storage
-                    .ref(
-                      auth.currentUser?.uid + "/images/" + existingProduct.id
-                    )
-                    .delete();
+                if (newProductUseRef.hasImage && !selectedFile && !currentImgUrl) {
+                  storage.ref(auth.currentUser?.uid + "/images/" + existingProduct.id).delete();
                   newProductUseRef.hasImage = false;
                   newProductUseRef.imageUrl = null;
                 }
-
                 copy[findIndex] = newProductUseRef;
                 if (!newProductUseRef.id) return;
-
-                setStoreProductsState({
-                  categories: catalog.categories,
-                  products: copy.sort(customSort),
-                });
+                setStoreProductsState({ categories: catalog.categories, products: copy.sort(customSort) });
                 const imgBatch = db.batch();
-                imgBatch.set(
-                  db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()),
-                  newProductUseRef
-                );
+                imgBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()), newProductUseRef);
                 if (onlineStoreDetails.onlineStoreSetUp) {
-                  imgBatch.set(
-                    db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()),
-                    newProductUseRef
-                  );
+                  imgBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()), newProductUseRef);
                 }
                 imgBatch.commit();
               });
           });
       } else {
         if (newProductUseRef.hasImage && !selectedFile && !currentImgUrl) {
-          storage
-            .ref(auth.currentUser?.uid + "/images/" + existingProduct.id)
-            .delete();
+          storage.ref(auth.currentUser?.uid + "/images/" + existingProduct.id).delete();
           newProductUseRef.hasImage = false;
           newProductUseRef.imageUrl = null;
         }
-
         copy[findIndex] = newProductUseRef;
         if (!newProductUseRef.id) return;
-
-        setStoreProductsState({
-          categories: catalog.categories,
-          products: copy.sort(customSort),
-        });
+        setStoreProductsState({ categories: catalog.categories, products: copy.sort(customSort) });
         const updateBatch = db.batch();
-        updateBatch.set(
-          db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()),
-          newProductUseRef
-        );
+        updateBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()), newProductUseRef);
         if (onlineStoreDetails.onlineStoreSetUp) {
-          updateBatch.set(
-            db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()),
-            newProductUseRef
-          );
+          updateBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()), newProductUseRef);
         }
         updateBatch.commit();
       }
     } else {
       newProduct.isTemplate = false;
+      newProduct.options = cleanedOptions;
       if (selectedFile) {
-        storage
-          .ref(auth.currentUser?.uid + "/images/" + newProduct.id)
-          .put(selectedFile)
-          .then(() => {
-            storage
-              .ref(auth.currentUser?.uid + "/images/" + newProduct.id)
-              .getDownloadURL()
-              .then((url) => {
-                newProduct.hasImage = true;
-                newProduct.imageUrl = url;
-                const newImgBatch = db.batch();
-                newImgBatch.set(
-                  db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""),
-                  newProduct
-                );
-                if (onlineStoreDetails.onlineStoreSetUp) {
-                  newImgBatch.set(
-                    db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""),
-                    newProduct
-                  );
-                }
-                newImgBatch.commit();
-                setStoreProductsState({
-                  categories: catalog.categories,
-                  products: [...catalog.products, newProduct].sort(customSort),
-                });
-              });
+        storage.ref(auth.currentUser?.uid + "/images/" + newProduct.id).put(selectedFile).then(() => {
+          storage.ref(auth.currentUser?.uid + "/images/" + newProduct.id).getDownloadURL().then((url) => {
+            newProduct.hasImage = true;
+            newProduct.imageUrl = url;
+            const newImgBatch = db.batch();
+            newImgBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""), newProduct);
+            if (onlineStoreDetails.onlineStoreSetUp) {
+              newImgBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""), newProduct);
+            }
+            newImgBatch.commit();
+            setStoreProductsState({ categories: catalog.categories, products: [...catalog.products, newProduct].sort(customSort) });
           });
+        });
       } else {
         const newBatch = db.batch();
-        newBatch.set(
-          db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""),
-          newProduct
-        );
+        newBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""), newProduct);
         if (onlineStoreDetails.onlineStoreSetUp) {
-          newBatch.set(
-            db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""),
-            newProduct
-          );
+          newBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""), newProduct);
         }
         newBatch.commit();
-        setStoreProductsState({
-          categories: catalog.categories,
-          products: [...catalog.products, newProduct].sort(customSort),
-        });
+        setStoreProductsState({ categories: catalog.categories, products: [...catalog.products, newProduct].sort(customSort) });
       }
     }
-    setaddProductModal(false);
-    setexistingProduct(null);
-    setisProductTemplate(false);
+    closeModal();
   }
 
   const changeHandler = (event: ChangeEvent<HTMLInputElement>) => {
@@ -278,408 +263,254 @@ function AddProductModal({
     }
   };
 
-  const modalTitle = isProductTemplate
-    ? "Add Product"
-    : existingProduct
-    ? "Update Product"
-    : "Add Product";
+  const modalTitle = isProductTemplate ? "Add Product" : existingProduct ? "Update Product" : "Add Product";
+  const canShowPreview = width > 900;
 
   return (
-    <div
-      onClick={() => {
-        if (
-          existingProduct &&
-          JSON.stringify(existingProduct) !== JSON.stringify(newProduct)
-        ) {
-          confirmText();
-        } else if (!existingProduct && newProduct.name.length > 0) {
-          confirmText();
-        } else {
-          setaddProductModal(false);
-          setexistingProduct(null);
-          setisProductTemplate(false);
-        }
-      }}
-      style={styles.backdrop}
-    >
-      <div onClick={(ev) => ev.stopPropagation()} style={{ cursor: "default" }}>
-        <div style={styles.panelsRow}>
-          {/* Left Panel — Editor */}
+    <div style={styles.fullScreen}>
+      {/* Top Bar */}
+      <div style={styles.topBar}>
+        <div style={styles.topBarLeft}>
+          <button style={styles.closeBtn} onClick={confirmDiscard}>
+            <FiX size={18} color="#64748b" />
+          </button>
+          <span style={styles.topBarTitle}>{modalTitle}</span>
+        </div>
+        <div style={styles.topBarRight}>
+          {existingProduct && !isProductTemplate && (
+            <button
+              style={styles.duplicateBtn}
+              onClick={() => {
+                const copy: ProductProp = { ...existingProduct };
+                copy.name = copy.name + " Copy";
+                copy.imageUrl = "";
+                copy.hasImage = false;
+                copy.id = Math.random().toString(36).substr(2, 9);
+                const dupBatch = db.batch();
+                dupBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(copy.id.toString()), copy);
+                if (onlineStoreDetails.onlineStoreSetUp) {
+                  dupBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(copy.id.toString()), copy);
+                }
+                dupBatch.commit();
+                setStoreProductsState({ categories: catalog.categories, products: [...catalog.products, copy] });
+                setexistingProduct(copy);
+              }}
+            >
+              <IoCopy size={14} color="#475569" />
+              <span style={styles.actionBtnTxt}>Duplicate</span>
+            </button>
+          )}
+          {canShowPreview && (
+            <button
+              style={styles.previewToggleBtn}
+              onClick={() => setShowPreview(!showPreview)}
+            >
+              {showPreview ? <FiEyeOff size={14} color="#475569" /> : <FiEye size={14} color="#475569" />}
+              <span style={styles.actionBtnTxt}>{showPreview ? "Hide Preview" : "Show Preview"}</span>
+            </button>
+          )}
+          <button style={styles.cancelBtn} onClick={confirmDiscard}>
+            <span style={styles.cancelTxt}>Cancel</span>
+          </button>
+          <button style={styles.saveBtn} onClick={handleDataUpdate}>
+            <span style={styles.saveTxt}>
+              {isProductTemplate ? "Add Product" : existingProduct ? "Save Changes" : "Add Product"}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={styles.mainContent}>
+        {/* Editor */}
+        <div style={{ ...styles.editorPanel, flex: showPreview ? "0 0 60%" : "1 1 100%", maxWidth: showPreview ? "none" : 860, margin: showPreview ? 0 : "0 auto" }}>
           <div
-            style={{
-              ...styles.panel,
-              height: height * 0.9,
-              width: width * 0.6,
-            }}
+            style={styles.scrollArea}
+            onScroll={(event) => setScrollY(event.currentTarget.scrollTop)}
+            ref={scrollViewRef}
           >
-            {/* Header */}
-            <div style={styles.headerRow}>
-              <div>
-                <span style={styles.title}>{modalTitle}</span>
-                <span style={styles.subtitle}>
-                  {existingProduct && !isProductTemplate
-                    ? "Edit product details, pricing, and options"
-                    : "Fill in details to create a new product"}
-                </span>
+            <input type="file" ref={hiddenFileInput} onChange={changeHandler} style={{ display: "none" }} accept="image/*" />
+
+            {/* Product Name + Price — most important, always on top */}
+            <div style={styles.topFields}>
+              <div style={{ ...styles.fieldGroup, flex: 2 }}>
+                <span style={styles.fieldLabel}>Product Name</span>
+                <input
+                  style={styles.inputLg}
+                  placeholder="e.g. Margherita Pizza, Iced Latte, Caesar Salad"
+                  onChange={(ev) => setnewProduct((prev) => ({ ...prev, name: ev.target.value }))}
+                  value={newProduct?.name}
+                  autoFocus
+                />
               </div>
-              <div style={styles.headerActions}>
-                {existingProduct && !isProductTemplate && (
-                  <button
-                    style={styles.duplicateBtn}
-                    onClick={() => {
-                      const copy: ProductProp = { ...existingProduct };
-                      copy.name = copy.name + " Copy";
-                      copy.imageUrl = "";
-                      copy.hasImage = false;
-                      copy.id = Math.random().toString(36).substr(2, 9);
-                      const dupBatch = db.batch();
-                      dupBatch.set(
-                        db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(copy.id.toString()),
-                        copy
-                      );
-                      if (onlineStoreDetails.onlineStoreSetUp) {
-                        dupBatch.set(
-                          db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(copy.id.toString()),
-                          copy
-                        );
-                      }
-                      dupBatch.commit();
-                      setStoreProductsState({
-                        categories: catalog.categories,
-                        products: [...catalog.products, copy],
-                      });
-                      setexistingProduct(copy);
-                    }}
-                  >
-                    <IoCopy size={14} color="#475569" />
-                    <span style={styles.duplicateTxt}>Duplicate</span>
-                  </button>
-                )}
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Price ($)</span>
+                <input
+                  style={styles.inputLg}
+                  placeholder="0.00"
+                  onChange={(ev) => {
+                    const val = ev.target.value;
+                    const re = /^-?\d*\.?\d*$/;
+                    if (re.test(val)) {
+                      setnewProduct((prev) => ({ ...prev, price: val.replace(/^0+/, "") }));
+                    } else if (!val) {
+                      setnewProduct((prev) => ({ ...prev, price: "0" }));
+                    }
+                  }}
+                  value={newProduct?.price.toString()}
+                />
               </div>
             </div>
 
-            {/* Scrollable Content */}
-            <div
-              style={styles.scrollArea}
-              onScroll={(event) => {
-                setScrollY(event.currentTarget.scrollTop);
-              }}
-              ref={scrollViewRef}
-            >
-              <input
-                type="file"
-                ref={hiddenFileInput}
-                onChange={changeHandler}
-                style={{ display: "none" }}
-                accept="image/*"
-              />
-
-              {/* Image Upload */}
-              <div style={styles.fieldGroup}>
-                <span style={styles.fieldLabel}>Product Image</span>
-                <button onClick={handleClick} style={styles.imageUploadArea}>
-                  {selectedFile ? (
-                    <>
-                      <img
-                        src={URL.createObjectURL(selectedFile)}
-                        style={styles.previewImage}
-                        key={selectedFile.name}
-                        alt=""
-                      />
-                      <button
-                        style={styles.removeImageBtn}
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          setSelectedFile(null);
-                        }}
-                      >
-                        <FiX size={14} color="#fff" />
-                      </button>
-                    </>
-                  ) : currentImgUrl ? (
-                    <>
-                      <img
-                        src={currentImgUrl}
-                        style={styles.previewImage}
-                        key={currentImgUrl}
-                        alt=""
-                      />
-                      <button
-                        style={styles.removeImageBtn}
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          setSelectedFile(null);
-                          setcurrentImgUrl(null);
-                        }}
-                      >
-                        <FiX size={14} color="#fff" />
-                      </button>
-                    </>
-                  ) : (
-                    <div style={styles.uploadPlaceholder}>
-                      <FiUpload size={24} color="#94a3b8" />
-                      <span style={styles.uploadTxt}>
-                        Click to upload an image
-                      </span>
-                      <span style={styles.uploadHint}>Max 5MB</span>
-                    </div>
-                  )}
-                </button>
-              </div>
-
-              {/* Product Details Grid */}
-              <div style={styles.fieldsGrid}>
-                <div style={styles.fieldGroup}>
-                  <span style={styles.fieldLabel}>Product Name</span>
-                  <input
-                    style={styles.input}
-                    placeholder="Enter product name"
-                    onChange={(ev) =>
-                      setnewProduct((prevState) => ({
-                        ...prevState,
-                        name: ev.target.value,
-                      }))
-                    }
-                    value={newProduct?.name}
-                  />
-                </div>
-                <div style={styles.fieldGroup}>
-                  <span style={styles.fieldLabel}>Base Price</span>
-                  <input
-                    style={styles.input}
-                    placeholder="0.00"
-                    onChange={(ev) => {
-                      const val = ev.target.value;
-                      const re = /^-?\d*\.?\d*$/;
-                      if (re.test(val)) {
-                        setnewProduct((prevState) => ({
-                          ...prevState,
-                          price: val.replace(/^0+/, ""),
-                        }));
-                      } else if (!val) {
-                        setnewProduct((prevState) => ({
-                          ...prevState,
-                          price: "0",
-                        }));
-                      }
-                    }}
-                    value={newProduct?.price.toString()}
-                  />
-                </div>
+            {/* Details Card */}
+            <div style={styles.card}>
+              <span style={styles.cardTitle}>Details</span>
+              <div style={styles.fieldsRow}>
                 <div style={styles.fieldGroup}>
                   <span style={styles.fieldLabel}>Category</span>
                   <DropdownStringOptions
                     placeholder="Choose category"
-                    value={
-                      newProduct?.category ? newProduct.category : null
-                    }
-                    setValue={(val) => {
-                      setnewProduct((prevState) => ({
-                        ...prevState,
-                        category: val,
-                      }));
-                    }}
+                    value={newProduct?.category ? newProduct.category : null}
+                    setValue={(val) => setnewProduct((prev) => ({ ...prev, category: val }))}
                     options={selectValues}
                     scrollY={scrollY}
                   />
                 </div>
                 <div style={styles.fieldGroup}>
-                  <span style={styles.fieldLabel}>Rank</span>
+                  <span style={styles.fieldLabel}>Display Order</span>
                   <input
                     style={styles.input}
-                    placeholder="N/A"
+                    placeholder="Auto"
                     onChange={(ev) => {
                       const val = ev.target.value;
                       const re = /^[0-9]+$/;
                       if (re.test(val)) {
-                        setnewProduct((prevState) => ({
-                          ...prevState,
-                          rank: val,
-                        }));
+                        setnewProduct((prev) => ({ ...prev, rank: val }));
                       } else if (!val) {
-                        setnewProduct((prevState) => ({
-                          ...prevState,
-                          rank: undefined,
-                        }));
+                        setnewProduct((prev) => ({ ...prev, rank: undefined }));
                       }
                     }}
                     value={newProduct?.rank?.toString()}
                   />
                 </div>
               </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Description <span style={styles.optionalTag}>optional</span></span>
+                <textarea
+                  style={styles.textarea}
+                  placeholder="Describe this product for your customers"
+                  onChange={(ev) => setnewProduct((prev) => ({ ...prev, description: ev.target.value }))}
+                  value={newProduct?.description}
+                />
+              </div>
+            </div>
 
-              {/* Toggle Rows */}
+            {/* Image Card */}
+            <div style={styles.card}>
+              <span style={styles.cardTitle}>Image <span style={styles.optionalTag}>optional</span></span>
+              <button onClick={handleClick} style={styles.imageUploadArea}>
+                {selectedFile ? (
+                  <>
+                    <img src={URL.createObjectURL(selectedFile)} style={styles.previewImage} key={selectedFile.name} alt="" />
+                    <button style={styles.removeImageBtn} onClick={(ev) => { ev.stopPropagation(); setSelectedFile(null); }}>
+                      <FiX size={14} color="#fff" />
+                    </button>
+                  </>
+                ) : currentImgUrl ? (
+                  <>
+                    <img src={currentImgUrl} style={styles.previewImage} key={currentImgUrl} alt="" />
+                    <button style={styles.removeImageBtn} onClick={(ev) => { ev.stopPropagation(); setSelectedFile(null); setcurrentImgUrl(null); }}>
+                      <FiX size={14} color="#fff" />
+                    </button>
+                  </>
+                ) : (
+                  <div style={styles.uploadPlaceholder}>
+                    <FiUpload size={20} color="#94a3b8" />
+                    <span style={styles.uploadTxt}>Click to upload</span>
+                    <span style={styles.uploadHint}>PNG, JPG up to 5MB</span>
+                  </div>
+                )}
+              </button>
+            </div>
+
+            {/* Settings Card */}
+            <div style={styles.card}>
+              <span style={styles.cardTitle}>Settings</span>
               <div style={styles.toggleSection}>
                 <div style={styles.toggleRow}>
                   <div>
                     <span style={styles.toggleLabel}>Hide from Online Store</span>
-                    <span style={styles.toggleHint}>Product won't appear on your online store</span>
+                    <span style={styles.toggleHint}>Won't appear on your online store</span>
                   </div>
-                  <Switch
-                    isActive={newProduct?.dontDisplayOnOnlineStore ?? false}
-                    toggleSwitch={() => {
-                      setnewProduct((prevState) => ({
-                        ...prevState,
-                        dontDisplayOnOnlineStore:
-                          !prevState.dontDisplayOnOnlineStore,
-                      }));
-                    }}
-                  />
+                  <Switch isActive={newProduct?.dontDisplayOnOnlineStore ?? false} toggleSwitch={() => setnewProduct((prev) => ({ ...prev, dontDisplayOnOnlineStore: !prev.dontDisplayOnOnlineStore }))} />
                 </div>
-                <div style={styles.toggleRow}>
+                <div style={{ ...styles.toggleRow, borderBottom: "none" }}>
                   <div>
                     <span style={styles.toggleLabel}>Track Inventory</span>
                     <span style={styles.toggleHint}>Monitor stock levels for this product</span>
                   </div>
-                  <Switch
-                    isActive={newProduct?.trackStock ?? false}
-                    toggleSwitch={() => {
-                      setnewProduct((prevState) => ({
-                        ...prevState,
-                        trackStock: !prevState.trackStock,
-                      }));
-                    }}
-                  />
+                  <Switch isActive={newProduct?.trackStock ?? false} toggleSwitch={() => setnewProduct((prev) => ({ ...prev, trackStock: !prev.trackStock }))} />
                 </div>
               </div>
+            </div>
 
-              {/* Inventory Tracking */}
-              {newProduct?.trackStock && (
-                <div style={styles.inventorySection}>
-                  <div style={styles.trackingToggleRow}>
-                    <button
-                      style={{
-                        ...styles.trackingToggleBtn,
-                        ...(!newProduct.recipe || newProduct.recipe.length === 0
-                          ? styles.trackingToggleBtnActive
-                          : {}),
-                      }}
-                      onClick={() => setnewProduct((prev) => {
-                        const clone = { ...prev };
-                        delete clone.recipe;
-                        return clone;
-                      })}
-                    >
-                      <span
-                        style={{
-                          ...styles.trackingToggleTxt,
-                          ...(!newProduct.recipe || newProduct.recipe.length === 0
-                            ? styles.trackingToggleTxtActive
-                            : {}),
-                        }}
-                      >
-                        Track by Count
-                      </span>
-                    </button>
-                    <button
-                      style={{
-                        ...styles.trackingToggleBtn,
-                        ...(newProduct.recipe && newProduct.recipe.length > 0
-                          ? styles.trackingToggleBtnActive
-                          : {}),
-                      }}
-                      onClick={() => setnewProduct((prev) => ({ ...prev, recipe: prev.recipe && prev.recipe.length > 0 ? prev.recipe : [] }))}
-                    >
-                      <span
-                        style={{
-                          ...styles.trackingToggleTxt,
-                          ...(newProduct.recipe && newProduct.recipe.length > 0
-                            ? styles.trackingToggleTxtActive
-                            : {}),
-                        }}
-                      >
-                        Track by Recipe
-                      </span>
-                    </button>
-                  </div>
-
-                  {(!newProduct.recipe || newProduct.recipe.length === 0) && !Array.isArray(newProduct.recipe) && (
-                    <div style={styles.stockFieldsRow}>
-                      <div style={styles.fieldGroup}>
-                        <span style={styles.fieldLabel}>Stock Quantity</span>
-                        <input
-                          type="number"
-                          min="0"
-                          style={styles.input}
-                          placeholder="0"
-                          value={newProduct.stockQuantity ?? ""}
-                          onChange={(ev) => {
-                            const val = parseInt(ev.target.value, 10);
-                            setnewProduct((prevState) => ({
-                              ...prevState,
-                              stockQuantity: isNaN(val) ? 0 : val,
-                            }));
-                          }}
-                        />
-                      </div>
-                      <div style={styles.fieldGroup}>
-                        <span style={styles.fieldLabel}>Low Stock Alert</span>
-                        <input
-                          type="number"
-                          min="0"
-                          style={styles.input}
-                          placeholder="5"
-                          value={newProduct.lowStockThreshold ?? ""}
-                          onChange={(ev) => {
-                            const val = parseInt(ev.target.value, 10);
-                            setnewProduct((prevState) => ({
-                              ...prevState,
-                              lowStockThreshold: isNaN(val) ? 5 : val,
-                            }));
-                          }}
-                        />
-                      </div>
-                      <div style={styles.fieldGroup}>
-                        <span style={styles.fieldLabel}>Cost Price</span>
-                        <input
-                          style={styles.input}
-                          placeholder="0.00"
-                          value={newProduct.costPrice ?? ""}
-                          onChange={(ev) => {
-                            setnewProduct((prevState) => ({
-                              ...prevState,
-                              costPrice: ev.target.value,
-                            }));
-                          }}
-                        />
-                      </div>
+            {/* Inventory Card */}
+            {newProduct?.trackStock && (
+              <div style={styles.card}>
+                <span style={styles.cardTitle}>Inventory</span>
+                <div style={styles.trackingToggleRow}>
+                  <button
+                    style={{ ...styles.trackingToggleBtn, ...(!newProduct.recipe || newProduct.recipe.length === 0 ? styles.trackingToggleBtnActive : {}) }}
+                    onClick={() => setnewProduct((prev) => { const clone = { ...prev }; delete clone.recipe; return clone; })}
+                  >
+                    <span style={{ ...styles.trackingToggleTxt, ...(!newProduct.recipe || newProduct.recipe.length === 0 ? styles.trackingToggleTxtActive : {}) }}>Simple Count</span>
+                  </button>
+                  <button
+                    style={{ ...styles.trackingToggleBtn, ...(newProduct.recipe && newProduct.recipe.length > 0 ? styles.trackingToggleBtnActive : {}) }}
+                    onClick={() => setnewProduct((prev) => ({ ...prev, recipe: prev.recipe && prev.recipe.length > 0 ? prev.recipe : [] }))}
+                  >
+                    <span style={{ ...styles.trackingToggleTxt, ...(newProduct.recipe && newProduct.recipe.length > 0 ? styles.trackingToggleTxtActive : {}) }}>Recipe Based</span>
+                  </button>
+                </div>
+                {(!newProduct.recipe || newProduct.recipe.length === 0) && !Array.isArray(newProduct.recipe) && (
+                  <div style={styles.fieldsRow}>
+                    <div style={styles.fieldGroup}>
+                      <span style={styles.fieldLabel}>Stock Quantity</span>
+                      <input type="number" min="0" style={styles.input} placeholder="0" value={newProduct.stockQuantity ?? ""} onChange={(ev) => { const val = parseInt(ev.target.value, 10); setnewProduct((prev) => ({ ...prev, stockQuantity: isNaN(val) ? 0 : val })); }} />
                     </div>
-                  )}
-
-                  {Array.isArray(newProduct.recipe) && (
-                    <RecipeEditor
-                      recipe={newProduct.recipe}
-                      onRecipeChange={(recipe: RecipeItem[]) =>
-                        setnewProduct((prev) => ({ ...prev, recipe }))
-                      }
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Description */}
-              <div style={styles.fieldGroup}>
-                <span style={styles.fieldLabel}>Description</span>
-                <textarea
-                  style={styles.textarea}
-                  placeholder="Enter product description"
-                  onChange={(ev) =>
-                    setnewProduct((prevState) => ({
-                      ...prevState,
-                      description: ev.target.value,
-                    }))
-                  }
-                  value={newProduct?.description}
-                />
+                    <div style={styles.fieldGroup}>
+                      <span style={styles.fieldLabel}>Low Stock Alert</span>
+                      <input type="number" min="0" style={styles.input} placeholder="5" value={newProduct.lowStockThreshold ?? ""} onChange={(ev) => { const val = parseInt(ev.target.value, 10); setnewProduct((prev) => ({ ...prev, lowStockThreshold: isNaN(val) ? 5 : val })); }} />
+                    </div>
+                    <div style={styles.fieldGroup}>
+                      <span style={styles.fieldLabel}>Cost Price</span>
+                      <input style={styles.input} placeholder="0.00" value={newProduct.costPrice ?? ""} onChange={(ev) => setnewProduct((prev) => ({ ...prev, costPrice: ev.target.value }))} />
+                    </div>
+                  </div>
+                )}
+                {Array.isArray(newProduct.recipe) && (
+                  <RecipeEditor recipe={newProduct.recipe} onRecipeChange={(recipe: RecipeItem[]) => setnewProduct((prev) => ({ ...prev, recipe }))} />
+                )}
               </div>
+            )}
 
-              {/* Options */}
-              <div style={styles.optionsSection}>
-                <span style={styles.sectionTitle}>Options</span>
-                {newProduct.options.map((option, index) => (
+            {/* Options Card */}
+            <div style={styles.card}>
+              <div style={styles.cardTitleRow}>
+                <span style={styles.cardTitle}>
+                  Customization Options
+                  {newProduct.options.length > 0 && (
+                    <span style={styles.optionCount}>{newProduct.options.length}</span>
+                  )}
+                </span>
+                <span style={styles.cardSubtitle}>
+                  Let customers customize this product (sizes, toppings, extras, etc.)
+                </span>
+              </div>
+              {newProduct.options.length > 0 ? (
+                newProduct.options.map((option, index) => (
                   <OptionsItem
                     key={option.id}
-                    style={styles.optionsItem}
                     item={option}
                     index={index}
                     setnewProduct={setnewProduct}
@@ -693,155 +524,113 @@ function AddProductModal({
                     selectedID={selectedID}
                     setselectedID={setselectedID}
                   />
-                ))}
-                {newProduct.options.length === 0 && (
+                ))
+              ) : (
+                <div style={styles.emptyOptions}>
+                  <span style={styles.emptyOptionsTxt}>No options yet</span>
+                  <span style={styles.emptyOptionsHint}>
+                    Create options like "Size" with choices like Small, Medium, Large — each with optional price changes
+                  </span>
                   <div style={styles.optionBtnsRow}>
                     <button
                       onClick={() => {
-                        setnewProductOptions([
-                          {
-                            label: null,
-                            optionsList: [],
-                            numOfSelectable: null,
-                            id: Math.random().toString(36).substr(2, 9),
-                            optionType: null,
-                            selectedCaseList: [],
-                            isRequired: false,
-                          },
-                        ]);
+                        setnewProductOptions([{
+                          label: null, optionsList: [], numOfSelectable: null,
+                          id: Math.random().toString(36).substr(2, 9),
+                          optionType: null, selectedCaseList: [], isRequired: false,
+                        }]);
                         setindexOn(0);
                       }}
-                      disabled={
-                        newProduct?.options.length > 0 &&
-                        newProduct?.options[newProduct?.options.length - 1]
-                          .label === null
-                      }
                       style={styles.createOptionBtn}
                     >
+                      <FiPlus size={15} color="#fff" />
                       <span style={styles.createOptionTxt}>Create Option</span>
                     </button>
                     <button
                       style={styles.pasteOptionBtn}
                       onClick={() => {
                         navigator.clipboard.readText().then((text) => {
-                          try {
-                            const parsed = JSON.parse(text);
-                            setnewProductOptions([parsed]);
-                            setindexOn(0);
-                          } catch (e) {
-                            alertP.error("Invalid JSON");
-                          }
+                          try { const parsed = JSON.parse(text); setnewProductOptions([parsed]); setindexOn(0); }
+                          catch (e) { alertP.error("Invalid clipboard data"); }
                         });
                       }}
                     >
+                      <FiClipboard size={15} color="#475569" />
                       <span style={styles.pasteOptionTxt}>Paste Option</span>
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-
-            {/* Footer */}
-            <div style={styles.footer}>
-              <button
-                style={styles.cancelBtn}
-                onClick={() => {
-                  setaddProductModal(false);
-                  setexistingProduct(null);
-                  setisProductTemplate(false);
-                }}
-              >
-                <span style={styles.cancelTxt}>Cancel</span>
-              </button>
-              <button style={styles.saveBtn} onClick={handleDataUpdate}>
-                <span style={styles.saveTxt}>
-                  {isProductTemplate
-                    ? "Add Product"
-                    : existingProduct
-                    ? "Save Changes"
-                    : "Add Product"}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Right Panel — Preview */}
-          <div
-            style={{
-              ...styles.panel,
-              height: height * 0.9,
-              width: width * 0.36,
-            }}
-          >
-            <ProductBuilderView
-              product={newProduct}
-              imageUrl={
-                selectedFile
-                  ? URL.createObjectURL(selectedFile)
-                  : currentImgUrl
-                  ? currentImgUrl
-                  : null
-              }
-            />
           </div>
         </div>
+
+        {/* Preview Panel */}
+        {showPreview && canShowPreview && (
+          <div style={styles.previewPanel}>
+            <ProductBuilderView
+              product={newProduct}
+              imageUrl={selectedFile ? URL.createObjectURL(selectedFile) : currentImgUrl ? currentImgUrl : null}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  backdrop: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100%",
-    width: "100%",
-  },
-  panelsRow: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: "100%",
-    width: "100%",
-    gap: 12,
-  },
-  panel: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    border: "1px solid #e2e8f0",
+  fullScreen: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#f1f5f9",
     display: "flex",
     flexDirection: "column",
-    overflow: "hidden",
+    zIndex: 10000,
   },
-  // Header
-  headerRow: {
+  // Top Bar
+  topBar: {
     display: "flex",
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    padding: "24px 28px 16px",
+    height: 56,
+    padding: "0 20px",
+    backgroundColor: "#fff",
+    borderBottom: "1px solid #e2e8f0",
     flexShrink: 0,
-    borderBottom: "1px solid #f1f5f9",
   },
-  title: {
+  topBarLeft: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  topBarTitle: {
+    fontSize: 16,
     fontWeight: "700",
     color: "#0f172a",
-    fontSize: 20,
-    display: "block",
   },
-  subtitle: {
-    fontSize: 13,
-    color: "#94a3b8",
-    fontWeight: "500",
-    marginTop: 2,
-    display: "block",
-  },
-  headerActions: {
+  topBarRight: {
     display: "flex",
     flexDirection: "row",
+    alignItems: "center",
     gap: 8,
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    cursor: "pointer",
+    padding: 0,
   },
   duplicateBtn: {
     height: 36,
@@ -849,45 +638,158 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingLeft: 14,
-    paddingRight: 14,
+    paddingLeft: 12,
+    paddingRight: 12,
     backgroundColor: "#fff",
     border: "1px solid #e2e8f0",
     borderRadius: 8,
     cursor: "pointer",
   },
-  duplicateTxt: {
+  previewToggleBtn: {
+    height: 36,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingLeft: 12,
+    paddingRight: 12,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    cursor: "pointer",
+  },
+  actionBtnTxt: {
     fontWeight: "500",
     color: "#475569",
     fontSize: 13,
   },
-  // Scroll Area
+  cancelBtn: {
+    height: 36,
+    paddingLeft: 16,
+    paddingRight: 16,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+  },
+  cancelTxt: {
+    fontWeight: "600",
+    color: "#475569",
+    fontSize: 13,
+  },
+  saveBtn: {
+    height: 36,
+    paddingLeft: 20,
+    paddingRight: 20,
+    backgroundColor: "#1470ef",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+  },
+  saveTxt: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 13,
+  },
+  // Main Content
+  mainContent: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "row",
+    overflow: "hidden",
+  },
+  editorPanel: {
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
   scrollArea: {
     flex: 1,
     overflow: "auto",
-    padding: "20px 28px",
+    padding: "24px 32px 40px",
     display: "flex",
     flexDirection: "column",
-    gap: 20,
+    gap: 16,
   },
-  // Fields
-  fieldsGrid: {
+  previewPanel: {
+    flex: "0 0 40%",
+    borderLeft: "1px solid #e2e8f0",
+    overflow: "hidden",
+  },
+  // Top Fields (Name + Price)
+  topFields: {
     display: "flex",
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 16,
+  },
+  // Cards
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    padding: 24,
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0f172a",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  cardTitleRow: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+  },
+  optionCount: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#fff",
+    backgroundColor: "#1470ef",
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Fields
+  fieldsRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 14,
+    flexWrap: "wrap",
   },
   fieldGroup: {
     display: "flex",
     flexDirection: "column",
     gap: 6,
-    flex: "1 1 calc(50% - 8px)",
+    flex: 1,
     minWidth: 140,
   },
   fieldLabel: {
     fontSize: 13,
     fontWeight: "600",
     color: "#344054",
+  },
+  optionalTag: {
+    fontSize: 11,
+    fontWeight: "400",
+    color: "#94a3b8",
+    marginLeft: 4,
   },
   input: {
     height: 42,
@@ -900,9 +802,21 @@ const styles: Record<string, React.CSSProperties> = {
     outline: "none",
     backgroundColor: "#fff",
   },
+  inputLg: {
+    height: 48,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "0 14px",
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
+    backgroundColor: "#fff",
+  },
   textarea: {
     width: "100%",
-    height: 100,
+    height: 80,
     border: "1px solid #e2e8f0",
     borderRadius: 8,
     padding: 12,
@@ -913,10 +827,10 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#0f172a",
     outline: "none",
   },
-  // Image Upload
+  // Image
   imageUploadArea: {
     width: "100%",
-    height: 160,
+    height: 120,
     backgroundColor: "#f8fafc",
     border: "2px dashed #e2e8f0",
     borderRadius: 10,
@@ -950,25 +864,17 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
   },
-  uploadTxt: {
-    fontSize: 13,
-    color: "#64748b",
-    fontWeight: "500",
-  },
-  uploadHint: {
-    fontSize: 11,
-    color: "#94a3b8",
-  },
-  // Toggle Section
+  uploadTxt: { fontSize: 13, color: "#64748b", fontWeight: "500" },
+  uploadHint: { fontSize: 11, color: "#94a3b8" },
+  // Toggles
   toggleSection: {
     display: "flex",
     flexDirection: "column",
-    gap: 0,
     backgroundColor: "#f8fafc",
     borderRadius: 10,
-    border: "1px solid #e2e8f0",
+    border: "1px solid #f1f5f9",
     overflow: "hidden",
   },
   toggleRow: {
@@ -976,159 +882,48 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "14px 16px",
+    padding: "12px 16px",
     borderBottom: "1px solid #f1f5f9",
   },
-  toggleLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0f172a",
-    display: "block",
-  },
-  toggleHint: {
-    fontSize: 12,
-    color: "#94a3b8",
-    marginTop: 1,
-    display: "block",
-  },
+  toggleLabel: { fontSize: 14, fontWeight: "600", color: "#0f172a", display: "block" },
+  toggleHint: { fontSize: 12, color: "#94a3b8", marginTop: 1, display: "block" },
   // Inventory
-  inventorySection: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-  },
-  trackingToggleRow: {
-    display: "flex",
-    flexDirection: "row",
-    gap: 8,
-  },
+  trackingToggleRow: { display: "flex", flexDirection: "row", gap: 8 },
   trackingToggleBtn: {
-    flex: 1,
-    height: 36,
-    borderRadius: 8,
-    border: "1px solid #e2e8f0",
-    backgroundColor: "#fff",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    flex: 1, height: 36, borderRadius: 8, border: "1px solid #e2e8f0",
+    backgroundColor: "#fff", cursor: "pointer", display: "flex",
+    alignItems: "center", justifyContent: "center",
   },
-  trackingToggleBtnActive: {
-    backgroundColor: "#0f172a",
-    borderColor: "#0f172a",
-  },
-  trackingToggleTxt: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#64748b",
-  },
-  trackingToggleTxtActive: {
-    color: "#fff",
-  },
-  stockFieldsRow: {
-    display: "flex",
-    flexDirection: "row",
-    gap: 16,
-  },
-  // Options
-  optionsSection: {
+  trackingToggleBtnActive: { backgroundColor: "#0f172a", borderColor: "#0f172a" },
+  trackingToggleTxt: { fontSize: 13, fontWeight: "500", color: "#64748b" },
+  trackingToggleTxtActive: { color: "#fff" },
+  // Empty Options
+  emptyOptions: {
     display: "flex",
     flexDirection: "column",
-    gap: 16,
-  },
-  sectionTitle: {
-    fontWeight: "700",
-    color: "#0f172a",
-    fontSize: 16,
-  },
-  optionsItem: {
-    alignSelf: "stretch",
-  },
-  optionBtnsRow: {
-    display: "flex",
-    flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    padding: "28px 16px",
+    gap: 6,
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    border: "1px dashed #e2e8f0",
   },
+  emptyOptionsTxt: { fontSize: 14, fontWeight: "600", color: "#64748b" },
+  emptyOptionsHint: { fontSize: 13, color: "#94a3b8", marginBottom: 14, textAlign: "center" as const, maxWidth: 400 },
+  optionBtnsRow: { display: "flex", flexDirection: "row", alignItems: "center", gap: 10 },
   createOptionBtn: {
-    height: 40,
-    paddingLeft: 20,
-    paddingRight: 20,
-    backgroundColor: "#1470ef",
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
+    height: 38, paddingLeft: 16, paddingRight: 16, backgroundColor: "#1470ef",
+    borderRadius: 8, display: "flex", flexDirection: "row", alignItems: "center",
+    justifyContent: "center", gap: 6, border: "none", cursor: "pointer",
   },
-  createOptionTxt: {
-    fontWeight: "600",
-    color: "#fff",
-    fontSize: 14,
-  },
+  createOptionTxt: { fontWeight: "600", color: "#fff", fontSize: 13 },
   pasteOptionBtn: {
-    height: 40,
-    paddingLeft: 20,
-    paddingRight: 20,
-    backgroundColor: "#fff",
-    border: "1px solid #e2e8f0",
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
+    height: 38, paddingLeft: 16, paddingRight: 16, backgroundColor: "#fff",
+    border: "1px solid #e2e8f0", borderRadius: 8, display: "flex",
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, cursor: "pointer",
   },
-  pasteOptionTxt: {
-    fontWeight: "600",
-    color: "#475569",
-    fontSize: 14,
-  },
-  // Footer
-  footer: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    gap: 10,
-    padding: "16px 28px",
-    borderTop: "1px solid #f1f5f9",
-    flexShrink: 0,
-  },
-  cancelBtn: {
-    height: 42,
-    paddingLeft: 24,
-    paddingRight: 24,
-    backgroundColor: "#fff",
-    border: "1px solid #e2e8f0",
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-  },
-  cancelTxt: {
-    fontWeight: "600",
-    color: "#475569",
-    fontSize: 14,
-  },
-  saveBtn: {
-    height: 42,
-    paddingLeft: 24,
-    paddingRight: 24,
-    backgroundColor: "#1470ef",
-    border: "none",
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-  },
-  saveTxt: {
-    fontWeight: "600",
-    color: "#fff",
-    fontSize: 14,
-  },
+  pasteOptionTxt: { fontWeight: "500", color: "#475569", fontSize: 13 },
 };
 
 export default AddProductModal;

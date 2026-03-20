@@ -19,15 +19,15 @@ function PercentageButton({
         ...styles.container,
         ...style,
         ...(isSelected
-          ? { backgroundColor: "#1c294e" }
-          : { backgroundColor: "#edf1fe" }),
+          ? { backgroundColor: "#0f172a", color: "#fff", border: "1px solid #0f172a" }
+          : { backgroundColor: "#f1f5f9", color: "#0f172a", border: "1px solid #e2e8f0" }),
       }}
       onClick={onPress}
     >
       <span
         style={{
           ...styles.percentageAmount,
-          ...(isSelected ? { color: "white" } : { color: "black" }),
+          ...(isSelected ? { color: "#fff" } : { color: "#0f172a" }),
         }}
       >
         {percentageAmount}
@@ -38,16 +38,18 @@ function PercentageButton({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
-    border: "none",
     cursor: "pointer",
+    height: 44,
+    width: 44,
+    boxSizing: "border-box" as const,
   },
   percentageAmount: {
-    fontWeight: "700",
-    fontSize: 12,
+    fontWeight: "600",
+    fontSize: 13,
   },
 };
 

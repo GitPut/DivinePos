@@ -10,6 +10,8 @@ interface ProductOptionBoxProps {
   deleteProduct?: () => void;
   setexistingProduct: (val: ProductProp) => void;
   isTemplate?: boolean;
+  viewMode?: "grid" | "list";
+  isLast?: boolean;
 }
 
 function ProductOptionBox({
@@ -19,36 +21,137 @@ function ProductOptionBox({
   deleteProduct,
   setexistingProduct,
   isTemplate,
+  viewMode = "grid",
+  isLast,
 }: ProductOptionBoxProps) {
+  if (viewMode === "list") {
+    return (
+      <button
+        style={{
+          ...listStyles.row,
+          ...(!isLast ? { borderBottom: "1px solid #f1f5f9" } : {}),
+        }}
+        onClick={() => setexistingProduct(product)}
+      >
+        {/* Thumbnail */}
+        <div style={listStyles.thumbWrap}>
+          {product.imageUrl ? (
+            <ProductImage
+              source={product.imageUrl}
+              style={listStyles.thumb}
+              alt={product.name}
+            />
+          ) : (
+            <div style={listStyles.thumbPlaceholder}>
+              <FiImage size={16} color="#cbd5e1" />
+            </div>
+          )}
+        </div>
+        {/* Name + Description */}
+        <div style={listStyles.nameCol}>
+          <span style={listStyles.productName}>{product.name}</span>
+          {product.description && (
+            <span style={listStyles.description}>{product.description}</span>
+          )}
+        </div>
+        {/* Price */}
+        <div style={listStyles.priceCol}>
+          <span style={listStyles.price}>${product.price}</span>
+        </div>
+        {/* Category */}
+        <div style={listStyles.categoryCol}>
+          {product.category ? (
+            <span style={listStyles.categoryBadge}>{product.category}</span>
+          ) : (
+            <span style={listStyles.noneText}>\u2014</span>
+          )}
+        </div>
+        {/* Options count */}
+        <div style={listStyles.optionsCol}>
+          {product.options.length > 0 ? (
+            <span style={listStyles.optionsCount}>{product.options.length}</span>
+          ) : (
+            <span style={listStyles.offText}>None</span>
+          )}
+        </div>
+        {/* Stock */}
+        <div style={listStyles.stockCol}>
+          {product.trackStock ? (
+            <span
+              style={{
+                ...listStyles.stockBadge,
+                ...(product.stockQuantity !== undefined &&
+                product.lowStockThreshold !== undefined &&
+                product.stockQuantity <= product.lowStockThreshold
+                  ? { backgroundColor: "#fef2f2", color: "#ef4444" }
+                  : { backgroundColor: "#f0fdf4", color: "#16a34a" }),
+              }}
+            >
+              {product.stockQuantity ?? 0}
+            </span>
+          ) : (
+            <span style={listStyles.offText}>Off</span>
+          )}
+        </div>
+        {/* Actions */}
+        {editMode && (
+          <div style={listStyles.actionsCol}>
+            <button
+              style={listStyles.editBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                setexistingProduct(product);
+              }}
+              title="Edit"
+            >
+              <FiEdit3 size={14} color="#64748b" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteProduct?.();
+              }}
+              style={listStyles.deleteBtn}
+              title="Delete"
+            >
+              <FiTrash2 size={14} color="#ef4444" />
+            </button>
+          </div>
+        )}
+      </button>
+    );
+  }
+
+  // Grid view (card)
   return (
     <button
-      style={{ ...styles.container, ...style }}
+      style={{ ...gridStyles.container, ...style }}
       onClick={() => setexistingProduct(product)}
     >
       {product.imageUrl ? (
         <ProductImage
           source={product.imageUrl}
-          style={styles.productImage}
+          style={gridStyles.productImage}
           alt={product.name}
         />
       ) : (
-        <div style={styles.noImagePlaceholder}>
+        <div style={gridStyles.noImagePlaceholder}>
           <FiImage size={24} color="#cbd5e1" />
         </div>
       )}
-      <div style={styles.infoSection}>
-        <span style={styles.productName}>{product.name}</span>
-        <div style={styles.metaRow}>
-          <span style={styles.productPrice}>${product.price}</span>
+      <div style={gridStyles.infoSection}>
+        <span style={gridStyles.productName}>{product.name}</span>
+        <div style={gridStyles.metaRow}>
+          <span style={gridStyles.productPrice}>${product.price}</span>
           {product.category && (
-            <span style={styles.categoryBadge}>{product.category}</span>
+            <span style={gridStyles.categoryBadge}>{product.category}</span>
           )}
         </div>
       </div>
-      {editMode ? (
-        <div style={styles.actionRow}>
+      {editMode && (
+        <div style={gridStyles.actionRow}>
           <button
-            style={styles.editBtn}
+            style={gridStyles.editBtn}
             onClick={(e) => {
               e.stopPropagation();
               setexistingProduct(product);
@@ -61,18 +164,9 @@ function ProductOptionBox({
               e.stopPropagation();
               deleteProduct?.();
             }}
-            style={styles.deleteBtn}
+            style={gridStyles.deleteBtn}
           >
             <FiTrash2 size={14} color="#ef4444" />
-          </button>
-        </div>
-      ) : (
-        <div style={styles.actionRow}>
-          <button style={styles.editBtn} onClick={(e) => e.stopPropagation()}>
-            <FiEdit3 size={14} color="#475569" />
-            <span style={styles.editTxt}>
-              {!isTemplate ? "Edit" : "View"}
-            </span>
           </button>
         </div>
       )}
@@ -80,7 +174,157 @@ function ProductOptionBox({
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const listStyles: Record<string, React.CSSProperties> = {
+  row: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: "10px 20px",
+    gap: 12,
+    cursor: "pointer",
+    background: "none",
+    border: "none",
+    width: "100%",
+    textAlign: "left",
+    boxSizing: "border-box",
+  },
+  thumbWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  thumb: {
+    width: 42,
+    height: 42,
+    objectFit: "cover" as const,
+  },
+  thumbPlaceholder: {
+    width: 42,
+    height: 42,
+    backgroundColor: "#f8fafc",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    border: "1px solid #f1f5f9",
+  },
+  nameCol: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+    minWidth: 0,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  description: {
+    fontSize: 12,
+    color: "#94a3b8",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    maxWidth: 280,
+  },
+  priceCol: {
+    width: 90,
+    textAlign: "center",
+    display: "flex",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  price: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  categoryCol: {
+    width: 120,
+    display: "flex",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  categoryBadge: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "#64748b",
+    backgroundColor: "#f1f5f9",
+    padding: "3px 10px",
+    borderRadius: 20,
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: 110,
+  },
+  optionsCol: {
+    width: 80,
+    display: "flex",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  optionsCount: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#64748b",
+  },
+  stockCol: {
+    width: 80,
+    display: "flex",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  stockBadge: {
+    fontSize: 12,
+    fontWeight: "600",
+    padding: "3px 10px",
+    borderRadius: 20,
+  },
+  offText: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "#94a3b8",
+  },
+  actionsCol: {
+    width: 90,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    flexShrink: 0,
+  },
+  editBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  },
+  deleteBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    border: "1px solid #fee2e2",
+    backgroundColor: "#fef2f2",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  },
+};
+
+const gridStyles: Record<string, React.CSSProperties> = {
   container: {
     borderRadius: 12,
     backgroundColor: "#fff",
@@ -164,11 +408,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: "none",
     border: "1px solid #e2e8f0",
     cursor: "pointer",
-  },
-  editTxt: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#475569",
   },
   deleteBtn: {
     width: 32,

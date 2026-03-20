@@ -89,87 +89,93 @@ const DiscountModal = () => {
     >
       <div style={{ cursor: "default" }} onClick={(e) => e.stopPropagation()}>
         <div style={styles.container}>
-          <div style={styles.innerContentContainer}>
-            <div style={styles.labelAndInnerGroup}>
-              <span style={styles.containerLbl}>Discount</span>
-              <div style={styles.innerGroup}>
-                <span style={styles.currentTotalLbl}>
-                  Total Without Discount: $
-                  {totalWithoutDiscount.toFixed(2)}
-                </span>
-                <div style={styles.inputWithPercentageRow}>
-                  <input
-                    style={styles.customPercentageInput}
-                    placeholder="Enter Custom Amount or Percentage"
-                    onChange={(e) => setLocalDiscountAmount(e.target.value)}
-                    value={localDiscountAmount}
-                    onKeyDown={handleKeyDown}
-                  />
-                  <div style={styles.percentageBtnsRow}>
-                    <PercentageButton
-                      percentageAmount="5%"
-                      style={styles.percentageBtn5}
-                      onPress={() => setLocalDiscountAmount("5%")}
-                      isSelected={localDiscountAmount === "5%"}
-                    />
-                    <PercentageButton
-                      percentageAmount="10%"
-                      style={styles.percentageBtn10}
-                      onPress={() => setLocalDiscountAmount("10%")}
-                      isSelected={localDiscountAmount === "10%"}
-                    />
-                    <PercentageButton
-                      percentageAmount="15%"
-                      style={styles.percentageBtn15}
-                      onPress={() => setLocalDiscountAmount("15%")}
-                      isSelected={localDiscountAmount === "15%"}
-                    />
-                  </div>
-                </div>
-                <span style={styles.newTotalLbl}>
-                  New Total: $
-                  {totalWithNewDiscount
-                    ? totalWithNewDiscount.toFixed(2)
-                    : cartSub.toFixed(2)}
-                </span>
-                <input
-                  placeholder="Enter Manager's Code"
-                  onChange={(e) => setCode(e.target.value)}
-                  style={styles.managerCodeInput}
-                  onKeyDown={(e) => handleKeyDown(e)}
-                />
-              </div>
+          {/* Title */}
+          <span style={styles.title}>Apply Discount</span>
+
+          {/* Totals */}
+          <div style={styles.totalsRow}>
+            <div style={styles.totalItem}>
+              <span style={styles.totalLabel}>Current Total</span>
+              <span style={styles.totalValue}>
+                ${totalWithoutDiscount.toFixed(2)}
+              </span>
             </div>
-            <div style={styles.confirmAndCancelBtnGroup}>
-              <button
-                disabled={
+            <div style={styles.totalItem}>
+              <span style={styles.totalLabel}>New Total</span>
+              <span style={styles.totalValueGreen}>
+                ${totalWithNewDiscount
+                  ? totalWithNewDiscount.toFixed(2)
+                  : cartSub.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {/* Discount input + percentage pills */}
+          <div style={styles.inputRow}>
+            <input
+              style={styles.discountInput}
+              placeholder="Amount or percentage (e.g. 5%)"
+              onChange={(e) => setLocalDiscountAmount(e.target.value)}
+              value={localDiscountAmount}
+              onKeyDown={handleKeyDown}
+            />
+            <div style={styles.pillsRow}>
+              <PercentageButton
+                percentageAmount="5%"
+                onPress={() => setLocalDiscountAmount("5%")}
+                isSelected={localDiscountAmount === "5%"}
+              />
+              <PercentageButton
+                percentageAmount="10%"
+                onPress={() => setLocalDiscountAmount("10%")}
+                isSelected={localDiscountAmount === "10%"}
+              />
+              <PercentageButton
+                percentageAmount="15%"
+                onPress={() => setLocalDiscountAmount("15%")}
+                isSelected={localDiscountAmount === "15%"}
+              />
+            </div>
+          </div>
+
+          {/* Manager code input */}
+          <input
+            placeholder="Manager code"
+            onChange={(e) => setCode(e.target.value)}
+            style={styles.managerCodeInput}
+            onKeyDown={(e) => handleKeyDown(e)}
+          />
+
+          {/* Buttons */}
+          <div style={styles.buttonsRow}>
+            <button
+              disabled={
+                (!storeDetails.settingsPassword &&
+                  discountAmount !== "") ||
+                (code.length > 0 && discountAmount !== "")
+                  ? false
+                  : true
+              }
+              onClick={tryApplyDiscount}
+              style={{
+                ...styles.applyBtn,
+                ...(!(
                   (!storeDetails.settingsPassword &&
                     discountAmount !== "") ||
                   (code.length > 0 && discountAmount !== "")
-                    ? false
-                    : true
-                }
-                onClick={tryApplyDiscount}
-                style={{
-                  ...styles.confirmBtn,
-                  ...(!(
-                    (!storeDetails.settingsPassword &&
-                      discountAmount !== "") ||
-                    (code.length > 0 && discountAmount !== "")
-                  ) && { opacity: 0.8 }),
-                }}
-              >
-                <span style={styles.confirmLbl}>Confirm</span>
-              </button>
-              <button
-                onClick={() => {
-                  updatePosState({ discountModal: false });
-                }}
-                style={styles.cancelBtn}
-              >
-                <span style={styles.cancelLbl}>Cancel</span>
-              </button>
-            </div>
+                ) && { opacity: 0.5, cursor: "not-allowed" }),
+              }}
+            >
+              <span style={styles.applyBtnLabel}>Apply Discount</span>
+            </button>
+            <button
+              onClick={() => {
+                updatePosState({ discountModal: false });
+              }}
+              style={styles.cancelBtn}
+            >
+              <span style={styles.cancelBtnLabel}>Cancel</span>
+            </button>
           </div>
         </div>
       </div>
@@ -181,142 +187,118 @@ export default DiscountModal;
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,1)",
-    width: 540,
-    height: 439,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+    width: 440,
+    padding: "24px 28px",
     display: "flex",
     flexDirection: "column",
+    gap: 20,
+    boxSizing: "border-box" as const,
   },
-  innerContentContainer: {
-    width: 439,
-    height: 382,
-    alignItems: "center",
-    justifyContent: "space-between",
-    display: "flex",
-    flexDirection: "column",
-  },
-  labelAndInnerGroup: {
-    width: 439,
-    height: 246,
-    justifyContent: "space-between",
-    alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
-  },
-  containerLbl: {
+  title: {
+    fontSize: 18,
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 20,
+    color: "#0f172a",
     display: "block",
   },
-  innerGroup: {
-    width: 439,
-    height: 202,
-    justifyContent: "space-between",
+  totalsRow: {
+    flexDirection: "row",
+    display: "flex",
+    gap: 24,
+  },
+  totalItem: {
     display: "flex",
     flexDirection: "column",
+    gap: 2,
   },
-  currentTotalLbl: {
+  totalLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#64748b",
+  },
+  totalValue: {
+    fontSize: 16,
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 14,
+    color: "#0f172a",
   },
-  inputWithPercentageRow: {
-    width: 439,
-    height: 52,
+  totalValueGreen: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#10b981",
+  },
+  inputRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     display: "flex",
+    gap: 10,
+    alignItems: "center",
   },
-  customPercentageInput: {
-    width: 259,
-    height: 52,
-    backgroundColor: "rgba(255,255,255,1)",
+  discountInput: {
+    flex: 1,
+    height: 44,
+    border: "1px solid #e2e8f0",
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#9e9e9e",
-    borderStyle: "solid" as const,
-    padding: 10,
+    padding: "0 14px",
+    fontSize: 15,
+    color: "#0f172a",
     boxSizing: "border-box" as const,
+    outline: "none",
   },
-  percentageBtnsRow: {
-    width: 156,
-    height: 46,
+  pillsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     display: "flex",
-  },
-  percentageBtn5: {
-    height: 46,
-    width: 46,
-  },
-  percentageBtn10: {
-    height: 46,
-    width: 46,
-  },
-  percentageBtn15: {
-    height: 46,
-    width: 46,
-  },
-  newTotalLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 14,
+    gap: 6,
+    alignItems: "center",
   },
   managerCodeInput: {
-    width: 438,
-    height: 52,
-    backgroundColor: "rgba(255,255,255,1)",
+    width: "100%",
+    height: 44,
+    border: "1px solid #e2e8f0",
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#9e9e9e",
-    borderStyle: "solid" as const,
-    padding: 10,
+    padding: "0 14px",
+    fontSize: 15,
+    color: "#0f172a",
     boxSizing: "border-box" as const,
+    outline: "none",
   },
-  confirmAndCancelBtnGroup: {
-    width: 284,
-    height: 101,
-    justifyContent: "space-between",
-    alignItems: "center",
+  buttonsRow: {
+    flexDirection: "row",
     display: "flex",
-    flexDirection: "column",
+    gap: 10,
+    marginTop: 4,
   },
-  confirmBtn: {
-    width: 284,
-    height: 42,
-    backgroundColor: "#1c294e",
+  applyBtn: {
+    flex: 1,
+    height: 44,
+    backgroundColor: "#1470ef",
     borderRadius: 10,
+    border: "none",
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
-    border: "none",
     cursor: "pointer",
   },
-  confirmLbl: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
+  applyBtnLabel: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 15,
   },
   cancelBtn: {
-    width: 284,
-    height: 42,
-    backgroundColor: "#edf1fe",
+    flex: 1,
+    height: 44,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
-    border: "none",
     cursor: "pointer",
   },
-  cancelLbl: {
-    fontWeight: "700",
-    color: "rgba(0,0,0,1)",
-    fontSize: 18,
+  cancelBtnLabel: {
+    fontWeight: "600",
+    color: "#0f172a",
+    fontSize: 15,
   },
 };

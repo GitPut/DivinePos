@@ -47,9 +47,9 @@ function OptionConditionItem({
   return (
     <div style={styles.container}>
       <div style={styles.fieldGroup}>
-        <span style={styles.fieldLabel}>If Option</span>
+        <span style={styles.fieldLabel}>When this option</span>
         <DropdownStringOptions
-          placeholder="Choose Option"
+          placeholder="Select option..."
           value={ifStatement.selectedCaseKey}
           setValue={(val) => {
             let clone: Option[] = [];
@@ -76,9 +76,9 @@ function OptionConditionItem({
         <span style={styles.equalsText}>=</span>
       </div>
       <div style={styles.fieldGroup}>
-        <span style={styles.fieldLabel}>Value Of Option</span>
+        <span style={styles.fieldLabel}>Equals</span>
         <DropdownStringOptions
-          placeholder="Choose Value"
+          placeholder="Select value..."
           value={ifStatement?.selectedCaseValue}
           setValue={(val) => {
             let clone: Option[] = [];

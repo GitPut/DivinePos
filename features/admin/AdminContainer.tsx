@@ -222,6 +222,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     justifyContent: "space-between",
     backgroundColor: "#f8fafc",
+    position: "relative",
+    zIndex: 1,
   },
   leftMenu: {
     width: 240,

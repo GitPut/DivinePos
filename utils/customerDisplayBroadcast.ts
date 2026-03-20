@@ -1,6 +1,6 @@
 import { CartItemProp } from "types";
 
-const CHANNEL_NAME = "divine-pos-customer-display";
+const STORAGE_KEY = "divine-pos-cart-sync";
 
 export interface CustomerDisplayData {
   cart: CartItemProp[];
@@ -9,26 +9,47 @@ export interface CustomerDisplayData {
   cartSub: number;
 }
 
+/**
+ * POS side: write cart data to localStorage on every change.
+ */
 export function broadcastCartUpdate(data: CustomerDisplayData): void {
   try {
-    const channel = new BroadcastChannel(CHANNEL_NAME);
-    channel.postMessage(data);
-    channel.close();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
-    // BroadcastChannel not supported — silently ignore
+    // Storage full or unavailable
   }
 }
 
+/**
+ * Customer display side: poll localStorage every 500ms for cart changes.
+ * Also reads immediately on setup so display is populated instantly.
+ * Polling is more reliable than the storage event across all browsers/tab configs.
+ */
 export function onCartUpdate(
   callback: (data: CustomerDisplayData) => void
 ): () => void {
-  try {
-    const channel = new BroadcastChannel(CHANNEL_NAME);
-    channel.onmessage = (event: MessageEvent<CustomerDisplayData>) => {
-      callback(event.data);
-    };
-    return () => channel.close();
-  } catch {
-    return () => {};
-  }
+  let lastValue = "";
+
+  const readAndUpdate = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw && raw !== lastValue) {
+        lastValue = raw;
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.cart)) {
+          callback(parsed);
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  };
+
+  // Read immediately
+  readAndUpdate();
+
+  // Poll every 500ms
+  const interval = setInterval(readAndUpdate, 500);
+
+  return () => clearInterval(interval);
 }

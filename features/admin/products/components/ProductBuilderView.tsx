@@ -3,6 +3,7 @@ import ItemNoOptionsView from "./ItemNoOptionsView";
 import DisplayOption from "features/pos/components/ProductBuilder/OptionDisplay";
 import { ProductProp } from "types";
 import { resolveOptionPrice } from "utils/resolveOptionPrice";
+import { FiEye } from "react-icons/fi";
 
 interface ProductBuilderViewProps {
   product: ProductProp;
@@ -52,85 +53,66 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
     return total;
   };
 
+  const hasOptions = product.options.length > 0;
+
   return (
     <div style={styles.container}>
-      <div
-        style={{ width: "100%", height: "100%", padding: 20, overflow: "auto" }}
-      >
-        <div style={{ width: "100%" }}>
-          <span style={{ fontWeight: "700", color: "#121212", fontSize: 21 }}>
-            Preview
-          </span>
-          {product.options.length > 0 ? (
-            <>
-              <div style={styles.productBuilderGroup}>
-                <div style={styles.itemInfoContainer}>
-                  {imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt=""
-                      style={{
-                        ...styles.itemImg,
-                        ...(myObj.description ? { width: 300, height: 150 } : {}),
-                      }}
-                    />
-                  )}
-                  <div style={styles.itemInfoTxtGroup}>
-                    <div style={styles.topTxtGroup}>
-                      <span style={styles.productName}>{myObj.name}</span>
-                      <>
-                        {myObj.calorieDetails && (
-                          <span style={styles.calorieDetails}>280 cal/slice</span>
-                        )}
-                      </>
-                    </div>
-                    <>
-                      {myObj.description && (
-                        <span style={styles.description}>
-                          Description: {myObj.description}
-                        </span>
-                      )}
-                    </>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    width: "100%",
-                    padding: 20,
-                    paddingLeft: 30,
-                    paddingRight: 30,
-                    backgroundColor: "white",
-                    borderRadius: 10,
-                    marginTop: 20,
-                  }}
-                >
-                  <div>
-                    {myObjProfile.options.map((option, index) => (
-                      <DisplayOption
-                        key={option.id}
-                        e={option}
-                        index={index}
-                        myObjProfile={myObjProfile}
-                        setMyObjProfile={setMyObjProfile}
-                        setOpenOptions={setOpenOptions}
-                        openOptions={openOptions}
-                        isOnlineOrder={false}
-                        scrollY={0}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div style={styles.totalLblRow}>
-                  <span style={styles.totalLbl}>
-                    Total: ${parseFloat(total).toFixed(2)}
-                  </span>
-                </div>
+      {/* Header */}
+      <div style={styles.header}>
+        <FiEye size={16} color="#64748b" />
+        <span style={styles.headerTitle}>Live Preview</span>
+      </div>
+
+      {/* Preview Content */}
+      <div style={styles.scrollArea}>
+        {hasOptions ? (
+          <div style={styles.previewCard}>
+            {/* Product Info */}
+            <div style={styles.productInfo}>
+              {imageUrl && (
+                <img src={imageUrl} alt="" style={styles.productImage} />
+              )}
+              <div style={styles.productMeta}>
+                <span style={styles.productName}>
+                  {myObj.name || "Product Name"}
+                </span>
+                {myObj.description && (
+                  <span style={styles.productDesc}>{myObj.description}</span>
+                )}
+                <span style={styles.basePrice}>
+                  ${parseFloat(myObj.price || "0").toFixed(2)}
+                </span>
               </div>
-            </>
-          ) : (
-            <ItemNoOptionsView product={product} />
-          )}
-        </div>
+            </div>
+
+            {/* Options */}
+            <div style={styles.optionsArea}>
+              {myObjProfile.options.map((option, index) => (
+                <DisplayOption
+                  key={option.id}
+                  e={option}
+                  index={index}
+                  myObjProfile={myObjProfile}
+                  setMyObjProfile={setMyObjProfile}
+                  setOpenOptions={setOpenOptions}
+                  openOptions={openOptions}
+                  isOnlineOrder={false}
+                  scrollY={0}
+                />
+              ))}
+            </div>
+
+            {/* Total */}
+            <div style={styles.totalRow}>
+              <span style={styles.totalLabel}>Total</span>
+              <span style={styles.totalAmount}>
+                ${parseFloat(total).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <ItemNoOptionsView product={product} imageUrl={imageUrl} />
+        )}
       </div>
     </div>
   );
@@ -139,83 +121,99 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#edf2ff",
-    width: "100%",
+    flexDirection: "column",
     height: "100%",
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  header: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: "16px 24px",
+    borderBottom: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
+    flexShrink: 0,
+  },
+  headerTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  scrollArea: {
+    flex: 1,
+    overflow: "auto",
+    padding: 20,
+  },
+  previewCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    overflow: "hidden",
+  },
+  productInfo: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "24px 20px 16px",
+    borderBottom: "1px solid #f1f5f9",
+    gap: 12,
+  },
+  productImage: {
+    width: "100%",
+    maxWidth: 240,
+    height: 160,
+    objectFit: "contain" as const,
     borderRadius: 10,
   },
-  productBuilderGroup: {
+  productMeta: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
     width: "100%",
-    height: "85%",
-    paddingTop: 20,
-  },
-  itemInfoContainer: {
-    height: 350,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,1)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-  },
-  itemImg: {
-    height: 250,
-    width: 250,
-    objectFit: "contain",
-  },
-  itemInfoTxtGroup: {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  topTxtGroup: {
-    marginTop: 7,
-    marginBottom: 15,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
   },
   productName: {
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 30,
-    paddingLeft: "3%",
-    paddingRight: "3%",
-    textAlign: "center",
-    display: "block",
+    color: "#0f172a",
+    fontSize: 20,
+    textAlign: "center" as const,
   },
-  calorieDetails: {
-    color: "rgba(131,126,126,1)",
-    marginBottom: 25,
-    display: "inline-block",
+  productDesc: {
+    color: "#94a3b8",
+    fontSize: 13,
+    textAlign: "center" as const,
+    maxWidth: "90%",
   },
-  description: {
-    color: "rgba(131,126,126,1)",
-    width: "90%",
-    textAlign: "left",
-    paddingBottom: 50,
-    display: "block",
+  basePrice: {
+    fontWeight: "600",
+    color: "#64748b",
+    fontSize: 16,
+    marginTop: 4,
   },
-  totalLblRow: {
+  optionsArea: {
+    padding: "16px 20px",
+  },
+  totalRow: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "flex-end",
-    alignSelf: "stretch",
-    paddingLeft: 30,
-    paddingRight: 30,
-    paddingBottom: 20,
-    paddingTop: 20,
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "16px 24px",
+    borderTop: "1px solid #e2e8f0",
+    backgroundColor: "#f8fafc",
   },
-  totalLbl: {
+  totalLabel: {
+    fontWeight: "600",
+    color: "#64748b",
+    fontSize: 15,
+  },
+  totalAmount: {
     fontWeight: "700",
-    color: "#00c937",
-    fontSize: 22,
-    marginTop: 0,
+    color: "#0f172a",
+    fontSize: 20,
   },
 };
 

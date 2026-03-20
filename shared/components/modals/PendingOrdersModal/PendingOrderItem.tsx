@@ -1,17 +1,15 @@
 import React, { useEffect } from "react";
-import { FiEdit } from "react-icons/fi";
-import { FiCheck } from "react-icons/fi";
-import { MdCancel } from "react-icons/md";
+import { FiEye, FiCheck, FiTrash2 } from "react-icons/fi";
 import { auth, db } from "services/firebase/config";
 import { updateTransList } from "services/firebase/functions";
 import { storeDetailsState } from "store/appState";
 import { posState, updatePosState } from "store/posState";
 import { CurrentOrderProp, TransListStateItem } from "types";
+import { parseDate } from "utils/dateFormatting";
 
 interface PendingOrderItemProps {
   element: TransListStateItem;
   index: number;
-  style: React.CSSProperties;
   date: Date | null;
   setcurrentOrder: (val: CurrentOrderProp) => void;
   cartString: string;
@@ -21,7 +19,6 @@ interface PendingOrderItemProps {
 function PendingOrderItem({
   element,
   index,
-  style,
   date,
   setcurrentOrder,
   cartString,
@@ -47,122 +44,140 @@ function PendingOrderItem({
     }
   }, [managerAuthorizedStatus, pendingAuthAction]);
 
+  const getMethodColor = (): string => {
+    if (element.method === "tableOrder") return "#8b5cf6";
+    if (element.method === "deliveryOrder" || element.method === "delivery") return "#f59e0b";
+    if (element.method === "pickupOrder" || element.method === "pickup") return "#1470ef";
+    if (element.online) return "#06b6d4";
+    return "#10b981";
+  };
+
+  const getMethodLabel = (): string => {
+    if (element.method === "tableOrder") {
+      const name = (element as any).tableName || (element as any).tableNumber || "";
+      return name ? `Table ${name}` : "Table";
+    }
+    if (element.online) return "Online";
+    if (element.method === "pickupOrder") return "Pickup";
+    if (element.method === "deliveryOrder") return "Delivery";
+    if (element.method === "inStoreOrder") return "In-Store";
+    return "Order";
+  };
+
+  const methodColor = getMethodColor();
+  const itemCount = element.cart?.reduce(
+    (sum, item) => sum + parseFloat(item.quantity ?? "1"),
+    0
+  ) ?? 0;
+
   return (
-    <div style={{ ...styles.container, ...style }}>
-      <div style={styles.customerDetailsContainer}>
-        <div style={styles.orderNameContainer}>
-          <span style={styles.orderNameLbl}>Order Name:</span>
-          <span style={styles.orderNameValue}>
-            {element.customer?.name?.length ?? 0 > 0
-              ? element.customer?.name?.toUpperCase()
-              : "N/A"}
+    <div style={styles.container}>
+      {/* Color accent */}
+      <div style={{ ...styles.accent, backgroundColor: methodColor }} />
+
+      {/* Main content */}
+      <div style={styles.body}>
+        <div style={styles.topRow}>
+          <div style={styles.leftInfo}>
+            <div style={{
+              ...styles.methodBadge,
+              backgroundColor: methodColor + "14",
+              borderColor: methodColor + "30",
+            }}>
+              <span style={{ ...styles.methodText, color: methodColor }}>
+                {getMethodLabel()}
+              </span>
+            </div>
+            {element.transNum && (
+              <span style={styles.orderNum}>#{element.transNum}</span>
+            )}
+          </div>
+          <span style={styles.time}>
+            {date ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
           </span>
         </div>
-        <div style={styles.orderNumberContainer}>
-          <span style={styles.orderNumberLabel}>Order Number:</span>
-          <span style={styles.orderNumberValue}>
-            {element.transNum?.toUpperCase()}
-          </span>
-        </div>
-      </div>
-      <div style={styles.divider}></div>
-      <div style={styles.orderInfoContainer}>
-        <div style={styles.orderInfoTextGroup}>
-          {element.online && (
-            <span style={{ ...styles.orderTypeLabel, color: "#01C550" }}>
-              Online Order
+
+        <div style={styles.bottomRow}>
+          <div style={styles.details}>
+            <span style={styles.customerName}>
+              {element.customer?.name || "Walk-in"}
             </span>
-          )}
-          {!element.online && element.method !== "inStoreOrder" && element.method !== "tableOrder" && (
-            <span style={{ ...styles.orderTypeLabel, color: "#FF0F00" }}>
-              Phone Order
+            <span style={styles.itemCount}>
+              {itemCount} item{itemCount !== 1 ? "s" : ""}
             </span>
-          )}
-          {element.method === "tableOrder" && (
-            <span style={{ ...styles.orderTypeLabel, color: "#6366f1" }}>
-              Table Order
-              {element.tableName ? ` - ${element.tableName}` : ""}
-            </span>
-          )}
-          {element.method === "inStoreOrder" && (
-            <span style={styles.orderTypeLabel}>POS Order</span>
-          )}
-          <span style={styles.orderTime}>
-            {element.method === "pickupOrder" && "Pickup"}
-            {element.method === "deliveryOrder" && "Delivery"}
-          </span>
-          <span style={styles.orderDate}>{date?.toLocaleTimeString()}</span>
-        </div>
-      </div>
-      <div style={styles.orderOptionContainer}>
-        <div style={styles.optionIconsRow}>
-          <button
-            onClick={() => {
-              fadeIn();
-              setcurrentOrder({
-                element: element,
-                index: index.toString(),
-                type: "view",
-                cartString: cartString,
-                date: date,
-              });
-            }}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-          >
-            <FiEdit style={styles.editIcon} />
-          </button>
-          <button
-            onClick={() => {
-              if (storeDetails.settingsPassword?.length > 0) {
-                updatePosState({
-                  authPasswordModal: true,
-                  pendingAuthAction: `cancelOrder${element.id}`,
+          </div>
+          <div style={styles.actions}>
+            <button
+              style={styles.viewBtn}
+              onClick={() => {
+                fadeIn();
+                setcurrentOrder({
+                  element: element,
+                  index: index.toString(),
+                  type: "view",
+                  cartString: cartString,
+                  date: date,
                 });
-              } else {
-                db.collection("users")
-                  .doc(auth.currentUser?.uid)
-                  .collection("pendingOrders")
-                  .doc(element.id)
-                  .delete();
-              }
-            }}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-          >
-            <MdCancel style={styles.cancelIcon} />
-          </button>
-          <button
-            onClick={() => {
-              if (element.online) {
-                db.collection("users")
-                  .doc(auth.currentUser?.uid)
-                  .collection("pendingOrders")
-                  .doc(element.id)
-                  .delete();
-                updateTransList(element);
-              } else {
-                if (element.method === "pickupOrder") {
-                  setcurrentOrder({
-                    element: element,
-                    index: index.toString(),
-                    type: "pay",
-                    cartString: cartString,
-                    date: date,
-                  });
-                  fadeIn();
-                } else {
+              }}
+              title="View order"
+            >
+              <FiEye size={14} color="#64748b" />
+            </button>
+            <button
+              style={styles.completeBtn}
+              onClick={() => {
+                if (element.online) {
                   db.collection("users")
                     .doc(auth.currentUser?.uid)
                     .collection("pendingOrders")
                     .doc(element.id)
                     .delete();
                   updateTransList(element);
+                } else {
+                  if (element.method === "pickupOrder") {
+                    setcurrentOrder({
+                      element: element,
+                      index: index.toString(),
+                      type: "pay",
+                      cartString: cartString,
+                      date: date,
+                    });
+                    fadeIn();
+                  } else {
+                    db.collection("users")
+                      .doc(auth.currentUser?.uid)
+                      .collection("pendingOrders")
+                      .doc(element.id)
+                      .delete();
+                    updateTransList(element);
+                  }
                 }
-              }
-            }}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-          >
-            <FiCheck style={styles.finishIcon} />
-          </button>
+              }}
+              title="Complete order"
+            >
+              <FiCheck size={14} color="#fff" />
+            </button>
+            <button
+              style={styles.cancelBtn}
+              onClick={() => {
+                if (storeDetails.settingsPassword?.length > 0) {
+                  updatePosState({
+                    authPasswordModal: true,
+                    pendingAuthAction: `cancelOrder${element.id}`,
+                  });
+                } else {
+                  db.collection("users")
+                    .doc(auth.currentUser?.uid)
+                    .collection("pendingOrders")
+                    .doc(element.id)
+                    .delete();
+                }
+              }}
+              title="Cancel order"
+            >
+              <FiTrash2 size={14} color="#ef4444" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -171,115 +186,120 @@ function PendingOrderItem({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: "#edf1fe",
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    boxShadow: "3px 3px 3px rgba(0,0,0,0.2)",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
     display: "flex",
+    flexDirection: "row",
+    overflow: "hidden",
   },
-  customerDetailsContainer: {
-    width: 158,
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "stretch",
+  accent: {
+    width: 4,
+    flexShrink: 0,
+  },
+  body: {
+    flex: 1,
+    padding: "12px 14px",
     display: "flex",
     flexDirection: "column",
+    gap: 8,
   },
-  orderNameContainer: {
-    width: "100%",
-    height: 18,
+  topRow: {
+    display: "flex",
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingLeft: 10,
-    display: "flex",
-  },
-  orderNameLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 13,
-    marginRight: 5,
-  },
-  orderNameValue: {
-    color: "#121212",
-  },
-  orderNumberContainer: {
-    width: "100%",
-    height: 36,
-    justifyContent: "flex-start",
-    paddingLeft: 10,
-    display: "flex",
-    flexDirection: "column",
-  },
-  orderNumberLabel: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 13,
-  },
-  orderNumberValue: {
-    color: "#121212",
-    fontSize: 13,
-  },
-  divider: {
-    width: 1,
-    height: 53,
-    backgroundColor: "rgba(0,0,0,1)",
-  },
-  orderInfoContainer: {
-    width: 113,
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "stretch",
-    display: "flex",
-  },
-  orderInfoTextGroup: {
-    width: 96,
-    height: 53,
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  leftInfo: {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  orderTypeLabel: {
+  methodBadge: {
+    padding: "2px 10px",
+    borderRadius: 5,
+    border: "1px solid",
+  },
+  methodText: {
+    fontSize: 11,
     fontWeight: "700",
-    color: "#0529ff",
-    fontSize: 13,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.3,
   },
-  orderTime: {
-    color: "#121212",
-    fontSize: 13,
+  orderNum: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#94a3b8",
   },
-  orderDate: {
-    color: "#121212",
-    fontSize: 13,
+  time: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#94a3b8",
   },
-  orderOptionContainer: {
-    width: 143,
+  bottomRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  details: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  customerName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  itemCount: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#94a3b8",
+  },
+  actions: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  viewBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "stretch",
-    display: "flex",
+    cursor: "pointer",
+    padding: 0,
   },
-  optionIconsRow: {
-    width: 98,
-    height: 26,
-    flexDirection: "row",
-    justifyContent: "space-between",
+  completeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    border: "none",
+    backgroundColor: "#10b981",
+    display: "flex",
     alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+  },
+  cancelBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    border: "1px solid #fee2e2",
+    backgroundColor: "#fef2f2",
     display: "flex",
-  },
-  editIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 22,
-  },
-  cancelIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 24,
-  },
-  finishIcon: {
-    color: "rgba(0,0,0,1)",
-    fontSize: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
   },
 };
 
