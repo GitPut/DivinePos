@@ -1,7 +1,7 @@
 import React from "react";
 import { FaPhone } from "react-icons/fa";
-import { IoLocationSharp } from "react-icons/io5";
-import { FiShoppingBag, FiTruck, FiClock, FiArrowRight } from "react-icons/fi";
+import { IoLocationSharp, IoTimeOutline } from "react-icons/io5";
+import { FiShoppingBag, FiTruck } from "react-icons/fi";
 import {
   orderDetailsState,
   setOrderDetailsState,
@@ -14,8 +14,7 @@ function StoreFront() {
   const orderDetails = orderDetailsState.use();
   const page = orderDetails.page;
   const { width: screenWidth } = useWindowSize();
-
-  const isMobile = screenWidth < 700;
+  const isMobile = screenWidth < 640;
 
   const handleLogoClick = () => {
     if (page === 5) {
@@ -25,43 +24,46 @@ function StoreFront() {
     }
   };
 
+  const hasLogo = storeDetails.hasLogo && storeDetails.logoUrl;
+
   return (
-    <div style={styles.container}>
-      {/* Hero Banner */}
-      <div style={styles.heroBanner}>
-        <div style={styles.heroOverlay}>
-          {/* Logo / Store Name */}
+    <div style={styles.page}>
+      {/* Hero Section */}
+      <div style={styles.hero}>
+        {/* Background pattern */}
+        <div style={styles.heroBgPattern} />
+
+        <div style={styles.heroContent}>
+          {/* Store logo or initial */}
           <button style={styles.logoBtn} onClick={handleLogoClick}>
-            {storeDetails.hasLogo && storeDetails.logoUrl ? (
-              <img src={storeDetails.logoUrl} style={styles.logo} alt="" />
+            {hasLogo ? (
+              <img src={storeDetails.logoUrl!} style={styles.logoImg} alt="" />
             ) : (
-              <div style={styles.logoCircle}>
-                <span style={styles.logoInitial}>
+              <div style={styles.logoPlaceholder}>
+                <span style={styles.logoLetter}>
                   {(storeDetails.name || "S").charAt(0).toUpperCase()}
                 </span>
               </div>
             )}
           </button>
 
-          <span style={{
-            ...styles.storeName,
-            fontSize: isMobile ? 32 : 42,
-          }}>
+          {/* Store name */}
+          <span style={{ ...styles.storeName, fontSize: isMobile ? 28 : 36 }}>
             {storeDetails.name}
           </span>
 
-          {/* Store info */}
-          <div style={styles.infoRow}>
+          {/* Meta row */}
+          <div style={styles.metaRow}>
             {storeDetails.phoneNumber && (
-              <div style={styles.infoPill}>
-                <FaPhone size={11} color="#fff" />
-                <span style={styles.infoPillText}>{storeDetails.phoneNumber}</span>
+              <div style={styles.metaItem}>
+                <FaPhone size={11} color="rgba(255,255,255,0.6)" />
+                <span style={styles.metaText}>{storeDetails.phoneNumber}</span>
               </div>
             )}
             {storeDetails.address?.value?.structured_formatting?.main_text && (
-              <div style={styles.infoPill}>
-                <IoLocationSharp size={13} color="#fff" />
-                <span style={styles.infoPillText}>
+              <div style={styles.metaItem}>
+                <IoLocationSharp size={14} color="rgba(255,255,255,0.6)" />
+                <span style={styles.metaText}>
                   {storeDetails.address.value.structured_formatting.main_text}
                 </span>
               </div>
@@ -70,57 +72,48 @@ function StoreFront() {
         </div>
       </div>
 
-      {/* Order Type Selection */}
+      {/* Order Type Section */}
       <div style={styles.orderSection}>
-        <div style={styles.orderSectionInner}>
-          <div style={styles.sectionHeader}>
-            <FiClock size={18} color="#1D294E" />
-            <span style={styles.sectionTitle}>Start Your Order</span>
-          </div>
-          <span style={styles.sectionSubtitle}>Choose how you'd like to receive your food</span>
+        <div style={{ ...styles.orderInner, maxWidth: isMobile ? "100%" : 480 }}>
+          <span style={styles.orderTitle}>How would you like your order?</span>
 
-          <div style={{
-            ...styles.cardsRow,
-            flexDirection: isMobile ? "column" : "row",
-          }}>
-            {/* Pickup Card */}
+          <div style={styles.optionsCol}>
+            {/* Pickup */}
             <button
-              style={styles.orderCard}
+              style={styles.optionBtn}
               onClick={() => setOrderDetailsState({ page: 2 })}
             >
-              <div style={styles.cardTop}>
-                <div style={{ ...styles.cardIcon, backgroundColor: "#eef6ff" }}>
-                  <FiShoppingBag size={24} color="#1D294E" />
-                </div>
-                <div style={styles.cardTextGroup}>
-                  <span style={styles.cardTitle}>Pickup</span>
-                  <span style={styles.cardDesc}>Order ahead and pick up in store</span>
-                </div>
+              <div style={{ ...styles.optionIcon, backgroundColor: "#eef4ff" }}>
+                <FiShoppingBag size={22} color="#1D294E" />
               </div>
-              <div style={styles.cardArrow}>
-                <FiArrowRight size={18} color="#1D294E" />
+              <div style={styles.optionText}>
+                <span style={styles.optionTitle}>Pickup</span>
+                <span style={styles.optionDesc}>Order ahead and pick up in store</span>
+              </div>
+              <div style={styles.optionArrow}>
+                <span style={styles.optionArrowText}>→</span>
               </div>
             </button>
 
-            {/* Delivery Card */}
+            {/* Delivery */}
             {storeDetails.acceptDelivery && (
               <button
-                style={styles.orderCard}
-                onClick={() => {
-                  setOrderDetailsState({ ...orderDetails, delivery: true, page: 3 });
-                }}
+                style={styles.optionBtn}
+                onClick={() => setOrderDetailsState({ ...orderDetails, delivery: true, page: 3 })}
               >
-                <div style={styles.cardTop}>
-                  <div style={{ ...styles.cardIcon, backgroundColor: "#fef3e2" }}>
-                    <FiTruck size={24} color="#e67e22" />
-                  </div>
-                  <div style={styles.cardTextGroup}>
-                    <span style={styles.cardTitle}>Delivery</span>
-                    <span style={styles.cardDesc}>Get it delivered to your door</span>
-                  </div>
+                <div style={{ ...styles.optionIcon, backgroundColor: "#fef7ed" }}>
+                  <FiTruck size={22} color="#d97706" />
                 </div>
-                <div style={styles.cardArrow}>
-                  <FiArrowRight size={18} color="#e67e22" />
+                <div style={styles.optionText}>
+                  <span style={styles.optionTitle}>Delivery</span>
+                  <span style={styles.optionDesc}>
+                    {storeDetails.deliveryPrice && parseFloat(storeDetails.deliveryPrice) > 0
+                      ? `$${parseFloat(storeDetails.deliveryPrice).toFixed(2)} delivery fee`
+                      : "Free delivery"}
+                  </span>
+                </div>
+                <div style={styles.optionArrow}>
+                  <span style={styles.optionArrowText}>→</span>
                 </div>
               </button>
             )}
@@ -130,56 +123,46 @@ function StoreFront() {
 
       {/* Footer */}
       <div style={styles.footer}>
-        <div style={styles.footerInner}>
-          {storeDetails.phoneNumber && (
-            <span style={styles.footerText}>
-              📞 {storeDetails.phoneNumber}
-            </span>
-          )}
-          {storeDetails.address?.value?.structured_formatting && (
-            <span style={styles.footerText}>
-              📍 {storeDetails.address.value.structured_formatting.main_text}, {storeDetails.address.value.structured_formatting.secondary_text}
-            </span>
-          )}
-          {storeDetails.website && (
-            <span style={styles.footerText}>
-              🌐 {storeDetails.website}
-            </span>
-          )}
-        </div>
-        <span style={styles.poweredBy}>Powered by Divine POS</span>
+        {storeDetails.address?.value?.structured_formatting && (
+          <span style={styles.footerAddress}>
+            {storeDetails.address.value.structured_formatting.main_text},{" "}
+            {storeDetails.address.value.structured_formatting.secondary_text}
+          </span>
+        )}
+        <span style={styles.footerPowered}>Powered by Divine POS</span>
       </div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  page: {
     minHeight: "100%",
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: "#fafafa",
     display: "flex",
     flexDirection: "column",
   },
-  // Hero Banner
-  heroBanner: {
+  // Hero
+  hero: {
     width: "100%",
-    backgroundColor: "#1D294E",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#1a1a2e",
     position: "relative",
     overflow: "hidden",
   },
-  heroOverlay: {
+  heroBgPattern: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "radial-gradient(circle at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 50%)",
+  },
+  heroContent: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    padding: "48px 24px 40px",
-    width: "100%",
-    maxWidth: 600,
-    gap: 12,
+    padding: "44px 24px 40px",
     position: "relative",
     zIndex: 1,
   },
@@ -188,26 +171,27 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     cursor: "pointer",
     padding: 0,
-    marginBottom: 8,
+    marginBottom: 16,
   },
-  logo: {
-    height: 60,
+  logoImg: {
+    height: 64,
     maxWidth: 200,
     objectFit: "contain",
+    borderRadius: 12,
   },
-  logoCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    border: "2px solid rgba(255,255,255,0.3)",
+  logoPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    border: "2px solid rgba(255,255,255,0.15)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
-  logoInitial: {
-    fontSize: 32,
-    fontWeight: "700",
+  logoLetter: {
+    fontSize: 36,
+    fontWeight: "800",
     color: "#fff",
   },
   storeName: {
@@ -215,29 +199,26 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#fff",
     textAlign: "center",
     letterSpacing: -0.5,
+    lineHeight: "1.1",
   },
-  infoRow: {
+  metaRow: {
     display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 16,
     justifyContent: "center",
-    marginTop: 4,
+    marginTop: 12,
   },
-  infoPill: {
+  metaItem: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 20,
-    padding: "5px 14px",
-    border: "1px solid rgba(255,255,255,0.1)",
   },
-  infoPillText: {
+  metaText: {
     fontSize: 13,
-    color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
+    color: "rgba(255,255,255,0.6)",
+    fontWeight: "400",
   },
   // Order Section
   orderSection: {
@@ -245,118 +226,96 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     justifyContent: "center",
     padding: "32px 20px 40px",
-    backgroundColor: "#f8f9fb",
   },
-  orderSectionInner: {
+  orderInner: {
     width: "100%",
-    maxWidth: 560,
     display: "flex",
     flexDirection: "column",
-    gap: 8,
   },
-  sectionHeader: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 22,
+  orderTitle: {
+    fontSize: 20,
     fontWeight: "700",
-    color: "#0f172a",
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "#94a3b8",
+    color: "#1a1a1a",
     marginBottom: 16,
   },
-  cardsRow: {
+  optionsCol: {
     display: "flex",
-    gap: 12,
-    width: "100%",
+    flexDirection: "column",
+    gap: 10,
   },
-  orderCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    border: "1px solid #e8ecf1",
-    padding: "20px 20px",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    cursor: "pointer",
-    textAlign: "left",
-    transition: "box-shadow 0.15s, border-color 0.15s",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-  },
-  cardTop: {
+  optionBtn: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    flex: 1,
+    padding: "18px 16px",
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #eee",
+    cursor: "pointer",
+    textAlign: "left",
+    transition: "box-shadow 0.15s, border-color 0.15s",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   },
-  cardIcon: {
-    width: 52,
-    height: 52,
+  optionIcon: {
+    width: 50,
+    height: 50,
     borderRadius: 14,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  cardTextGroup: {
+  optionText: {
     display: "flex",
     flexDirection: "column",
     gap: 2,
+    flex: 1,
   },
-  cardTitle: {
-    fontSize: 17,
+  optionTitle: {
+    fontSize: 16,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1a1a1a",
   },
-  cardDesc: {
+  optionDesc: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "#888",
     fontWeight: "400",
   },
-  cardArrow: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#f8f9fb",
+  optionArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#f5f5f5",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
+  optionArrowText: {
+    fontSize: 16,
+    color: "#999",
+    fontWeight: "400",
+  },
   // Footer
   footer: {
     width: "100%",
-    borderTop: "1px solid #f1f5f9",
-    padding: "20px 24px 16px",
+    padding: "16px 24px 20px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     boxSizing: "border-box",
+    borderTop: "1px solid #f0f0f0",
   },
-  footerInner: {
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 20,
-    justifyContent: "center",
+  footerAddress: {
+    fontSize: 12,
+    color: "#aaa",
+    textAlign: "center",
   },
-  footerText: {
-    fontSize: 13,
-    color: "#94a3b8",
-  },
-  poweredBy: {
+  footerPowered: {
     fontSize: 11,
-    color: "#cbd5e1",
-    marginTop: 4,
+    color: "#ccc",
   },
 };
 

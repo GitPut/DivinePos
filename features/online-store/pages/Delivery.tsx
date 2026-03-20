@@ -1,7 +1,5 @@
 import React from "react";
 import { FiArrowLeft } from "react-icons/fi";
-import { FaPhone } from "react-icons/fa";
-import { IoLocationSharp } from "react-icons/io5";
 import DeliveryDetails from "../components/DeliveryDetails";
 import {
   orderDetailsState,
@@ -9,112 +7,38 @@ import {
   storeDetailsState,
 } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
-import dposLogoWhite from "assets/images/dpos-logo-white.png";
 
 function OnlineOrderHomeDelivery() {
-  const orderDetails = orderDetailsState.use();
   const storeDetails = storeDetailsState.use();
+  const orderDetails = orderDetailsState.use();
   const page = orderDetails.page;
   const { width: screenWidth } = useWindowSize();
 
-  const isMobile = screenWidth < 700;
-
-  const handleLogoClick = () => {
-    if (page === 5) {
-      setOrderDetailsState({ page: 4 });
-    } else {
-      setOrderDetailsState({
-        ...orderDetails,
-        delivery: false,
-        address: null,
-      });
-      setOrderDetailsState({ page: 1 });
-    }
-  };
-
   const handleBack = () => {
-    setOrderDetailsState({
-      ...orderDetails,
-      delivery: false,
-      address: null,
-    });
+    setOrderDetailsState({ ...orderDetails, delivery: false, address: null });
     setOrderDetailsState({ page: 1 });
   };
 
   return (
-    <div style={styles.container}>
+    <div style={styles.page}>
       {/* Header */}
       <div style={styles.header}>
-        <button
-          style={styles.logoButton}
-          onClick={handleLogoClick}
-        >
-          {storeDetails.hasLogo ? (
-            <img
-              src={dposLogoWhite}
-              style={styles.logo}
-              alt=""
-            />
-          ) : (
-            <span style={styles.logoText}>
-              {storeDetails.name}
-            </span>
-          )}
+        <button style={styles.backBtn} onClick={handleBack}>
+          <FiArrowLeft size={18} color="#1a1a1a" />
         </button>
+        <span style={styles.headerTitle}>{storeDetails.name}</span>
+        <div style={{ width: 40 }} />
       </div>
 
       {/* Content */}
       <div style={styles.content}>
-        <div style={{
-          ...styles.formContainer,
-          ...(isMobile ? { padding: "32px 20px", maxWidth: "100%" } : {}),
-        }}>
-          {/* Back button */}
-          <button
-            style={styles.backButton}
-            onClick={handleBack}
-          >
-            <FiArrowLeft style={{ fontSize: 18, color: "#64748b" }} />
-            <span style={styles.backText}>Back</span>
-          </button>
+        <div style={{ ...styles.inner, maxWidth: screenWidth < 640 ? "100%" : 440 }}>
+          <span style={styles.title}>Delivery Order</span>
+          <span style={styles.subtitle}>Enter your details and delivery address</span>
 
-          {/* Title */}
-          <span style={{
-            ...styles.title,
-            ...(isMobile ? { fontSize: 24 } : {}),
-          }}>
-            Delivery Order
-          </span>
-          <span style={styles.subtitle}>
-            Enter your details for delivery
-          </span>
-
-          {/* Form Card */}
-          <div style={styles.formCard}>
+          <div style={styles.card}>
             <DeliveryDetails />
           </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div style={styles.footer}>
-        <div style={styles.footerContent}>
-          {storeDetails.phoneNumber && (
-            <div style={styles.footerItem}>
-              <FaPhone style={{ fontSize: 14, color: "#94a3b8" }} />
-              <span style={styles.footerText}>{storeDetails.phoneNumber}</span>
-            </div>
-          )}
-          {storeDetails.address?.value?.structured_formatting && (
-            <div style={styles.footerItem}>
-              <IoLocationSharp style={{ fontSize: 16, color: "#94a3b8" }} />
-              <span style={styles.footerText}>
-                {storeDetails.address.value.structured_formatting.main_text}
-                {", "}
-                {storeDetails.address.value.structured_formatting.secondary_text}
-              </span>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -122,111 +46,67 @@ function OnlineOrderHomeDelivery() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  page: {
     minHeight: "100%",
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: "#fafafa",
     display: "flex",
     flexDirection: "column",
   },
   header: {
-    width: "100%",
-    padding: "16px 24px",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "14px 20px",
+    backgroundColor: "#fff",
+    borderBottom: "1px solid #f0f0f0",
+    flexShrink: 0,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#f5f5f5",
     display: "flex",
     alignItems: "center",
-    borderBottom: "1px solid #f1f5f9",
-    boxSizing: "border-box",
-  },
-  logoButton: {
-    background: "none",
+    justifyContent: "center",
     border: "none",
     cursor: "pointer",
-    padding: 0,
-    display: "flex",
-    alignItems: "center",
   },
-  logo: {
-    height: 40,
-    objectFit: "contain",
-  },
-  logoText: {
-    fontSize: 22,
+  headerTitle: {
+    fontSize: 16,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1a1a1a",
   },
   content: {
     flex: 1,
     display: "flex",
     justifyContent: "center",
-    alignItems: "flex-start",
-    padding: "40px 24px",
+    padding: "32px 20px",
   },
-  formContainer: {
-    maxWidth: 500,
+  inner: {
     width: "100%",
     display: "flex",
     flexDirection: "column",
-    gap: 8,
-  },
-  backButton: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    padding: 0,
-    marginBottom: 8,
-  },
-  backText: {
-    fontSize: 15,
-    color: "#64748b",
-    fontWeight: "500",
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#0f172a",
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#1a1a1a",
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 15,
-    color: "#64748b",
-    marginBottom: 16,
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 20,
   },
-  formCard: {
+  card: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-    border: "1px solid #f1f5f9",
-    padding: "28px 24px",
-    display: "flex",
-    flexDirection: "column",
-  },
-  footer: {
-    width: "100%",
-    borderTop: "1px solid #f1f5f9",
-    padding: "20px 24px",
-    display: "flex",
-    justifyContent: "center",
-    boxSizing: "border-box",
-  },
-  footerContent: {
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 24,
-    justifyContent: "center",
-  },
-  footerItem: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  footerText: {
-    fontSize: 14,
-    color: "#94a3b8",
+    border: "1px solid #eee",
+    padding: "24px 20px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   },
 };
 
