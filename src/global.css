@@ -263,6 +263,11 @@ input, textarea {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Smooth number transitions for totals */
 .pos-total-value {
   transition: color 0.2s ease;

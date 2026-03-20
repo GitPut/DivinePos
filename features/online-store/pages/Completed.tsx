@@ -1,16 +1,11 @@
 import React from "react";
-import { FaPhone } from "react-icons/fa";
-import { IoLocationSharp } from "react-icons/io5";
+import { FiCheckCircle, FiPhone, FiMapPin } from "react-icons/fi";
 import {
   orderDetailsState,
   setOrderDetailsState,
   storeDetailsState,
 } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
-import dposLogoWhite from "assets/images/dpos-logo-white.png";
-import dashImg from "assets/images/image_ridw..png";
-import facebookIcon from "assets/images/image_pDaA..png";
-import instagramIcon from "assets/images/image_CLpi..png";
 
 function OnlineOrderHomeCompleted() {
   const storeDetails = storeDetailsState.use();
@@ -20,155 +15,91 @@ function OnlineOrderHomeCompleted() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.backgroundContainer}>
-        <div style={styles.plantImgContainer}>
-          <div style={styles.wingImgContainer}>
-            <div style={styles.pizzaImgContainer}>
-              <div style={styles.frontContainer}>
-                <div style={styles.logoGroup}>
-                  {storeDetails.hasLogo ? (
-                    <button
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                      onClick={() => {
-                        if (page === 5) {
-                          setOrderDetailsState({
-                            page: 4,
-                          });
-                        } else {
-                          setOrderDetailsState({
-                            ...orderDetails,
-                            delivery: false,
-                            address: null,
-                            page: 1,
-                          });
-                        }
-                      }}
-                    >
-                      <img
-                        src={dposLogoWhite}
-                        style={styles.logo}
-                        alt=""
-                      />
-                    </button>
-                  ) : (
-                    <button
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                      onClick={() => {
-                        if (page === 5) {
-                          setOrderDetailsState({
-                            page: 4,
-                          });
-                        } else {
-                          setOrderDetailsState({
-                            ...orderDetails,
-                            delivery: false,
-                            address: null,
-                            page: 1,
-                          });
-                        }
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: screenWidth < 1000 ? 30 : 35,
-                          fontWeight: "700",
-                          color: "white",
-                        }}
-                      >
-                        {storeDetails.name}
-                      </span>
-                    </button>
-                  )}
-                  <img
-                    src={dashImg}
-                    style={styles.dash}
-                    alt=""
-                  />
-                </div>
-                {screenWidth > 1000 ? (
-                  <span
-                    style={{
-                      fontSize: 35,
-                      fontWeight: "700",
-                      color: "white",
-                      textAlign: "center",
-                      display: "block",
-                      width: "100%",
-                    }}
-                  >
-                    Thank you for placing a order.
-                  </span>
-                ) : (
-                  <div
-                    style={{
-                      justifyContent: "center",
-                      alignItems: "center",
-                      width: "100%",
-                      display: "flex",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 30,
-                        fontWeight: "700",
-                        color: "white",
-                        textAlign: "center",
-                        display: "block",
-                        width: "100%",
-                      }}
-                    >
-                      Thank you for placing a order.
-                    </span>
-                  </div>
-                )}
-                <div style={styles.bottomRowGroup}>
-                  <div style={styles.detailsLocationGroup}>
-                    <div style={styles.phoneNumberRow}>
-                      <FaPhone
-                        style={{
-                          ...styles.phoneNumberIcon,
-                          ...(screenWidth < 1000 ? { fontSize: 35 } : {}),
-                        }}
-                      />
-                      <span style={styles.phoneNumberTxt}>
-                        {storeDetails.phoneNumber}
-                      </span>
-                    </div>
-                    <div style={styles.addressRow}>
-                      <IoLocationSharp
-                        style={{
-                          ...styles.addressIcon,
-                          ...(screenWidth < 1000 ? { fontSize: 35 } : {}),
-                        }}
-                      />
-                      <span style={styles.addressTxt}>
-                        {
-                          storeDetails.address?.value?.structured_formatting?.main_text
-                        }
-                        {"\n"}
-                        {
-                          storeDetails.address?.value?.structured_formatting?.secondary_text
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  {storeDetails.hasSocial && (
-                    <div style={styles.socialIconsGroup}>
-                      <img
-                        src={facebookIcon}
-                        style={styles.facebookIcon}
-                        alt=""
-                      />
-                      <img
-                        src={instagramIcon}
-                        style={styles.instagramIcon}
-                        alt=""
-                      />
-                    </div>
-                  )}
-                </div>
+      <div style={styles.scrollContainer}>
+        <div
+          style={{
+            ...styles.contentWrapper,
+            ...(screenWidth < 600 ? { padding: "40px 20px" } : {}),
+          }}
+        >
+          {/* Success icon */}
+          <div style={styles.iconWrapper}>
+            <FiCheckCircle size={56} color="#22c55e" strokeWidth={1.5} />
+          </div>
+
+          {/* Title */}
+          <span style={styles.title}>Order Confirmed!</span>
+          <span style={styles.subtitle}>
+            Thank you for placing an order. We are preparing it now and will have
+            it ready for you shortly.
+          </span>
+
+          {/* Order info card */}
+          <div
+            style={{
+              ...styles.infoCard,
+              ...(screenWidth < 600 ? { padding: "20px 20px" } : {}),
+            }}
+          >
+            <span style={styles.infoCardTitle}>Order Details</span>
+            {orderDetails.customer?.name && (
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Name</span>
+                <span style={styles.infoValue}>{orderDetails.customer.name}</span>
               </div>
+            )}
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>Type</span>
+              <span style={styles.infoValue}>
+                {orderDetails.delivery ? "Delivery" : "Pickup"}
+              </span>
             </div>
+            {orderDetails.total != null && (
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Total</span>
+                <span style={{ ...styles.infoValue, fontWeight: "700" }}>
+                  ${(Number(orderDetails.total) / 100).toFixed(2)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Place another order button */}
+          <button
+            style={styles.primaryBtn}
+            onClick={() => {
+              setOrderDetailsState({
+                ...orderDetails,
+                delivery: false,
+                address: null,
+                page: 1,
+              });
+            }}
+          >
+            <span style={styles.primaryBtnTxt}>Place Another Order</span>
+          </button>
+
+          {/* Store contact info */}
+          <div style={styles.contactSection}>
+            {storeDetails.phoneNumber && (
+              <div style={styles.contactRow}>
+                <FiPhone size={15} color="#94a3b8" />
+                <span style={styles.contactText}>
+                  {storeDetails.phoneNumber}
+                </span>
+              </div>
+            )}
+            {storeDetails.address?.value?.structured_formatting?.main_text && (
+              <div style={styles.contactRow}>
+                <FiMapPin size={15} color="#94a3b8" />
+                <span style={styles.contactText}>
+                  {storeDetails.address.value.structured_formatting.main_text}
+                  {storeDetails.address.value.structured_formatting.secondary_text
+                    ? `, ${storeDetails.address.value.structured_formatting.secondary_text}`
+                    : ""}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -180,185 +111,120 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
     width: "100%",
-  },
-  backgroundContainer: {
-    height: "100%",
-    width: "100%",
-  },
-  plantImgContainer: {
-    alignItems: "flex-start",
-    justifyContent: "flex-end",
-    height: "100%",
-    width: "100%",
+    backgroundColor: "#ffffff",
     display: "flex",
+    flexDirection: "column",
   },
-  plantImg: {
-    height: 520,
-    width: 200,
-  },
-  wingImgContainer: {
-    top: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    display: "flex",
-  },
-  wingImg: {
-    height: 200,
-    width: "50%",
-  },
-  pizzaImgContainer: {
-    top: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
-    display: "flex",
-  },
-  pizzaImg: {
-    height: 1000,
-    width: 401,
-  },
-  frontContainer: {
+  scrollContainer: {
     flex: 1,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "space-between",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
     alignItems: "center",
+  },
+  contentWrapper: {
+    width: "100%",
+    maxWidth: 480,
+    padding: "60px 24px 40px",
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
   },
-  logoGroup: {
-    justifyContent: "space-between",
-    alignSelf: "stretch",
-    padding: 10,
+  iconWrapper: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "#f0fdf4",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#0f172a",
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 15,
+    color: "#64748b",
+    textAlign: "center",
+    lineHeight: "1.6",
+    maxWidth: 380,
+    marginBottom: 8,
+  },
+  infoCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+    border: "1px solid #f1f5f9",
+    padding: "24px 28px",
     display: "flex",
     flexDirection: "column",
+    gap: 14,
+    marginTop: 8,
   },
-  logo: {
-    width: 237,
-    height: 78,
-    objectFit: "contain",
+  infoCardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0f172a",
+    marginBottom: 4,
   },
-  dash: {
-    height: 35,
-    width: "50%",
-    objectFit: "contain",
-  },
-  btnContainerRow: {
+  infoRow: {
+    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-    height: 60,
-    width: 683,
-    display: "flex",
-  },
-  pickupBtn: {
-    width: 219,
-    height: 60,
-    backgroundColor: "rgba(238,125,67,1)",
-    borderRadius: 60,
-    justifyContent: "center",
     alignItems: "center",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.2)",
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#94a3b8",
+    fontWeight: "500",
+  },
+  infoValue: {
+    fontSize: 14,
+    color: "#0f172a",
+    fontWeight: "500",
+  },
+  primaryBtn: {
+    width: "100%",
+    height: 52,
+    backgroundColor: "#1D294E",
+    borderRadius: 12,
     display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     border: "none",
     cursor: "pointer",
+    marginTop: 12,
+    transition: "opacity 0.15s",
   },
-  pickupBtnTxt: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
+  primaryBtnTxt: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: -0.2,
   },
-  deliveryBtn: {
-    width: 219,
-    height: 60,
-    backgroundColor: "rgba(238,125,67,1)",
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.2)",
-    display: "flex",
-    border: "none",
-    cursor: "pointer",
-  },
-  deliveryBtnTxt: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
-  },
-  bottomRowGroup: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    height: 150,
-    alignSelf: "stretch",
-    display: "flex",
-  },
-  detailsLocationGroup: {
-    justifyContent: "center",
-    margin: 10,
+  contactSection: {
     display: "flex",
     flexDirection: "column",
-  },
-  phoneNumberRow: {
-    width: 231,
-    height: 65,
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
+    marginTop: 24,
+    paddingBottom: 16,
+  },
+  contactRow: {
     display: "flex",
-  },
-  phoneNumberIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 50,
-  },
-  phoneNumberTxt: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 25,
-  },
-  addressRow: {
-    width: 231,
-    height: 65,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    display: "flex",
+    gap: 8,
   },
-  addressIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 50,
-  },
-  addressTxt: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 23,
-    whiteSpace: "pre-line",
-  },
-  socialIconsGroup: {
-    width: 190,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    margin: 10,
-    display: "flex",
-  },
-  facebookIcon: {
-    height: 57,
-    width: 72,
-    objectFit: "contain",
-  },
-  instagramIcon: {
-    height: 57,
-    width: 72,
-    objectFit: "contain",
+  contactText: {
+    fontSize: 13,
+    color: "#94a3b8",
   },
 };
 

@@ -1,7 +1,7 @@
 import firebase from "firebase/compat/app";
 import { auth, db } from "./config";
 
-type SystemLogType = "login" | "logout" | "subscription_change";
+type SystemLogType = "login" | "logout" | "signup" | "subscription_change";
 
 export const logSystemEvent = async (
   type: SystemLogType,

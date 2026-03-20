@@ -94,18 +94,24 @@ function DeliveryDetails() {
     }
   }
 
+  const isDisabled =
+    checkingDeliveryRange ||
+    !localAddress ||
+    localName === "" ||
+    localPhoneNumber === "";
+
   return (
-    <>
+    <div style={styles.wrapper}>
       <div
         style={{
           ...styles.fieldsGroup,
-          ...(width < 1000 ? { width: width * 0.9 } : {}),
+          ...(width < 600 ? { width: "100%" } : {}),
         }}
       >
         <FieldInput
-          txtInput="Name"
-          label="Name*"
-          style={styles.nameField}
+          txtInput="Your full name"
+          label="Name"
+          style={styles.field}
           value={localName}
           onChangeText={(text) => setlocalName(text)}
           textContentType="name"
@@ -113,8 +119,8 @@ function DeliveryDetails() {
         />
         <FieldInput
           txtInput="(123) 456-7890"
-          label="Phone Number*"
-          style={styles.nameField}
+          label="Phone Number"
+          style={styles.field}
           value={localPhoneNumber}
           onChangeText={(text) => setlocalPhoneNumber(text)}
           textContentType="telephoneNumber"
@@ -122,8 +128,8 @@ function DeliveryDetails() {
         />
         <FieldInput
           txtInput="Delivery Address"
-          label="Delivery Address*"
-          style={styles.addressField}
+          label="Delivery Address"
+          style={styles.field}
           customInput={() => (
             <GooglePlacesAutocomplete
               apiOptions={{
@@ -141,19 +147,19 @@ function DeliveryDetails() {
             />
           )}
         />
-        <div style={styles.buzzCodeAndPhoneRow}>
+        <div style={styles.halfRow}>
           <FieldInput
-            txtInput="#"
+            txtInput="Code"
             label="Buzz Code"
-            style={styles.buzzCodeField}
+            style={styles.halfField}
             value={localBuzzCode}
             onChangeText={(text) => setlocalBuzzCode(text)}
             textContentType="none"
           />
           <FieldInput
-            txtInput="#"
+            txtInput="Unit #"
             label="Unit Number"
-            style={styles.phoneNumberField}
+            style={styles.halfField}
             value={localUnitNumber}
             onChangeText={(text) => setlocalUnitNumber(text)}
             textContentType="none"
@@ -163,20 +169,9 @@ function DeliveryDetails() {
       <button
         style={{
           ...styles.continueBtn,
-          opacity:
-            checkingDeliveryRange ||
-            !localAddress ||
-            localName === "" ||
-            localPhoneNumber === ""
-              ? 0.8
-              : 1,
+          ...(isDisabled ? { opacity: 0.5, cursor: "not-allowed" } : {}),
         }}
-        disabled={
-          checkingDeliveryRange ||
-          !localAddress ||
-          localName === "" ||
-          localPhoneNumber === ""
-        }
+        disabled={isDisabled}
         onClick={() => {
           setcheckingDeliveryRange(true);
           if (localName === "" || localPhoneNumber === "" || !localAddress)
@@ -230,60 +225,59 @@ function DeliveryDetails() {
           });
         }}
       >
-        <span style={styles.continueBtnTxt}>CONTINUE</span>
+        <span style={styles.continueBtnTxt}>
+          {checkingDeliveryRange ? "Checking..." : "Continue"}
+        </span>
       </button>
-    </>
+    </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  fieldsGroup: {
-    width: 380,
-    height: 325,
-    justifyContent: "space-between",
+  wrapper: {
+    width: "100%",
+    alignItems: "center",
+    gap: 24,
     display: "flex",
     flexDirection: "column",
   },
-  nameField: {
-    height: 70,
+  fieldsGroup: {
+    width: 420,
+    maxWidth: "100%",
+    gap: 16,
+    display: "flex",
+    flexDirection: "column",
+  },
+  field: {
     width: "100%",
   },
-  addressField: {
-    height: 70,
+  halfRow: {
     width: "100%",
-  },
-  buzzCodeAndPhoneRow: {
-    width: "100%",
-    height: 70,
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 12,
     display: "flex",
   },
-  buzzCodeField: {
-    height: 70,
-    width: "48%",
-  },
-  phoneNumberField: {
-    height: 70,
-    width: "48%",
+  halfField: {
+    flex: 1,
   },
   continueBtn: {
-    width: 219,
-    height: 60,
-    backgroundColor: "rgba(238,125,67,1)",
-    borderRadius: 60,
+    width: "100%",
+    maxWidth: 420,
+    height: 52,
+    backgroundColor: "#1D294E",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.2)",
-    marginTop: 10,
     display: "flex",
     border: "none",
     cursor: "pointer",
+    transition: "opacity 0.2s ease",
   },
   continueBtnTxt: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
-    fontWeight: "700",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 };
 

@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
-import { FaPhone } from "react-icons/fa";
-import { IoLocationSharp } from "react-icons/io5";
+import { FiArrowLeft } from "react-icons/fi";
 import CheckOutDetails from "../components/CheckOutDetails";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -11,10 +10,6 @@ import {
   onlineStoreState,
 } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
-import dposLogoWhite from "assets/images/dpos-logo-white.png";
-import dashImg from "assets/images/image_ridw..png";
-import facebookIcon from "assets/images/image_pDaA..png";
-import instagramIcon from "assets/images/image_CLpi..png";
 
 function OnlineOrderHomeCheckout() {
   const storeDetails = storeDetailsState.use();
@@ -29,138 +24,72 @@ function OnlineOrderHomeCheckout() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.backgroundContainer}>
-        <div style={styles.plantImgContainer}>
-          <div style={styles.wingImgContainer}>
-            <div style={styles.pizzaImgContainer}>
-              <div style={styles.frontContainer}>
-                <div style={styles.logoGroup}>
-                  {storeDetails?.hasLogo ? (
-                    <button
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                      onClick={() => {
-                        if (page === 5) {
-                          setOrderDetailsState({
-                            page: 4,
-                          });
-                        } else {
-                          setOrderDetailsState({
-                            ...orderDetails,
-                            delivery: false,
-                            address: null,
-                            page: 1,
-                          });
-                        }
-                      }}
-                    >
-                      <img
-                        src={dposLogoWhite}
-                        style={styles.logo}
-                        alt=""
-                      />
-                    </button>
-                  ) : (
-                    <button
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                      onClick={() => {
-                        if (page === 5) {
-                          setOrderDetailsState({
-                            page: 4,
-                          });
-                        } else {
-                          setOrderDetailsState({
-                            ...orderDetails,
-                            delivery: false,
-                            address: null,
-                            page: 1,
-                          });
-                        }
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: screenWidth < 1000 ? 30 : 35,
-                          fontWeight: "700",
-                          color: "white",
-                        }}
-                      >
-                        {storeDetails.name}
-                      </span>
-                    </button>
-                  )}
-                  <img
-                    src={dashImg}
-                    style={styles.dash}
-                    alt=""
-                  />
-                </div>
-                {screenWidth > 1000 ? (
-                  <Elements stripe={stripePromise}>
-                    <CheckOutDetails />
-                  </Elements>
-                ) : (
-                  <div
-                    style={{
-                      justifyContent: "center",
-                      alignItems: "center",
-                      width: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <Elements stripe={stripePromise}>
-                      <CheckOutDetails />
-                    </Elements>
-                  </div>
-                )}
-                <div style={styles.bottomRowGroup}>
-                  <div style={styles.detailsLocationGroup}>
-                    <div style={styles.phoneNumberRow}>
-                      <FaPhone
-                        style={{
-                          ...styles.phoneNumberIcon,
-                          ...(screenWidth < 1000 ? { fontSize: 35 } : {}),
-                        }}
-                      />
-                      <span style={styles.phoneNumberTxt}>
-                        {storeDetails.phoneNumber}
-                      </span>
-                    </div>
-                    <div style={styles.addressRow}>
-                      <IoLocationSharp
-                        style={{
-                          ...styles.addressIcon,
-                          ...(screenWidth < 1000 ? { fontSize: 35 } : {}),
-                        }}
-                      />
-                      <span style={styles.addressTxt}>
-                        {
-                          storeDetails.address?.value?.structured_formatting?.main_text
-                        }
-                        {"\n"}
-                        {
-                          storeDetails.address?.value?.structured_formatting?.secondary_text
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  {storeDetails.hasSocial && (
-                    <div style={styles.socialIconsGroup}>
-                      <img
-                        src={facebookIcon}
-                        style={styles.facebookIcon}
-                        alt=""
-                      />
-                      <img
-                        src={instagramIcon}
-                        style={styles.instagramIcon}
-                        alt=""
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+      <div style={styles.scrollContainer}>
+        <div
+          style={{
+            ...styles.contentWrapper,
+            ...(screenWidth < 600 ? { padding: "32px 20px" } : {}),
+          }}
+        >
+          {/* Back button */}
+          <button
+            onClick={() => {
+              if (page === 5) {
+                setOrderDetailsState({ page: 4 });
+              } else {
+                setOrderDetailsState({
+                  ...orderDetails,
+                  delivery: false,
+                  address: null,
+                  page: 1,
+                });
+              }
+            }}
+            style={styles.backBtn}
+          >
+            <FiArrowLeft size={16} color="#64748b" />
+            <span style={styles.backBtnTxt}>Back to menu</span>
+          </button>
+
+          {/* Store logo / name */}
+          <div style={styles.logoSection}>
+            {storeDetails?.hasLogo ? (
+              <img
+                src={storeDetails.logoUrl}
+                style={styles.logo}
+                alt={storeDetails.name}
+              />
+            ) : (
+              <span style={styles.storeNameText}>{storeDetails.name}</span>
+            )}
+          </div>
+
+          {/* Title */}
+          <span style={styles.title}>Checkout</span>
+          <span style={styles.subtitle}>Complete your order securely</span>
+
+          {/* Stripe Elements form */}
+          <div
+            style={{
+              ...styles.formCard,
+              ...(screenWidth < 600 ? { padding: "24px 20px" } : {}),
+            }}
+          >
+            <Elements stripe={stripePromise}>
+              <CheckOutDetails />
+            </Elements>
+          </div>
+
+          {/* Store contact footer */}
+          <div style={styles.footer}>
+            {storeDetails.phoneNumber && (
+              <span style={styles.footerText}>{storeDetails.phoneNumber}</span>
+            )}
+            {storeDetails.address?.value?.structured_formatting?.main_text && (
+              <span style={styles.footerText}>
+                {storeDetails.address.value.structured_formatting.main_text}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -172,185 +101,93 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
     width: "100%",
-  },
-  backgroundContainer: {
-    height: "100%",
-    width: "100%",
-  },
-  plantImgContainer: {
-    alignItems: "flex-start",
-    justifyContent: "flex-end",
-    height: "100%",
-    width: "100%",
+    backgroundColor: "#ffffff",
     display: "flex",
+    flexDirection: "column",
   },
-  plantImg: {
-    height: 520,
-    width: 200,
-  },
-  wingImgContainer: {
-    top: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    display: "flex",
-  },
-  wingImg: {
-    height: 200,
-    width: "50%",
-  },
-  pizzaImgContainer: {
-    top: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
-    display: "flex",
-  },
-  pizzaImg: {
-    height: 1000,
-    width: 401,
-  },
-  frontContainer: {
+  scrollContainer: {
     flex: 1,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "space-between",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
   },
-  logoGroup: {
-    justifyContent: "space-between",
-    alignSelf: "stretch",
-    padding: 10,
+  contentWrapper: {
+    width: "100%",
+    maxWidth: 520,
+    padding: "32px 24px",
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+  },
+  backBtn: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "8px 0",
+    alignSelf: "flex-start",
+    marginBottom: 8,
+  },
+  backBtnTxt: {
+    fontSize: 14,
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  logoSection: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
   },
   logo: {
-    width: 237,
-    height: 78,
+    maxWidth: 160,
+    maxHeight: 60,
     objectFit: "contain",
   },
-  dash: {
-    height: 35,
-    width: "50%",
-    objectFit: "contain",
-  },
-  btnContainerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    height: 60,
-    width: 683,
-    display: "flex",
-  },
-  pickupBtn: {
-    width: 219,
-    height: 60,
-    backgroundColor: "rgba(238,125,67,1)",
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.2)",
-    display: "flex",
-    border: "none",
-    cursor: "pointer",
-  },
-  pickupBtnTxt: {
+  storeNameText: {
+    fontSize: 22,
     fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
+    color: "#1D294E",
   },
-  deliveryBtn: {
-    width: 219,
-    height: 60,
-    backgroundColor: "rgba(238,125,67,1)",
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.2)",
-    display: "flex",
-    border: "none",
-    cursor: "pointer",
-  },
-  deliveryBtnTxt: {
+  title: {
+    fontSize: 28,
     fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
+    color: "#0f172a",
+    textAlign: "center",
   },
-  bottomRowGroup: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    height: 150,
-    alignSelf: "stretch",
-    display: "flex",
+  subtitle: {
+    fontSize: 15,
+    color: "#64748b",
+    textAlign: "center",
+    marginBottom: 16,
   },
-  detailsLocationGroup: {
-    justifyContent: "center",
-    margin: 10,
+  formCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+    border: "1px solid #f1f5f9",
+    padding: "28px 28px",
     display: "flex",
     flexDirection: "column",
   },
-  phoneNumberRow: {
-    width: 231,
-    height: 65,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  footer: {
     display: "flex",
-  },
-  phoneNumberIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 50,
-  },
-  phoneNumberTxt: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 25,
-  },
-  addressRow: {
-    width: 231,
-    height: 65,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
     alignItems: "center",
-    display: "flex",
+    gap: 4,
+    marginTop: 24,
+    paddingBottom: 32,
   },
-  addressIcon: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 50,
-  },
-  addressTxt: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 23,
-    whiteSpace: "pre-line",
-  },
-  socialIconsGroup: {
-    width: 190,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    margin: 10,
-    display: "flex",
-  },
-  facebookIcon: {
-    height: 57,
-    width: 72,
-    objectFit: "contain",
-  },
-  instagramIcon: {
-    height: 57,
-    width: 72,
-    objectFit: "contain",
+  footerText: {
+    fontSize: 13,
+    color: "#94a3b8",
+    textAlign: "center",
   },
 };
 

@@ -64,6 +64,8 @@ export const signUp = async (
     });
 
     await userAuth.user.updateProfile({ displayName: name });
+
+    logSystemEvent("signup", { name, email, phoneNumber });
   }
 };
 

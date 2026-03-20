@@ -59,12 +59,12 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
           onClick={() => setOrderDetailsState({ page: 1 })}
           style={styles.backBtn}
         >
-          <FiArrowLeft size={18} color="#fff" />
+          <FiArrowLeft size={18} color="#1D294E" />
         </button>
         <span style={styles.storeName}>{storeDetails.name || "Menu"}</span>
         {width < 1000 && (
           <button onClick={() => setCartOpen(true)} style={styles.cartBtn}>
-            <FiShoppingCart size={18} color="#fff" />
+            <FiShoppingCart size={18} color="#1D294E" />
             {cart.length > 0 && (
               <span style={styles.cartBadge}>{cart.length}</span>
             )}
@@ -95,7 +95,7 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
           <div
             style={{
               ...styles.cartSidebar,
-              width: width > 1300 ? 360 : 320,
+              width: width > 1300 ? 380 : 340,
             }}
           >
             <Cart />
@@ -139,7 +139,7 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
             {ProductBuilderProps.product && <ProductBuilderModal />}
           </div>
           {width >= 1000 && (
-            <div style={{ width: width > 1300 ? 360 : 320, flexShrink: 0 }} />
+            <div style={{ width: width > 1300 ? 380 : 340, flexShrink: 0 }} />
           )}
         </div>
       </Modal>
@@ -151,7 +151,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
     width: "100%",
-    backgroundColor: "#f0f2ff",
+    backgroundColor: "#f8fafc",
     display: "flex",
     flexDirection: "column",
   },
@@ -160,47 +160,51 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "10px 16px",
-    backgroundColor: "#1e293b",
+    padding: "12px 20px",
+    backgroundColor: "#ffffff",
+    borderBottom: "1px solid #e2e8f0",
     flexShrink: 0,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#f1f5f9",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     border: "none",
     cursor: "pointer",
+    transition: "background-color 0.15s",
   },
   storeName: {
     fontWeight: "700",
-    color: "#fff",
-    fontSize: 16,
+    color: "#0f172a",
+    fontSize: 17,
+    letterSpacing: -0.3,
   },
   cartBtn: {
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#f1f5f9",
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    padding: "0 12px",
+    padding: "0 14px",
     border: "none",
     cursor: "pointer",
     position: "relative",
+    transition: "background-color 0.15s",
   },
   cartBadge: {
-    backgroundColor: "#ef4444",
+    backgroundColor: "#1D294E",
     color: "#fff",
     fontSize: 11,
     fontWeight: "700",
     borderRadius: 10,
-    padding: "1px 6px",
+    padding: "2px 7px",
     minWidth: 18,
     textAlign: "center",
   },
@@ -221,7 +225,7 @@ const styles: Record<string, React.CSSProperties> = {
   cartSidebar: {
     alignSelf: "stretch",
     borderLeft: "1px solid #e2e8f0",
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     flexShrink: 0,
   },
 };

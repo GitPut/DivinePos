@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import FieldInput from "./FieldInput";
 import {
   CardCvcElement,
   CardExpiryElement,
@@ -118,160 +117,182 @@ function CheckOutDetails() {
   const CARD_ELEMENT_OPTIONS = {
     style: {
       base: {
-        iconColor: "#c4f0ff",
-        color: "#121212",
+        iconColor: "#1D294E",
+        color: "#0f172a",
         fontWeight: "500",
-        fontFamily: "Roboto, Open Sans, Segoe UI, sans-serif",
-        fontSize: "16px",
+        fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+        fontSize: "15px",
         fontSmoothing: "antialiased",
         ":-webkit-autofill": {
-          color: "#121212",
+          color: "#0f172a",
         },
         "::placeholder": {
-          color: "#c3c3c3",
+          color: "#94a3b8",
         },
         backgroundColor: "transparent",
       },
       invalid: {
-        iconColor: "#FF0000",
-        color: "#FF0000",
+        iconColor: "#ef4444",
+        color: "#ef4444",
       },
     },
     hidePostalCode: true,
   };
 
+  const isDisabled = !stripe || !elements || loading || emailAddress === "";
+
   return (
-    <>
-      <div
-        style={{
-          ...styles.fieldsGroup,
-          ...(width < 1000 ? { width: width * 0.9 } : {}),
-        }}
-      >
-        <FieldInput
-          label="Email Address*"
-          txtInput="Email Address"
+    <div style={styles.formContainer}>
+      {/* Email field */}
+      <div style={styles.fieldGroup}>
+        <span style={styles.fieldLabel}>Email Address</span>
+        <input
+          type="email"
+          placeholder="you@example.com"
           style={{
-            ...styles.nameField,
+            ...styles.textInput,
             ...(loading ? { opacity: 0.5 } : {}),
           }}
           value={emailAddress}
-          onChangeText={(text) => setEmailAddress(text)}
-          textContentType="emailAddress"
+          onChange={(e) => setEmailAddress(e.target.value)}
         />
-        <FieldInput
-          label="Card Number*"
-          style={styles.nameField}
-          customInput={() => (
-            <div
-              style={{
-                backgroundColor: "#f4f4f4",
-                borderRadius: 4,
-                padding: 14,
-                display: "block",
-              }}
-            >
-              <CardNumberElement options={CARD_ELEMENT_OPTIONS} />
-            </div>
-          )}
-        />
-        <div style={styles.buzzCodeAndPhoneRow}>
-          <FieldInput
-            label="Expiry*"
-            style={styles.buzzCodeField}
-            customInput={() => (
-              <div
-                style={{
-                  backgroundColor: "#f4f4f4",
-                  borderRadius: 4,
-                  padding: 14,
-                  display: "block",
-                }}
-              >
-                <CardExpiryElement options={CARD_ELEMENT_OPTIONS} />
-              </div>
-            )}
-          />
-          <FieldInput
-            label="CVV*"
-            style={styles.phoneNumberField}
-            customInput={() => (
-              <div
-                style={{
-                  backgroundColor: "#f4f4f4",
-                  borderRadius: 4,
-                  padding: 14,
-                  display: "block",
-                }}
-              >
-                <CardCvcElement options={CARD_ELEMENT_OPTIONS} />
-              </div>
-            )}
-          />
+      </div>
+
+      {/* Card Number */}
+      <div style={styles.fieldGroup}>
+        <span style={styles.fieldLabel}>Card Number</span>
+        <div style={styles.stripeElementWrapper}>
+          <CardNumberElement options={CARD_ELEMENT_OPTIONS} />
         </div>
       </div>
+
+      {/* Expiry + CVC row */}
+      <div style={styles.row}>
+        <div style={{ ...styles.fieldGroup, flex: 1 }}>
+          <span style={styles.fieldLabel}>Expiry Date</span>
+          <div style={styles.stripeElementWrapper}>
+            <CardExpiryElement options={CARD_ELEMENT_OPTIONS} />
+          </div>
+        </div>
+        <div style={{ width: 16 }} />
+        <div style={{ ...styles.fieldGroup, flex: 1 }}>
+          <span style={styles.fieldLabel}>CVC</span>
+          <div style={styles.stripeElementWrapper}>
+            <CardCvcElement options={CARD_ELEMENT_OPTIONS} />
+          </div>
+        </div>
+      </div>
+
+      {/* Order total */}
+      {orderDetails.total != null && (
+        <div style={styles.totalRow}>
+          <span style={styles.totalLabel}>Total</span>
+          <span style={styles.totalValue}>
+            ${(Number(orderDetails.total) / 100).toFixed(2)} CAD
+          </span>
+        </div>
+      )}
+
+      {/* Pay button */}
       <button
         style={{
-          ...styles.continueBtn,
-          ...((!stripe || !elements || loading || emailAddress === "") ? { opacity: 0.5 } : {}),
+          ...styles.payBtn,
+          ...(isDisabled ? { opacity: 0.5, cursor: "not-allowed" } : {}),
         }}
         onClick={handleSubmit}
-        disabled={!stripe || !elements || loading || emailAddress === ""}
+        disabled={isDisabled}
       >
-        <span style={styles.continueBtnTxt}>CHECKOUT</span>
+        <span style={styles.payBtnTxt}>
+          {loading ? "Processing..." : "Pay Now"}
+        </span>
       </button>
-    </>
+    </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  fieldsGroup: {
-    width: 380,
-    height: 250,
-    justifyContent: "space-between",
+  formContainer: {
     display: "flex",
     flexDirection: "column",
-  },
-  nameField: {
-    height: 70,
+    gap: 20,
     width: "100%",
   },
-  addressField: {
-    height: 70,
-    width: "100%",
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
   },
-  buzzCodeAndPhoneRow: {
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#475569",
+    letterSpacing: 0.2,
+  },
+  textInput: {
+    height: 52,
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
+    padding: "0 16px",
+    fontSize: 15,
+    color: "#0f172a",
+    backgroundColor: "#fff",
+    outline: "none",
+    boxSizing: "border-box" as const,
     width: "100%",
-    height: 70,
+    transition: "border-color 0.15s",
+    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+  },
+  stripeElementWrapper: {
+    height: 52,
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
+    padding: "0 16px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    boxSizing: "border-box" as const,
+  },
+  row: {
+    display: "flex",
+    flexDirection: "row",
+  },
+  totalRow: {
+    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-    display: "flex",
-  },
-  buzzCodeField: {
-    height: 70,
-    width: "48%",
-  },
-  phoneNumberField: {
-    height: 70,
-    width: "48%",
-  },
-  continueBtn: {
-    width: 219,
-    height: 60,
-    backgroundColor: "rgba(238,125,67,1)",
-    borderRadius: 60,
-    justifyContent: "center",
     alignItems: "center",
-    boxShadow: "3px 3px 10px rgba(0,0,0,0.2)",
-    marginTop: 10,
+    padding: "16px 0",
+    borderTop: "1px solid #f1f5f9",
+    marginTop: 4,
+  },
+  totalLabel: {
+    fontSize: 15,
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  totalValue: {
+    fontSize: 18,
+    color: "#0f172a",
+    fontWeight: "700",
+  },
+  payBtn: {
+    width: "100%",
+    height: 52,
+    backgroundColor: "#1D294E",
+    borderRadius: 12,
     display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     border: "none",
     cursor: "pointer",
+    transition: "opacity 0.15s",
   },
-  continueBtnTxt: {
-    color: "rgba(255,255,255,1)",
-    fontSize: 18,
-    fontWeight: "700",
+  payBtnTxt: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: -0.2,
   },
 };
 

@@ -19,7 +19,6 @@ import plantImg from "assets/images/image_JqcD..png";
 import wingsImg from "assets/images/image_BSgk..png";
 import sideWingsImg from "assets/images/sidewings.png";
 import pizzaImg from "assets/images/image_DrUG..png";
-import loadingGif from "assets/loading.gif";
 
 const OrderPage = () => {
   const history = useHistory();
@@ -126,16 +125,8 @@ const OrderPage = () => {
   };
 
   return (
-    <div
-      style={{
-        flex: 1,
-        height: "100%",
-        width: "100%",
-        backgroundColor: "rgba(30,30,30,1)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div style={styles.outerContainer}>
+      {/* Background images for storefront/pickup/delivery/checkout/completed pages */}
       <div style={styles.backgroundContainer}>
         <div style={styles.plantImgContainer}>
           <img
@@ -187,6 +178,8 @@ const OrderPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Order page (menu browsing) */}
       <div
         style={{
           flex: 1,
@@ -202,6 +195,8 @@ const OrderPage = () => {
           catalog={{ categories: catalog.categories, products: data }}
         />
       </div>
+
+      {/* Other pages rendered over the background */}
       {(page === 1 || page === 2 || page === 3 || page === 5 || page === 6) && (
         <div
           style={{
@@ -220,37 +215,18 @@ const OrderPage = () => {
           {page === 1 && <OnlineOrderHome />}
         </div>
       )}
+
+      {/* Loading overlay */}
       {!loaderHidden && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            height: "100%",
-            width: "100%",
-            alignItems: "center",
-            justifyContent: "center",
-            display: "flex",
-          }}
-        >
+        <div style={styles.loaderOverlay}>
           <div
             style={{
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "white",
-              position: "absolute",
+              ...styles.loaderInner,
               opacity: fadeVisible ? 1 : 0,
-              transition: "opacity 0.5s",
-              height: "100%",
-              width: "100%",
-              display: "flex",
             }}
           >
-            <img
-              src={loadingGif}
-              style={{ width: 450, height: 450, objectFit: "contain" }}
-              alt=""
-            />
+            <div style={styles.spinner} />
+            <span style={styles.loaderText}>Loading store...</span>
           </div>
         </div>
       )}
@@ -259,10 +235,13 @@ const OrderPage = () => {
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  outerContainer: {
+    flex: 1,
     height: "100%",
     width: "100%",
-    backgroundColor: "rgba(30,30,30,1)",
+    backgroundColor: "#f8fafc",
+    display: "flex",
+    flexDirection: "column",
   },
   backgroundContainer: {
     height: "100%",
@@ -311,6 +290,40 @@ const styles: Record<string, React.CSSProperties> = {
     height: 1000,
     width: 401,
     objectFit: "contain",
+  },
+  loaderOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    height: "100%",
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    display: "flex",
+  },
+  loaderInner: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    position: "absolute",
+    transition: "opacity 0.5s",
+    height: "100%",
+    width: "100%",
+    display: "flex",
+    gap: 16,
+  },
+  spinner: {
+    width: 36,
+    height: 36,
+    border: "3px solid #e2e8f0",
+    borderTopColor: "#1D294E",
+    borderRadius: "50%",
+    animation: "spin 0.8s linear infinite",
+  },
+  loaderText: {
+    fontSize: 15,
+    color: "#64748b",
+    fontWeight: "500",
   },
 };
 
