@@ -10,6 +10,7 @@ import SideBar from "./components/SideBar";
 import DetailsStage from "./components/DetailsStage";
 import { AddressType } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
+import logoImg from "assets/dpos-logo-black.png";
 
 const STARTER_PRICE_ID = "price_1T8TIlCIw3L7DOwIDUpngIcI";
 const PROFESSIONAL_PRICE_ID = "price_1T8s0hCIw3L7DOwIuHk36Ly3";
@@ -69,7 +70,6 @@ const NewUserPayment = () => {
       tomorrow.setDate(tomorrow.getDate() + 31);
       await updateFreeTrial(tomorrow);
       SendEmail();
-      // Full reload so Router re-bootstraps and sees the freeTrial field
       window.location.href = "/pos";
     } else {
       let priceId;
@@ -90,19 +90,29 @@ const NewUserPayment = () => {
   };
 
   return (
-    <>
-      <Header />
-      <div style={{ ...styles.container, height: height - 75 }}>
-        <div style={styles.innerContainer}>
-          <SideBar
-            stageNum={stageNum}
-            setstageNum={setstageNum}
-            planType={planType}
-            CheckOutFunc={CheckOutFunc}
-            detailsFilledOut={
-              storeName?.length > 0 && phoneNumber?.length > 0 && !!address
-            }
-          />
+    <div style={{ ...styles.page, minHeight: height }}>
+      {/* Decorative circles */}
+      <div style={{ ...styles.circle, width: 500, height: 500, top: -150, right: -150, opacity: 0.12 }} />
+      <div style={{ ...styles.circle, width: 350, height: 350, bottom: -100, left: -100, opacity: 0.09 }} />
+      <div style={{ ...styles.circle, width: 250, height: 250, top: "30%", right: "5%", opacity: 0.09 }} />
+      <div style={{ ...styles.circle, width: 180, height: 180, bottom: "20%", left: "8%", opacity: 0.07 }} />
+
+      {/* Logo */}
+      <a href="https://divinepos.com" style={{ textDecoration: "none", marginBottom: 20, zIndex: 1 }}>
+        <img src={logoImg} style={styles.logo} alt="Divine POS" />
+      </a>
+
+      {/* Wizard */}
+      <div style={styles.wizardContainer}>
+        <SideBar
+          stageNum={stageNum}
+          setstageNum={setstageNum}
+          planType={planType}
+          CheckOutFunc={CheckOutFunc}
+          detailsFilledOut={
+            storeName?.length > 0 && phoneNumber?.length > 0 && !!address
+          }
+        >
           {stageNum === 1 && (
             <PlanStage
               planType={planType}
@@ -123,32 +133,43 @@ const NewUserPayment = () => {
               website={website}
             />
           )}
-        </div>
+        </SideBar>
       </div>
-    </>
+    </div>
   );
 };
 
 export default NewUserPayment;
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  page: {
     width: "100%",
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#f5f6f8",
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
     overflowY: "auto" as const,
     overflowX: "hidden" as const,
-    padding: "20px 20px 40px",
+    padding: "32px 20px 48px",
     boxSizing: "border-box" as const,
+    position: "relative" as const,
   },
-  innerContainer: {
+  circle: {
+    position: "absolute" as const,
+    borderRadius: "50%",
+    backgroundColor: "#c0c9d4",
+  },
+  logo: {
+    height: 48,
+    width: 160,
+    objectFit: "contain" as const,
+  },
+  wizardContainer: {
     width: "100%",
     maxWidth: 960,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 8,
+    zIndex: 1,
   },
 };

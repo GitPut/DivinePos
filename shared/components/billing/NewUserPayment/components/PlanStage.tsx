@@ -1,5 +1,4 @@
 import React from "react";
-import HeaderTxt from "./HeaderTxt";
 import Plan from "./Plan";
 
 interface PlanStageProps {
@@ -9,11 +8,12 @@ interface PlanStageProps {
 
 function PlanStage({ planType, setplanType }: PlanStageProps) {
   return (
-    <div style={styles.container}>
-      <HeaderTxt
-        Txt="Choose your plan"
-        SubTxt="Start with a free trial or pick the plan that works for you"
-      />
+    <div style={styles.card}>
+      <div style={styles.cardHeader}>
+        <span style={styles.title}>Choose your plan</span>
+        <span style={styles.subtitle}>Start with a free trial or pick the plan that works for you</span>
+      </div>
+      <div style={styles.divider} />
       <div style={styles.plansRow}>
         <Plan
           planName="Free Trial"
@@ -26,9 +26,7 @@ function PlanStage({ planType, setplanType }: PlanStageProps) {
 - Cloud-Based
 - 24/7 Support
 `}
-          selectPlan={() => {
-            setplanType("freeTrial");
-          }}
+          selectPlan={() => setplanType("freeTrial")}
           isPlanSelected={planType === "freeTrial"}
         />
         <Plan
@@ -43,9 +41,7 @@ function PlanStage({ planType, setplanType }: PlanStageProps) {
 - 24/7 Support
 - We Setup Your Store for You
 `}
-          selectPlan={() => {
-            setplanType("starter");
-          }}
+          selectPlan={() => setplanType("starter")}
           isPlanSelected={planType === "starter"}
           recurence="/ month"
         />
@@ -64,9 +60,7 @@ function PlanStage({ planType, setplanType }: PlanStageProps) {
 - 24/7 Support
 - We Setup Your Store for You
 `}
-          selectPlan={() => {
-            setplanType("professional");
-          }}
+          selectPlan={() => setplanType("professional")}
           isPlanSelected={planType === "professional"}
           recurence="/ month"
           isRecommended
@@ -77,22 +71,44 @@ function PlanStage({ planType, setplanType }: PlanStageProps) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    alignItems: "center",
-    justifyContent: "flex-start",
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    boxShadow: "0 2px 20px rgba(0,0,0,0.04)",
+    width: "100%",
+    maxWidth: 900,
     display: "flex",
     flexDirection: "column",
-    width: "100%",
-    maxWidth: 960,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  cardHeader: {
+    padding: "28px 36px 0",
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#94a3b8",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    margin: "18px 36px",
   },
   plansRow: {
-    width: "100%",
-    flexDirection: "row",
     display: "flex",
-    alignItems: "stretch",
+    flexDirection: "row",
     justifyContent: "center",
     gap: 16,
     flexWrap: "wrap",
+    padding: "0 28px 28px",
   },
 };
 

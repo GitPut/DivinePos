@@ -1,8 +1,7 @@
 import React from "react";
-import HeaderTxt from "./HeaderTxt";
+import { FiShoppingBag, FiPhone, FiMapPin, FiGlobe } from "react-icons/fi";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
 import { GooglePlacesStyles } from "utils/googlePlacesStyles";
-import InputWithLabel from "shared/components/ui/InputWithLabel";
 import { AddressType } from "types";
 
 const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
@@ -32,57 +31,65 @@ function DetailsStage({
   website,
 }: DetailsStageProps) {
   return (
-    <div style={styles.container}>
-      <button style={styles.backLink} onClick={() => setstageNum(1)}>
-        <span style={styles.backLinkText}>Back to plan selection</span>
-      </button>
-      <HeaderTxt
-        Txt="Set up your store"
-        SubTxt="Enter your store details to get started"
-      />
-      <div style={styles.card}>
-        <div style={styles.formContainer}>
-          <div style={styles.inputGroup}>
-            <span style={styles.inputLabel}>Store Name *</span>
+    <div style={styles.card}>
+      <div style={styles.cardHeader}>
+        <span style={styles.title}>Set up your store</span>
+        <span style={styles.subtitle}>Enter your store details to get started</span>
+      </div>
+      <div style={styles.divider} />
+      <div style={styles.form}>
+        <div style={styles.fieldGroup}>
+          <span style={styles.label}>Store Name *</span>
+          <div style={styles.inputRow}>
+            <FiShoppingBag size={18} color="#94a3b8" />
             <input
               style={styles.input}
-              placeholder="Enter store name"
+              placeholder="My Pizza Shop"
               value={storeName}
               onChange={(e) => setstoreName(e.target.value)}
             />
           </div>
-          <div style={styles.inputGroup}>
-            <span style={styles.inputLabel}>Phone Number *</span>
+        </div>
+        <div style={styles.fieldGroup}>
+          <span style={styles.label}>Phone Number *</span>
+          <div style={styles.inputRow}>
+            <FiPhone size={18} color="#94a3b8" />
             <input
               style={styles.input}
-              placeholder="Enter store phone number"
+              placeholder="(555) 123-4567"
               value={phoneNumber}
               onChange={(e) => setphoneNumber(e.target.value)}
             />
           </div>
-          <div style={styles.inputGroup}>
-            <span style={styles.inputLabel}>Address *</span>
-            <GooglePlacesAutocomplete
-              apiOptions={{
-                region: "CA",
-              }}
-              debounce={800}
-              apiKey={GOOGLE_API_KEY}
-              selectProps={{
-                value: address,
-                onChange: setaddress,
-                defaultValue: address,
-                placeholder: "Enter store address",
-                menuPortalTarget: document.body,
-                styles: GooglePlacesStyles,
-              }}
-            />
+        </div>
+        <div style={styles.fieldGroup}>
+          <span style={styles.label}>Address *</span>
+          <div style={styles.addressRow}>
+            <FiMapPin size={18} color="#94a3b8" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div style={{ flex: 1 }}>
+              <GooglePlacesAutocomplete
+                apiOptions={{ region: "CA" }}
+                debounce={800}
+                apiKey={GOOGLE_API_KEY}
+                selectProps={{
+                  value: address,
+                  onChange: setaddress,
+                  defaultValue: address,
+                  placeholder: "Enter store address",
+                  menuPortalTarget: document.body,
+                  styles: GooglePlacesStyles,
+                }}
+              />
+            </div>
           </div>
-          <div style={styles.inputGroup}>
-            <span style={styles.inputLabel}>Website</span>
+        </div>
+        <div style={styles.fieldGroup}>
+          <span style={styles.label}>Website <span style={styles.optional}>optional</span></span>
+          <div style={styles.inputRow}>
+            <FiGlobe size={18} color="#94a3b8" />
             <input
               style={styles.input}
-              placeholder="Enter store website (optional)"
+              placeholder="www.mypizzashop.com"
               value={website}
               onChange={(e) => setwebsite(e.target.value)}
             />
@@ -94,62 +101,88 @@ function DetailsStage({
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    alignItems: "center",
-    justifyContent: "flex-start",
-    display: "flex",
-    flexDirection: "column",
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    boxShadow: "0 2px 20px rgba(0,0,0,0.04)",
     width: "100%",
     maxWidth: 520,
-  },
-  backLink: {
-    alignSelf: "flex-start",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    padding: 0,
-    marginBottom: 16,
-  },
-  backLinkText: {
-    color: "#1D294E",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  card: {
-    width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-    padding: "32px 28px",
-  },
-  formContainer: {
     display: "flex",
     flexDirection: "column",
-    gap: 20,
-    width: "100%",
+    overflow: "hidden",
+    marginBottom: 8,
   },
-  inputGroup: {
+  cardHeader: {
+    padding: "28px 36px 0",
     display: "flex",
     flexDirection: "column",
     gap: 6,
-    width: "100%",
   },
-  inputLabel: {
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#94a3b8",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    margin: "18px 36px",
+  },
+  form: {
+    padding: "0 36px 28px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  label: {
     fontSize: 14,
     fontWeight: "600",
     color: "#0f172a",
   },
-  input: {
-    height: 48,
+  optional: {
+    fontSize: 12,
+    fontWeight: "400",
+    color: "#94a3b8",
+    marginLeft: 4,
+  },
+  inputRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    height: 52,
     border: "1px solid #e2e8f0",
-    borderRadius: 10,
+    borderRadius: 12,
     padding: "0 16px",
+    backgroundColor: "#fff",
+  },
+  addressRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
+    padding: "12px 16px",
+    backgroundColor: "#fff",
+  },
+  input: {
+    flex: 1,
+    height: 50,
+    border: "none",
+    outline: "none",
     fontSize: 15,
     color: "#0f172a",
-    outline: "none",
-    boxSizing: "border-box",
-    width: "100%",
+    backgroundColor: "transparent",
   },
 };
 

@@ -48,7 +48,7 @@ function ResetPassword() {
     <div style={styles.page}>
       <div style={{ ...styles.circle, width: 400, height: 400, top: -120, right: -100, opacity: 0.07 }} />
       <div style={{ ...styles.circle, width: 300, height: 300, bottom: -80, left: -80, opacity: 0.05 }} />
-      <div style={{ ...styles.circle, width: 200, height: 200, top: "40%", left: "10%", opacity: 0.04 }} />
+      <div style={{ ...styles.circle, width: 200, height: 200, top: "40%", left: "10%", opacity: 0.12 }} />
       <div style={styles.card}>
         <div style={styles.logoContainer}>
           <a href="https://divinepos.com" style={{ textDecoration: "none" }}>
@@ -112,7 +112,7 @@ const styles: Record<string, React.CSSProperties> = {
   circle: {
     position: "absolute",
     borderRadius: "50%",
-    backgroundColor: "#94a3b8",
+    backgroundColor: "#c0c9d4",
   },
   card: {
     backgroundColor: "#fff",

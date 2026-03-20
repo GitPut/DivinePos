@@ -1,5 +1,6 @@
 import React from "react";
-import { FiCheck } from "react-icons/fi";
+import { FiCheck, FiArrowRight, FiArrowLeft, FiLogOut } from "react-icons/fi";
+import { logout } from "services/firebase/functions";
 
 interface SideBarProps {
   stageNum: number;
@@ -7,7 +8,10 @@ interface SideBarProps {
   CheckOutFunc: () => void;
   setstageNum: (num: number) => void;
   detailsFilledOut: boolean;
+  children?: React.ReactNode;
 }
+
+const STEPS = ["Plan", "Details"];
 
 const SideBar = ({
   stageNum,
@@ -15,195 +19,221 @@ const SideBar = ({
   CheckOutFunc,
   setstageNum,
   detailsFilledOut,
+  children,
 }: SideBarProps) => {
   return (
-    <div style={styles.container}>
-      {/* Steps row */}
+    <>
+      {/* Step circles */}
       <div style={styles.stepsRow}>
-        <div style={styles.stepItem}>
-          <div
-            style={{
-              ...styles.stepCircle,
-              ...(stageNum >= 1 ? styles.stepCircleActive : {}),
-              ...(stageNum > 1 ? styles.stepCircleCompleted : {}),
-            }}
-          >
-            {stageNum > 1 ? (
-              <FiCheck size={14} color="#fff" />
-            ) : (
-              <span style={styles.stepNumber}>1</span>
-            )}
-          </div>
-          <span
-            style={{
-              ...styles.stepLabel,
-              ...(stageNum >= 1 ? { color: "#0f172a", fontWeight: "600" } : {}),
-            }}
-          >
-            Choose Plan
-          </span>
-        </div>
-        <div
-          style={{
-            ...styles.stepLine,
-            backgroundColor: stageNum > 1 ? "#1D294E" : "#e2e8f0",
-          }}
-        />
-        <div style={styles.stepItem}>
-          <div
-            style={{
-              ...styles.stepCircle,
-              ...(stageNum >= 2 ? styles.stepCircleActive : {}),
-            }}
-          >
-            <span style={styles.stepNumber}>2</span>
-          </div>
-          <span
-            style={{
-              ...styles.stepLabel,
-              ...(stageNum >= 2 ? { color: "#0f172a", fontWeight: "600" } : {}),
-            }}
-          >
-            Store Details
-          </span>
-        </div>
+        {STEPS.map((label, i) => {
+          const stepNum = i + 1;
+          const isActive = stageNum === stepNum;
+          const isCompleted = stageNum > stepNum;
+          return (
+            <React.Fragment key={label}>
+              {i > 0 && (
+                <div
+                  style={{
+                    ...styles.stepLine,
+                    backgroundColor: isCompleted || isActive ? "#1D294E" : "#d1d5db",
+                  }}
+                />
+              )}
+              <div style={styles.stepItem}>
+                <div
+                  style={{
+                    ...styles.stepCircle,
+                    ...(isActive ? styles.stepCircleActive : {}),
+                    ...(isCompleted ? styles.stepCircleCompleted : {}),
+                    ...(!isActive && !isCompleted ? styles.stepCircleInactive : {}),
+                  }}
+                >
+                  {isCompleted ? (
+                    <FiCheck size={14} color="#fff" />
+                  ) : (
+                    <span
+                      style={{
+                        ...styles.stepNumber,
+                        color: isActive ? "#1D294E" : "#94a3b8",
+                      }}
+                    >
+                      {stepNum}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </React.Fragment>
+          );
+        })}
       </div>
+      <span style={styles.stepLabel}>
+        STEP {stageNum} OF {STEPS.length} — {STEPS[stageNum - 1]?.toUpperCase()}
+      </span>
+
+      {/* Stage content */}
+      {children}
 
       {/* Action buttons */}
-      <div style={styles.buttonContainer}>
+      <div style={{ ...styles.buttonContainer, maxWidth: stageNum === 1 ? 900 : 520 }}>
+        <div style={styles.buttonLeft}>
+          {stageNum === 1 ? (
+            <button style={styles.logoutButton} onClick={logout}>
+              <FiLogOut size={14} color="#94a3b8" />
+              <span style={styles.logoutText}>Log out</span>
+            </button>
+          ) : (
+            <button style={styles.backButton} onClick={() => setstageNum(1)}>
+              <FiArrowLeft size={16} color="#64748b" />
+              <span style={styles.backButtonText}>Back</span>
+            </button>
+          )}
+        </div>
         {stageNum === 1 ? (
           <button
             style={{
-              ...styles.primaryButton,
-              ...(planType === null ? styles.primaryButtonDisabled : {}),
+              ...styles.continueBtn,
+              ...(planType === null ? { opacity: 0.4, cursor: "not-allowed" } : {}),
             }}
             disabled={!planType}
             onClick={() => setstageNum(2)}
           >
-            <span style={styles.buttonText}>Continue</span>
+            <span style={styles.continueTxt}>Continue</span>
+            <FiArrowRight size={16} color="#fff" />
           </button>
         ) : (
-          <div style={styles.buttonRow}>
-            <button style={styles.backButton} onClick={() => setstageNum(1)}>
-              <span style={styles.backButtonText}>Back</span>
-            </button>
-            <button
-              style={{
-                ...styles.primaryButton,
-                ...(!detailsFilledOut ? styles.primaryButtonDisabled : {}),
-              }}
-              disabled={!detailsFilledOut}
-              onClick={CheckOutFunc}
-            >
-              <span style={styles.buttonText}>Complete Setup</span>
-            </button>
-          </div>
+          <button
+            style={{
+              ...styles.continueBtn,
+              ...(!detailsFilledOut ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+            }}
+            disabled={!detailsFilledOut}
+            onClick={CheckOutFunc}
+          >
+            <span style={styles.continueTxt}>Complete Setup</span>
+            <FiArrowRight size={16} color="#fff" />
+          </button>
         )}
       </div>
-    </div>
+    </>
   );
 };
 
 export default SideBar;
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    width: "100%",
-    maxWidth: 960,
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 20px",
-    marginBottom: 16,
-  },
   stepsRow: {
     flexDirection: "row",
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "center",
+    gap: 0,
+    marginBottom: 8,
   },
   stepItem: {
     display: "flex",
-    flexDirection: "row",
     alignItems: "center",
-    gap: 8,
   },
   stepCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#e2e8f0",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
   stepCircleActive: {
-    backgroundColor: "#1D294E",
+    backgroundColor: "#fff",
+    border: "2px solid #1D294E",
   },
   stepCircleCompleted: {
     backgroundColor: "#10b981",
+    border: "none",
+  },
+  stepCircleInactive: {
+    backgroundColor: "#e2e8f0",
+    border: "none",
   },
   stepNumber: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  stepLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#94a3b8",
+    fontSize: 14,
+    fontWeight: "700",
   },
   stepLine: {
-    width: 40,
+    width: 48,
     height: 2,
     borderRadius: 1,
   },
+  stepLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#94a3b8",
+    letterSpacing: 1.5,
+    marginBottom: 20,
+    textAlign: "center",
+  },
   buttonContainer: {
     display: "flex",
-  },
-  buttonRow: {
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 16,
+  },
+  buttonLeft: {
     display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
-  primaryButton: {
-    backgroundColor: "#1D294E",
-    borderRadius: 8,
-    height: 38,
-    paddingLeft: 24,
-    paddingRight: 24,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-    transition: "opacity 0.2s",
-  },
-  primaryButtonDisabled: {
-    opacity: 0.4,
-    cursor: "not-allowed",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
   backButton: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    height: 38,
-    paddingLeft: 20,
-    paddingRight: 20,
+    height: 40,
+    paddingLeft: 14,
+    paddingRight: 14,
+    backgroundColor: "transparent",
+    border: "none",
     display: "flex",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    border: "1px solid #e2e8f0",
+    gap: 6,
     cursor: "pointer",
   },
   backButtonText: {
-    color: "#0f172a",
-    fontSize: 13,
+    color: "#64748b",
+    fontSize: 14,
     fontWeight: "600",
+  },
+  logoutButton: {
+    height: 40,
+    backgroundColor: "transparent",
+    border: "none",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    cursor: "pointer",
+    padding: 0,
+  },
+  logoutText: {
+    color: "#94a3b8",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  continueBtn: {
+    height: 46,
+    paddingLeft: 28,
+    paddingRight: 24,
+    backgroundColor: "#1D294E",
+    borderRadius: 12,
+    border: "none",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    cursor: "pointer",
+    transition: "opacity 0.2s",
+  },
+  continueTxt: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
   },
 };
