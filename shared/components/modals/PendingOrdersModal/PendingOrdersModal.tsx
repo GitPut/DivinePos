@@ -194,8 +194,10 @@ export default PendingOrdersModal;
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    width: 520,
-    height: 620,
+    width: "90vw",
+    maxWidth: 520,
+    height: "80vh",
+    maxHeight: 620,
     backgroundColor: "#fff",
     borderRadius: 14,
     display: "flex",
@@ -253,7 +255,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   listScroll: {
     flex: 1,
-    overflow: "auto",
+    overflowY: "auto",
+    overflowX: "hidden",
     padding: 16,
     display: "flex",
     flexDirection: "column",
@@ -288,5 +291,6 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     transition: "opacity 200ms",
     overflow: "hidden",
+    zIndex: 1,
   },
 };

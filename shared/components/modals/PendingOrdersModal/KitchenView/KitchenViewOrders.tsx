@@ -390,6 +390,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     fontWeight: "500",
     color: "#92400e",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
   },
   // Footer
   orderFooter: {

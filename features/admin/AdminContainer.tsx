@@ -62,6 +62,11 @@ function AdminContainer(props: { match: { url: string } }) {
                   link: "/authed/product/productlist-product",
                   active: pathname.includes("productlist-"),
                 },
+                {
+                  label: "Option Templates",
+                  link: "/authed/product/option-templates",
+                  active: pathname.includes("option-templates"),
+                },
               ]}
             />
             <DropdownMenuButton

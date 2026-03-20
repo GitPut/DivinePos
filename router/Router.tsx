@@ -7,6 +7,7 @@ import {
   setDeviceState,
   setEmployeesState,
   setIngredientsState,
+  setOptionTemplatesState,
   setOnlineStoreState,
   setStoreDetailsState,
   setTablesState,
@@ -28,7 +29,7 @@ import tz from "moment-timezone";
 import qz from "qz-tray";
 import { BrowserRouter as Router, Route } from "react-router-dom";
 import { useAlert } from "react-alert";
-import { CustomerProp, Device, Employee, Ingredient, ProductProp, TransListStateItem } from "types";
+import { CustomerProp, Device, Employee, Ingredient, OptionTemplate, ProductProp, TransListStateItem } from "types";
 import useInterval from "shared/hooks/useInterval";
 import { prefetchImage } from "shared/components/ui/ProductImage";
 import { parseDate } from "utils/dateFormatting";
@@ -245,7 +246,7 @@ const AppRouter = () => {
         import("features/pos/PosScreen");
 
         // Fetch user doc AND all subcollections in parallel (1 round-trip)
-        const [doc, productDocs, employeeDocs, subDocs, customerDocs, deviceDocs, wooDocs, ingredientDocs] = await Promise.all([
+        const [doc, productDocs, employeeDocs, subDocs, customerDocs, deviceDocs, wooDocs, ingredientDocs, optionTemplateDocs] = await Promise.all([
           userRef.get(),
           userRef.collection("products").get().catch(() => null),
           userRef.collection("employees").get().catch(() => null),
@@ -254,6 +255,7 @@ const AppRouter = () => {
           userRef.collection("devices").get().catch(() => null),
           userRef.collection("wooOrders").get().catch(() => null),
           userRef.collection("ingredients").get().catch(() => null),
+          userRef.collection("optionTemplates").get().catch(() => null),
         ]);
 
         // ── Process products ──────────────────────────────────────────────
@@ -459,6 +461,21 @@ const AppRouter = () => {
             });
           });
           setIngredientsState(ingredientsList);
+        }
+
+        // ── Process option templates ─────────────────────────────────────
+        if (optionTemplateDocs && !optionTemplateDocs.empty) {
+          const templatesList: OptionTemplate[] = [];
+          optionTemplateDocs.forEach((element) => {
+            const d = element.data();
+            templatesList.push({
+              id: element.id,
+              name: d.name ?? "",
+              option: d.option ?? { label: null, optionType: null, optionsList: [], id: element.id },
+              updatedAt: d.updatedAt ?? null,
+            });
+          });
+          setOptionTemplatesState(templatesList);
         }
 
         // ── Handle free trial status ──────────────────────────────────────

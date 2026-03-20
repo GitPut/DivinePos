@@ -5,10 +5,11 @@ import React, {
   useState,
 } from "react";
 import { IoCopy } from "react-icons/io5";
-import { FiUpload, FiX, FiPlus, FiClipboard, FiEye, FiEyeOff } from "react-icons/fi";
+import { FiUpload, FiX, FiPlus, FiClipboard, FiEye, FiEyeOff, FiLayers, FiCode } from "react-icons/fi";
 import OptionsItem from "../components/OptionsItem";
 import {
   onlineStoreState,
+  optionTemplatesState,
   setStoreProductsState,
   storeProductsState,
 } from "store/appState";
@@ -74,6 +75,8 @@ function AddProductModal({
   const scrollViewRef = useRef<HTMLDivElement>(null);
   const [selectedID, setselectedID] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const optionTemplates = optionTemplatesState.use();
   const alertP = useAlert();
 
   const closeModal = () => {
@@ -300,6 +303,19 @@ function AddProductModal({
               <span style={styles.actionBtnTxt}>Duplicate</span>
             </button>
           )}
+          {existingProduct && !isProductTemplate && (
+            <button
+              style={styles.duplicateBtn}
+              onClick={() => {
+                const jsonStr = JSON.stringify(newProduct, null, 2);
+                navigator.clipboard.writeText(jsonStr);
+                alertP.show("Product JSON copied to clipboard");
+              }}
+            >
+              <FiCode size={14} color="#475569" />
+              <span style={styles.actionBtnTxt}>Copy JSON</span>
+            </button>
+          )}
           {canShowPreview && (
             <button
               style={styles.previewToggleBtn}
@@ -507,6 +523,31 @@ function AddProductModal({
                   Let customers customize this product (sizes, toppings, extras, etc.)
                 </span>
               </div>
+              {newProduct.options.length > 0 && optionTemplates.length > 0 && (
+                <div style={styles.optionActionsRow}>
+                  <button
+                    style={styles.templatePickerBtn}
+                    onClick={() => setShowTemplatePicker(true)}
+                  >
+                    <FiLayers size={14} color="#1470ef" />
+                    <span style={styles.templatePickerTxt}>Add from Template</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setnewProductOptions((prev) => [...prev, {
+                        label: null, optionsList: [], numOfSelectable: null,
+                        id: Math.random().toString(36).substr(2, 9),
+                        optionType: null, selectedCaseList: [], isRequired: false,
+                      }]);
+                      setindexOn(newProductOptions.length);
+                    }}
+                    style={styles.addCustomOptionBtn}
+                  >
+                    <FiPlus size={14} color="#475569" />
+                    <span style={styles.addCustomOptionTxt}>Add Custom</span>
+                  </button>
+                </div>
+              )}
               {newProduct.options.length > 0 ? (
                 newProduct.options.map((option, index) => (
                   <OptionsItem
@@ -532,6 +573,15 @@ function AddProductModal({
                     Create options like "Size" with choices like Small, Medium, Large — each with optional price changes
                   </span>
                   <div style={styles.optionBtnsRow}>
+                    {optionTemplates.length > 0 && (
+                      <button
+                        style={styles.templatePickerBtn}
+                        onClick={() => setShowTemplatePicker(true)}
+                      >
+                        <FiLayers size={15} color="#1470ef" />
+                        <span style={styles.templatePickerTxt}>Add from Template</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setnewProductOptions([{
@@ -544,20 +594,58 @@ function AddProductModal({
                       style={styles.createOptionBtn}
                     >
                       <FiPlus size={15} color="#fff" />
-                      <span style={styles.createOptionTxt}>Create Option</span>
+                      <span style={styles.createOptionTxt}>Create Custom</span>
                     </button>
-                    <button
-                      style={styles.pasteOptionBtn}
-                      onClick={() => {
-                        navigator.clipboard.readText().then((text) => {
-                          try { const parsed = JSON.parse(text); setnewProductOptions([parsed]); setindexOn(0); }
-                          catch (e) { alertP.error("Invalid clipboard data"); }
-                        });
-                      }}
-                    >
-                      <FiClipboard size={15} color="#475569" />
-                      <span style={styles.pasteOptionTxt}>Paste Option</span>
-                    </button>
+                  </div>
+                </div>
+              )}
+              {/* Template Picker Dropdown */}
+              {showTemplatePicker && (
+                <div style={styles.templatePickerOverlay}>
+                  <div style={styles.templatePickerCard}>
+                    <div style={styles.templatePickerHeader}>
+                      <span style={styles.templatePickerTitle}>Add from Template</span>
+                      <button style={styles.templatePickerClose} onClick={() => setShowTemplatePicker(false)}>
+                        <FiX size={14} color="#64748b" />
+                      </button>
+                    </div>
+                    <div style={styles.templatePickerList}>
+                      {optionTemplates.map((template) => {
+                        const alreadyAdded = newProductOptions.some((o) => o.templateId === template.id);
+                        return (
+                          <button
+                            key={template.id}
+                            style={{
+                              ...styles.templatePickerItem,
+                              ...(alreadyAdded ? { opacity: 0.5 } : {}),
+                            }}
+                            disabled={alreadyAdded}
+                            onClick={() => {
+                              const newOpt = {
+                                ...structuredClone(template.option),
+                                templateId: template.id,
+                                id: Math.random().toString(36).substr(2, 9),
+                              };
+                              setnewProductOptions((prev) => [...prev, newOpt]);
+                              setShowTemplatePicker(false);
+                            }}
+                          >
+                            <div style={styles.templatePickerItemLeft}>
+                              <FiLayers size={14} color="#1470ef" />
+                              <div>
+                                <span style={styles.templatePickerItemName}>{template.name}</span>
+                                <span style={styles.templatePickerItemMeta}>
+                                  {template.option.label} · {template.option.optionsList?.length ?? 0} choices
+                                </span>
+                              </div>
+                            </div>
+                            <span style={styles.templatePickerItemAction}>
+                              {alreadyAdded ? "Added" : "Add"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}
@@ -581,15 +669,12 @@ function AddProductModal({
 
 const styles: Record<string, React.CSSProperties> = {
   fullScreen: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    width: "100%",
+    height: "100%",
     backgroundColor: "#f1f5f9",
     display: "flex",
     flexDirection: "column",
-    zIndex: 10000,
+    overflow: "hidden",
   },
   // Top Bar
   topBar: {
@@ -924,6 +1009,64 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 6, cursor: "pointer",
   },
   pasteOptionTxt: { fontWeight: "500", color: "#475569", fontSize: 13 },
+  optionActionsRow: {
+    display: "flex", flexDirection: "row" as const, alignItems: "center", gap: 8,
+    marginBottom: 4,
+  },
+  addCustomOptionBtn: {
+    height: 34, paddingLeft: 12, paddingRight: 12, backgroundColor: "#fff",
+    border: "1px solid #e2e8f0", borderRadius: 8, display: "flex",
+    flexDirection: "row" as const, alignItems: "center", justifyContent: "center",
+    gap: 5, cursor: "pointer",
+  },
+  addCustomOptionTxt: { fontWeight: "500", color: "#475569", fontSize: 12 },
+  templatePickerBtn: {
+    height: 38, paddingLeft: 16, paddingRight: 16, backgroundColor: "#eff6ff",
+    border: "1px solid #bfdbfe", borderRadius: 8, display: "flex",
+    flexDirection: "row" as const, alignItems: "center", justifyContent: "center",
+    gap: 6, cursor: "pointer",
+  },
+  templatePickerTxt: { fontWeight: "600", color: "#1470ef", fontSize: 13 },
+  templatePickerOverlay: {
+    position: "relative" as const, marginTop: 8,
+  },
+  templatePickerCard: {
+    backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e2e8f0",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.1)", overflow: "hidden",
+  },
+  templatePickerHeader: {
+    display: "flex", flexDirection: "row" as const, alignItems: "center",
+    justifyContent: "space-between", padding: "12px 16px",
+    borderBottom: "1px solid #f1f5f9",
+  },
+  templatePickerTitle: { fontSize: 14, fontWeight: "700", color: "#0f172a" },
+  templatePickerClose: {
+    width: 28, height: 28, borderRadius: 6, border: "1px solid #e2e8f0",
+    backgroundColor: "#fff", display: "flex", alignItems: "center",
+    justifyContent: "center", cursor: "pointer", padding: 0,
+  },
+  templatePickerList: {
+    maxHeight: 240, overflow: "auto", padding: "4px 0",
+  },
+  templatePickerItem: {
+    display: "flex", flexDirection: "row" as const, alignItems: "center",
+    justifyContent: "space-between", width: "100%", padding: "10px 16px",
+    background: "none", border: "none", cursor: "pointer", textAlign: "left" as const,
+    boxSizing: "border-box" as const,
+  },
+  templatePickerItemLeft: {
+    display: "flex", flexDirection: "row" as const, alignItems: "center",
+    gap: 10,
+  },
+  templatePickerItemName: {
+    fontSize: 14, fontWeight: "600", color: "#0f172a", display: "block",
+  },
+  templatePickerItemMeta: {
+    fontSize: 12, color: "#94a3b8", display: "block",
+  },
+  templatePickerItemAction: {
+    fontSize: 13, fontWeight: "600", color: "#1470ef",
+  },
 };
 
 export default AddProductModal;

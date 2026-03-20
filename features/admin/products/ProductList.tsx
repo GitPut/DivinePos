@@ -192,11 +192,11 @@ function ProductList() {
               <div style={styles.tableHeader}>
                 <span style={{ ...styles.tableHeaderTxt, width: 52 }} />
                 <span style={{ ...styles.tableHeaderTxt, flex: 1 }}>Product</span>
-                <span style={{ ...styles.tableHeaderTxt, width: 90, textAlign: "center" }}>Price</span>
-                <span style={{ ...styles.tableHeaderTxt, width: 120, textAlign: "center" }}>Category</span>
+                <span style={{ ...styles.tableHeaderTxt, width: 80, textAlign: "center" }}>Price</span>
+                <span style={{ ...styles.tableHeaderTxt, width: 100, textAlign: "center" }}>Category</span>
                 <span style={{ ...styles.tableHeaderTxt, width: 80, textAlign: "center" }}>Options</span>
                 <span style={{ ...styles.tableHeaderTxt, width: 80, textAlign: "center" }}>Stock</span>
-                <span style={{ ...styles.tableHeaderTxt, width: 90, textAlign: "center" }}>Actions</span>
+                <span style={{ ...styles.tableHeaderTxt, width: 76, textAlign: "center" }}>Actions</span>
               </div>
               {filteredProducts.map((product, i) => (
                 <ProductOptionBox

@@ -154,7 +154,7 @@ function CustomerDisplay() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    width: "100vw",
+    width: "100%",
     height: "100vh",
     backgroundColor: "#f8fafc",
     display: "flex",

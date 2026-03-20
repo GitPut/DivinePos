@@ -3,6 +3,8 @@ import {
   CustomerProp,
   Ingredient,
   IngredientStockHistoryEntry,
+  Option,
+  OptionTemplate,
   StatsDataProps,
   StockHistoryEntry,
   StoreDetailsProps,
@@ -16,7 +18,10 @@ import { Timestamp } from "firebase/firestore";
 import {
   ingredientsState,
   onlineStoreState,
+  optionTemplatesState,
   setIngredientsState,
+  setOptionTemplatesState,
+  setStoreProductsState,
   storeProductsState,
   updateIngredientsBatch,
   updateIngredientStock,
@@ -725,4 +730,129 @@ export const openStripePortal = (onError?: (msg: string) => void) => {
     .catch((error) => {
       onError?.(error?.message || "Unknown error occurred");
     });
+};
+
+// -------------------
+// 📋 OPTION TEMPLATES
+// -------------------
+
+export const saveOptionTemplate = async (
+  template: OptionTemplate
+): Promise<string> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const docRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("optionTemplates")
+    .doc(template.id);
+
+  const data = {
+    name: template.name,
+    option: template.option,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  await docRef.set(data);
+
+  // Update local state
+  const current = optionTemplatesState.get();
+  const existingIndex = current.findIndex((t) => t.id === template.id);
+  if (existingIndex > -1) {
+    const updated = [...current];
+    updated[existingIndex] = template;
+    setOptionTemplatesState(updated);
+  } else {
+    setOptionTemplatesState([...current, template]);
+  }
+
+  return template.id;
+};
+
+export const deleteOptionTemplate = async (
+  templateId: string
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("optionTemplates")
+    .doc(templateId)
+    .delete();
+
+  const current = optionTemplatesState.get();
+  setOptionTemplatesState(current.filter((t) => t.id !== templateId));
+};
+
+/**
+ * Sync an updated option template to all products that reference it.
+ * Finds products with options that have `templateId === template.id`,
+ * replaces the option data with the updated template, and saves to Firestore.
+ */
+export const syncOptionTemplateToProducts = async (
+  template: OptionTemplate
+): Promise<number> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const catalog = storeProductsState.get();
+  const isOnlineStoreActive = onlineStoreState.get().onlineStoreSetUp;
+  const batch = db.batch();
+  let updatedCount = 0;
+
+  const updatedProducts = catalog.products.map((product) => {
+    const hasTemplate = product.options.some(
+      (opt) => opt.templateId === template.id
+    );
+    if (!hasTemplate) return product;
+
+    const updatedOptions: Option[] = product.options.map((opt) => {
+      if (opt.templateId === template.id) {
+        return {
+          ...template.option,
+          templateId: template.id,
+          id: opt.id,
+        };
+      }
+      return opt;
+    });
+
+    const updatedProduct = { ...product, options: updatedOptions };
+
+    batch.update(
+      db
+        .collection("users")
+        .doc(userId)
+        .collection("products")
+        .doc(product.id),
+      { options: updatedOptions }
+    );
+
+    if (isOnlineStoreActive) {
+      batch.update(
+        db
+          .collection("public")
+          .doc(userId)
+          .collection("products")
+          .doc(product.id),
+        { options: updatedOptions }
+      );
+    }
+
+    updatedCount++;
+    return updatedProduct;
+  });
+
+  if (updatedCount > 0) {
+    await batch.commit();
+    setStoreProductsState({
+      products: updatedProducts,
+      categories: catalog.categories,
+    });
+  }
+
+  return updatedCount;
 };

@@ -231,10 +231,9 @@ const listStyles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-    maxWidth: 280,
   },
   priceCol: {
-    width: 90,
+    width: 80,
     textAlign: "center",
     display: "flex",
     justifyContent: "center",
@@ -246,7 +245,7 @@ const listStyles: Record<string, React.CSSProperties> = {
     color: "#0f172a",
   },
   categoryCol: {
-    width: 120,
+    width: 100,
     display: "flex",
     justifyContent: "center",
     flexShrink: 0,
@@ -292,7 +291,7 @@ const listStyles: Record<string, React.CSSProperties> = {
     color: "#94a3b8",
   },
   actionsCol: {
-    width: 90,
+    width: 76,
     display: "flex",
     flexDirection: "row",
     alignItems: "center",

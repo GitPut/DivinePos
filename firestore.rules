@@ -77,6 +77,16 @@ match /public/{uid} {
         }
       }
 
+      match /optionTemplates/{id} {
+        allow read: if request.auth.uid == uid || isSuperAdmin();
+        allow write: if request.auth.uid == uid;
+      }
+
+      match /deliveryOrders/{id} {
+        allow read: if request.auth.uid == uid || isSuperAdmin();
+        allow write: if true;  // Written by Cloud Function (deliveryWebhook)
+      }
+
       match /transList/{id} {
         allow read: if request.auth.uid == uid || isSuperAdmin();
         allow write: if request.auth.uid == uid;

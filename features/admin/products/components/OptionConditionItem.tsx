@@ -136,6 +136,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 6,
     flex: 1,
     minWidth: 0,
+    overflow: "hidden",
   },
   fieldLabel: {
     fontSize: 12,

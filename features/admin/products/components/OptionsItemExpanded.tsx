@@ -160,6 +160,69 @@ function OptionsItemExpanded({
         <span style={styles.sectionTitle}>Choices</span>
         <span style={styles.sectionHint}>Add the options customers can pick from</span>
       </div>
+      {/* Bulk price setter */}
+      {testMap.length > 1 && (
+        <div style={styles.bulkPriceRow}>
+          <span style={styles.bulkPriceLabel}>Set all prices</span>
+          <div style={styles.bulkPriceFields}>
+            {sizeLinkedLabels.length > 0 ? (
+              sizeLinkedLabels.map((sizeLabel) => (
+                <div key={sizeLabel} style={styles.bulkPriceItem}>
+                  <span style={styles.bulkPriceSizeLabel}>{sizeLabel}</span>
+                  <input
+                    style={styles.bulkPriceInput}
+                    placeholder="$"
+                    id={`bulk-${index}-${sizeLabel}`}
+                  />
+                </div>
+              ))
+            ) : (
+              <div style={styles.bulkPriceItem}>
+                <span style={styles.bulkPriceSizeLabel}>Price</span>
+                <input
+                  style={styles.bulkPriceInput}
+                  placeholder="$"
+                  id={`bulk-${index}-all`}
+                />
+              </div>
+            )}
+          </div>
+          <button
+            style={styles.bulkApplyBtn}
+            onClick={() => {
+              const cloneOuter = structuredClone(testMap);
+              if (sizeLinkedLabels.length > 0) {
+                sizeLinkedLabels.forEach((sizeLabel) => {
+                  const input = document.getElementById(`bulk-${index}-${sizeLabel}`) as HTMLInputElement;
+                  if (!input || input.value === "") return;
+                  const re = /^-?\d*\.?\d*$/;
+                  if (!re.test(input.value)) return;
+                  cloneOuter.forEach((item) => {
+                    if (!item.priceBySize) item.priceBySize = {};
+                    item.priceBySize![sizeLabel] = input.value;
+                  });
+                  input.value = "";
+                });
+              } else {
+                const input = document.getElementById(`bulk-${index}-all`) as HTMLInputElement;
+                if (!input || input.value === "") return;
+                const re = /^-?\d*\.?\d*$/;
+                if (!re.test(input.value)) return;
+                cloneOuter.forEach((item) => { item.priceIncrease = input.value; });
+                input.value = "";
+              }
+              setnewProductOptions((prev) => {
+                const clone = structuredClone(prev);
+                clone[index].optionsList = cloneOuter;
+                return clone;
+              });
+              settestMap(cloneOuter);
+            }}
+          >
+            <span style={styles.bulkApplyTxt}>Apply to All</span>
+          </button>
+        </div>
+      )}
       {testMap.map((e, indexInnerList) => (
         <OptionSelectionItem
           key={e.id}
@@ -416,6 +479,9 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     padding: "20px 20px 8px",
     gap: 14,
+    maxHeight: 500,
+    overflowY: "auto" as const,
+    overflowX: "hidden" as const,
   },
   fieldRow: {
     display: "flex",
@@ -514,6 +580,67 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#94a3b8",
     fontWeight: "400",
     marginTop: 2,
+  },
+  bulkPriceRow: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    padding: "12px 14px",
+    backgroundColor: "#eff6ff",
+    borderRadius: 8,
+    border: "1px solid #bfdbfe",
+  },
+  bulkPriceLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#1470ef",
+  },
+  bulkPriceFields: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap" as const,
+  },
+  bulkPriceItem: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  },
+  bulkPriceSizeLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#334155",
+  },
+  bulkPriceInput: {
+    width: 70,
+    height: 32,
+    border: "1px solid #bfdbfe",
+    borderRadius: 6,
+    padding: "0 8px",
+    fontSize: 13,
+    color: "#0f172a",
+    boxSizing: "border-box" as const,
+    outline: "none",
+    backgroundColor: "#fff",
+  },
+  bulkApplyBtn: {
+    height: 34,
+    paddingLeft: 14,
+    paddingRight: 14,
+    backgroundColor: "#1470ef",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+  },
+  bulkApplyTxt: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#fff",
+    whiteSpace: "nowrap" as const,
   },
   addBtnRow: {
     display: "flex",

@@ -7,6 +7,7 @@ import {
   Employee,
   Ingredient,
   MyDeviceDetailsProps,
+  OptionTemplate,
   ProductProp,
   StoreDetailsProps,
   Table,
@@ -317,6 +318,14 @@ export const setOrderDetailsState = (
     ...val,
     customer: { ...orderDetailsState.get().customer, ...val.customer },
   });
+};
+
+// ─── Option Templates ────────────────────────────────────────────────────────
+
+export const optionTemplatesState = entity<OptionTemplate[]>([]);
+
+export const setOptionTemplatesState = (val: OptionTemplate[]): void => {
+  optionTemplatesState.set(val);
 };
 
 // ─── Ingredients ─────────────────────────────────────────────────────────────

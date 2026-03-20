@@ -67,6 +67,14 @@ export type Option = {
   id?: string;
   sizeLinkedOptionLabel?: string;
   allowHalfAndHalf?: boolean;
+  templateId?: string;
+};
+
+export type OptionTemplate = {
+  id: string;
+  name: string;
+  option: Option;
+  updatedAt?: any;
 };
 
 export type OptionsList = {
