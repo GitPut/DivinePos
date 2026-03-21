@@ -215,7 +215,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   txtX: {
     fontWeight: "700",
-    color: "#00c93b",
+    color: "#0f172a",
     fontSize: 13,
     marginRight: 6,
     display: "inline-block",
@@ -230,7 +230,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cartItemPrice: {
     fontWeight: "700",
-    color: "#00c93b",
+    color: "#0f172a",
     fontSize: 14,
   },
   bottomBtnRow: {

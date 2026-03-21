@@ -4,17 +4,19 @@ import {
   orderDetailsState,
   setOrderDetailsState,
   storeDetailsState,
+  onlineStoreState,
 } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
 
 function OnlineOrderHomeCompleted() {
   const storeDetails = storeDetailsState.use();
   const orderDetails = orderDetailsState.use();
+  const onlineStore = onlineStoreState.use();
   const page = orderDetails.page;
   const { width: screenWidth } = useWindowSize();
 
   return (
-    <div style={styles.container}>
+    <div style={{ ...styles.container, backgroundColor: onlineStore.brandColor || "#0d0d0d" }}>
       <div style={styles.scrollContainer}>
         <div
           style={{
@@ -111,7 +113,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
     width: "100%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#0d0d0d",
     display: "flex",
     flexDirection: "column",
   },
@@ -135,7 +137,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#f0fdf4",
+    backgroundColor: "rgba(16,185,129,0.1)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -144,12 +146,12 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#fff",
     textAlign: "center",
   },
   subtitle: {
     fontSize: 15,
-    color: "#64748b",
+    color: "rgba(255,255,255,0.4)",
     textAlign: "center",
     lineHeight: "1.6",
     maxWidth: 380,
@@ -157,10 +159,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   infoCard: {
     width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-    border: "1px solid #f1f5f9",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 20,
+    border: "1px solid rgba(255,255,255,0.06)",
     padding: "24px 28px",
     display: "flex",
     flexDirection: "column",
@@ -170,7 +171,7 @@ const styles: Record<string, React.CSSProperties> = {
   infoCardTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#fff",
     marginBottom: 4,
   },
   infoRow: {
@@ -181,19 +182,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   infoLabel: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: "rgba(255,255,255,0.4)",
     fontWeight: "500",
   },
   infoValue: {
     fontSize: 14,
-    color: "#0f172a",
+    color: "#fff",
     fontWeight: "500",
   },
   primaryBtn: {
     width: "100%",
     height: 52,
-    backgroundColor: "#1D294E",
-    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderRadius: 14,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -203,9 +204,9 @@ const styles: Record<string, React.CSSProperties> = {
     transition: "opacity 0.15s",
   },
   primaryBtnTxt: {
-    color: "#ffffff",
+    color: "#1D294E",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: -0.2,
   },
   contactSection: {
@@ -224,7 +225,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   contactText: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "rgba(255,255,255,0.2)",
   },
 };
 

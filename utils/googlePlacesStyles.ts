@@ -1,4 +1,4 @@
-export const GooglePlacesStyles: Record<string, (provided: any) => any> = {
+export const GooglePlacesStyles: Record<string, (provided: any, state?: any) => any> = {
   container: (provided) => ({
     ...provided,
     display: "block",
@@ -12,8 +12,15 @@ export const GooglePlacesStyles: Record<string, (provided: any) => any> = {
     flexWrap: "wrap",
     alignItems: "center",
     width: "100%",
-    borderWidth: 1,
-    borderColor: "#9b9b9b",
+    height: 50,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 12,
+    cursor: "pointer",
+    boxShadow: "none",
+    "&:hover": {
+      borderColor: "rgba(255,255,255,0.2)",
+    },
   }),
   valueContainer: (provided) => ({
     ...provided,
@@ -21,6 +28,7 @@ export const GooglePlacesStyles: Record<string, (provided: any) => any> = {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
+    padding: "0 16px",
   }),
   indicatorsContainer: (provided) => ({
     ...provided,
@@ -29,41 +37,71 @@ export const GooglePlacesStyles: Record<string, (provided: any) => any> = {
     alignItems: "center",
     alignSelf: "stretch",
   }),
+  indicatorSeparator: () => ({
+    display: "none",
+  }),
+  dropdownIndicator: (provided) => ({
+    ...provided,
+    color: "rgba(255,255,255,0.3)",
+    padding: "0 12px 0 0",
+  }),
   menu: (provided) => ({
     ...provided,
     display: "block",
     fontFamily: "sans-serif",
+    backgroundColor: "#1a1a2e",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 4,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
   }),
   menuList: (provided) => ({
     ...provided,
     display: "block",
     fontFamily: "sans-serif",
+    padding: 4,
   }),
   menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-  option: (provided) => ({
+  option: (provided, state) => ({
     ...provided,
     display: "block",
     fontFamily: "sans-serif",
+    fontSize: 14,
+    color: "#fff",
+    backgroundColor: state.isFocused ? "rgba(255,255,255,0.08)" : "transparent",
+    borderRadius: 8,
+    padding: "10px 12px",
+    cursor: "pointer",
+    "&:active": {
+      backgroundColor: "rgba(255,255,255,0.12)",
+    },
   }),
   input: (provided) => ({
     ...provided,
     fontFamily: "sans-serif",
     width: "100%",
-    height: 40,
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    paddingTop: 10,
+    color: "#fff",
+    fontSize: 15,
     display: "inline-flex",
   }),
   placeholder: (provided) => ({
     ...provided,
     fontFamily: "sans-serif",
-    color: "grey",
+    color: "rgba(255,255,255,0.3)",
+    fontSize: 15,
   }),
-  singleValue: (provided) => ({ ...provided, fontFamily: "sans-serif" }),
+  singleValue: (provided) => ({
+    ...provided,
+    fontFamily: "sans-serif",
+    color: "#fff",
+    fontSize: 15,
+  }),
   noOptionsMessage: (provided) => ({
     ...provided,
     display: "block",
     fontFamily: "sans-serif",
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 14,
   }),
 };

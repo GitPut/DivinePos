@@ -23,7 +23,7 @@ function OnlineOrderHomeCheckout() {
   if (!stripePromise) return null;
 
   return (
-    <div style={styles.container}>
+    <div style={{ ...styles.container, backgroundColor: onlineStore.brandColor || "#0d0d0d" }}>
       <div style={styles.scrollContainer}>
         <div
           style={{
@@ -101,7 +101,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
     width: "100%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#0d0d0d",
     display: "flex",
     flexDirection: "column",
   },
@@ -135,7 +135,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   backBtnTxt: {
     fontSize: 14,
-    color: "#64748b",
+    color: "rgba(255,255,255,0.4)",
     fontWeight: "500",
   },
   logoSection: {
@@ -152,26 +152,25 @@ const styles: Record<string, React.CSSProperties> = {
   storeNameText: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#1D294E",
+    color: "#fff",
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#fff",
     textAlign: "center",
   },
   subtitle: {
     fontSize: 15,
-    color: "#64748b",
+    color: "rgba(255,255,255,0.4)",
     textAlign: "center",
     marginBottom: 16,
   },
   formCard: {
     width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-    border: "1px solid #f1f5f9",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 20,
+    border: "1px solid rgba(255,255,255,0.06)",
     padding: "28px 28px",
     display: "flex",
     flexDirection: "column",
@@ -186,7 +185,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   footerText: {
     fontSize: 13,
-    color: "#94a3b8",
+    color: "rgba(255,255,255,0.2)",
     textAlign: "center",
   },
 };

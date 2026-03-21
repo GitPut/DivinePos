@@ -369,6 +369,8 @@ const AppRouter = () => {
                   stripePublicKey: doc.data()?.stripePublicKey,
                   stripeSecretKey: doc.data()?.stripeSecretKey,
                   paidStatus: "active",
+                  brandColor: doc.data()?.brandColor,
+                  tagline: doc.data()?.tagline,
                 });
                 if (doc.data()?.freeTrial) {
                   setTrialDetailsState({ endDate: null, hasEnded: null });
@@ -401,6 +403,8 @@ const AppRouter = () => {
               stripePublicKey: doc.data()?.stripePublicKey,
               stripeSecretKey: doc.data()?.stripeSecretKey,
               paidStatus: "active",
+              brandColor: doc.data()?.brandColor,
+              tagline: doc.data()?.tagline,
             });
           } else {
             // No plan grants online store access — deactivate
@@ -415,6 +419,8 @@ const AppRouter = () => {
               stripePublicKey: doc.data()?.stripePublicKey,
               stripeSecretKey: doc.data()?.stripeSecretKey,
               paidStatus: "canceled",
+              brandColor: doc.data()?.brandColor,
+              tagline: doc.data()?.tagline,
             });
           }
         } else if (doc.data()?.freeTrial) {

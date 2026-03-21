@@ -1,20 +1,23 @@
 import React from "react";
-import { FaPhone } from "react-icons/fa";
-import { IoLocationSharp, IoTimeOutline } from "react-icons/io5";
 import { FiShoppingBag, FiTruck } from "react-icons/fi";
 import {
   orderDetailsState,
   setOrderDetailsState,
   storeDetailsState,
+  onlineStoreState,
 } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
+import heroPizza from "assets/images/hero-pizza.png";
 
 function StoreFront() {
   const storeDetails = storeDetailsState.use();
   const orderDetails = orderDetailsState.use();
+  const onlineStore = onlineStoreState.use();
   const page = orderDetails.page;
   const { width: screenWidth } = useWindowSize();
-  const isMobile = screenWidth < 640;
+  const isMobile = screenWidth < 700;
+  const bgColor = onlineStore.brandColor || "#0d0d0d";
+  const storeTagline = onlineStore.tagline || "Fresh, hot, and made to order.\nChoose how you'd like to get your food.";
 
   const handleLogoClick = () => {
     if (page === 5) {
@@ -27,295 +30,276 @@ function StoreFront() {
   const hasLogo = storeDetails.hasLogo && storeDetails.logoUrl;
 
   return (
-    <div style={styles.page}>
-      {/* Hero Section */}
-      <div style={styles.hero}>
-        {/* Background pattern */}
-        <div style={styles.heroBgPattern} />
+    <div style={{ ...styles.page, backgroundColor: bgColor }}>
+      {/* Left side — content */}
+      <div style={{
+        ...styles.leftPanel,
+        ...(isMobile ? { width: "100%", padding: "48px 24px 32px" } : {}),
+      }}>
+        {/* Logo */}
+        <button style={styles.logoBtn} onClick={handleLogoClick}>
+          {hasLogo ? (
+            <img src={storeDetails.logoUrl!} style={styles.logoImg} alt="" />
+          ) : (
+            <div style={styles.logoFallback}>
+              <span style={styles.logoLetter}>
+                {(storeDetails.name || "S").charAt(0)}
+              </span>
+            </div>
+          )}
+        </button>
 
-        <div style={styles.heroContent}>
-          {/* Store logo or initial */}
-          <button style={styles.logoBtn} onClick={handleLogoClick}>
-            {hasLogo ? (
-              <img src={storeDetails.logoUrl!} style={styles.logoImg} alt="" />
-            ) : (
-              <div style={styles.logoPlaceholder}>
-                <span style={styles.logoLetter}>
-                  {(storeDetails.name || "S").charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
-          </button>
-
-          {/* Store name */}
-          <span style={{ ...styles.storeName, fontSize: isMobile ? 28 : 36 }}>
+        {/* Main content */}
+        <div style={styles.textContent}>
+          <h1 style={{
+            ...styles.storeName,
+            fontSize: isMobile ? 34 : 46,
+          }}>
             {storeDetails.name}
-          </span>
+          </h1>
 
-          {/* Meta row */}
-          <div style={styles.metaRow}>
+          <p style={styles.subtitle}>{storeTagline}</p>
+
+          {/* Info chips */}
+          <div style={styles.infoRow}>
             {storeDetails.phoneNumber && (
-              <div style={styles.metaItem}>
-                <FaPhone size={11} color="rgba(255,255,255,0.6)" />
-                <span style={styles.metaText}>{storeDetails.phoneNumber}</span>
-              </div>
+              <span style={styles.infoChip}>{storeDetails.phoneNumber}</span>
             )}
             {storeDetails.address?.value?.structured_formatting?.main_text && (
-              <div style={styles.metaItem}>
-                <IoLocationSharp size={14} color="rgba(255,255,255,0.6)" />
-                <span style={styles.metaText}>
-                  {storeDetails.address.value.structured_formatting.main_text}
+              <span style={styles.infoChip}>
+                {storeDetails.address.value.structured_formatting.main_text}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* CTA Buttons — stacked */}
+        <div style={styles.ctaGroup}>
+          <button
+            style={styles.pickupBtn}
+            onClick={() => setOrderDetailsState({ page: 2 })}
+          >
+            <div style={styles.iconCircle}>
+              <FiShoppingBag size={20} color="#1D294E" />
+            </div>
+            <div style={styles.btnTextGroup}>
+              <span style={styles.btnTitle}>Pickup</span>
+              <span style={styles.btnDesc}>Ready when you arrive</span>
+            </div>
+          </button>
+
+          {storeDetails.acceptDelivery && (
+            <button
+              style={styles.deliveryBtn}
+              onClick={() => setOrderDetailsState({ ...orderDetails, delivery: true, page: 3 })}
+            >
+              <div style={styles.deliveryIconCircle}>
+                <FiTruck size={20} color="#fff" />
+              </div>
+              <div style={styles.btnTextGroup}>
+                <span style={styles.deliveryBtnTitle}>Delivery</span>
+                <span style={styles.deliveryBtnDesc}>
+                  Straight to your door
+                  {storeDetails.deliveryPrice && parseFloat(storeDetails.deliveryPrice) > 0
+                    ? ` · $${parseFloat(storeDetails.deliveryPrice).toFixed(2)}`
+                    : ""}
                 </span>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Order Type Section */}
-      <div style={styles.orderSection}>
-        <div style={{ ...styles.orderInner, maxWidth: isMobile ? "100%" : 480 }}>
-          <span style={styles.orderTitle}>How would you like your order?</span>
-
-          <div style={styles.optionsCol}>
-            {/* Pickup */}
-            <button
-              style={styles.optionBtn}
-              onClick={() => setOrderDetailsState({ page: 2 })}
-            >
-              <div style={{ ...styles.optionIcon, backgroundColor: "#eef4ff" }}>
-                <FiShoppingBag size={22} color="#1D294E" />
-              </div>
-              <div style={styles.optionText}>
-                <span style={styles.optionTitle}>Pickup</span>
-                <span style={styles.optionDesc}>Order ahead and pick up in store</span>
-              </div>
-              <div style={styles.optionArrow}>
-                <span style={styles.optionArrowText}>→</span>
-              </div>
             </button>
-
-            {/* Delivery */}
-            {storeDetails.acceptDelivery && (
-              <button
-                style={styles.optionBtn}
-                onClick={() => setOrderDetailsState({ ...orderDetails, delivery: true, page: 3 })}
-              >
-                <div style={{ ...styles.optionIcon, backgroundColor: "#fef7ed" }}>
-                  <FiTruck size={22} color="#d97706" />
-                </div>
-                <div style={styles.optionText}>
-                  <span style={styles.optionTitle}>Delivery</span>
-                  <span style={styles.optionDesc}>
-                    {storeDetails.deliveryPrice && parseFloat(storeDetails.deliveryPrice) > 0
-                      ? `$${parseFloat(storeDetails.deliveryPrice).toFixed(2)} delivery fee`
-                      : "Free delivery"}
-                  </span>
-                </div>
-                <div style={styles.optionArrow}>
-                  <span style={styles.optionArrowText}>→</span>
-                </div>
-              </button>
-            )}
-          </div>
+          )}
         </div>
+
+        {/* Footer */}
+        <span style={styles.poweredBy}>Powered by Divine POS</span>
       </div>
 
-      {/* Footer */}
-      <div style={styles.footer}>
-        {storeDetails.address?.value?.structured_formatting && (
-          <span style={styles.footerAddress}>
-            {storeDetails.address.value.structured_formatting.main_text},{" "}
-            {storeDetails.address.value.structured_formatting.secondary_text}
-          </span>
-        )}
-        <span style={styles.footerPowered}>Powered by Divine POS</span>
-      </div>
+      {/* Right side — hero pizza image (desktop only) */}
+      {!isMobile && (
+        <div style={styles.rightPanel}>
+          <img src={heroPizza} style={styles.heroImg} alt="" />
+        </div>
+      )}
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
-    minHeight: "100%",
     width: "100%",
-    backgroundColor: "#fafafa",
+    height: "100%",
+    backgroundColor: "#0d0d0d",
     display: "flex",
-    flexDirection: "column",
-  },
-  // Hero
-  hero: {
-    width: "100%",
-    backgroundColor: "#1a1a2e",
-    position: "relative",
+    flexDirection: "row",
     overflow: "hidden",
   },
-  heroBgPattern: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: "radial-gradient(circle at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 50%)",
-  },
-  heroContent: {
+  leftPanel: {
+    width: "50%",
+    height: "100%",
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    padding: "44px 24px 40px",
+    padding: "48px 56px 32px",
+    boxSizing: "border-box",
     position: "relative",
-    zIndex: 1,
+    zIndex: 2,
   },
   logoBtn: {
     background: "none",
     border: "none",
     cursor: "pointer",
     padding: 0,
-    marginBottom: 16,
+    marginBottom: 40,
+    alignSelf: "flex-start",
   },
   logoImg: {
-    height: 64,
-    maxWidth: 200,
-    objectFit: "contain",
-    borderRadius: 12,
+    height: 50,
+    maxWidth: 180,
+    objectFit: "contain" as const,
   },
-  logoPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    border: "2px solid rgba(255,255,255,0.15)",
+  logoFallback: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.1)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
   logoLetter: {
-    fontSize: 36,
+    fontSize: 24,
     fontWeight: "800",
     color: "#fff",
   },
-  storeName: {
-    fontWeight: "800",
-    color: "#fff",
-    textAlign: "center",
-    letterSpacing: -0.5,
-    lineHeight: "1.1",
-  },
-  metaRow: {
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-    justifyContent: "center",
-    marginTop: 12,
-  },
-  metaItem: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  metaText: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.6)",
-    fontWeight: "400",
-  },
-  // Order Section
-  orderSection: {
-    flex: 1,
-    display: "flex",
-    justifyContent: "center",
-    padding: "32px 20px 40px",
-  },
-  orderInner: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-  },
-  orderTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    marginBottom: 16,
-  },
-  optionsCol: {
+  textContent: {
     display: "flex",
     flexDirection: "column",
     gap: 10,
+    marginBottom: 36,
   },
-  optionBtn: {
+  storeName: {
+    fontWeight: "900",
+    color: "#fff",
+    letterSpacing: -1,
+    lineHeight: "1.05",
+    margin: 0,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: "rgba(255,255,255,0.4)",
+    lineHeight: "1.6",
+    margin: 0,
+    maxWidth: 360,
+    whiteSpace: "pre-line" as const,
+  },
+  infoRow: {
     display: "flex",
-    flexDirection: "row",
+    flexDirection: "row" as const,
+    gap: 8,
+    flexWrap: "wrap" as const,
+    marginTop: 4,
+  },
+  infoChip: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.3)",
+    padding: "5px 12px",
+    borderRadius: 20,
+    border: "1px solid rgba(255,255,255,0.06)",
+  },
+  ctaGroup: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 10,
+    width: "100%",
+    maxWidth: 400,
+  },
+  pickupBtn: {
+    width: "100%",
+    height: 70,
+    backgroundColor: "#fff",
+    border: "none",
+    borderRadius: 16,
+    display: "flex",
+    flexDirection: "row" as const,
     alignItems: "center",
     gap: 14,
-    padding: "18px 16px",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    border: "1px solid #eee",
+    padding: "0 20px",
     cursor: "pointer",
-    textAlign: "left",
-    transition: "box-shadow 0.15s, border-color 0.15s",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   },
-  optionIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#f0f4ff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  optionText: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 2,
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1a1a1a",
-  },
-  optionDesc: {
-    fontSize: 13,
-    color: "#888",
-    fontWeight: "400",
-  },
-  optionArrow: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#f5f5f5",
+  deliveryIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  optionArrowText: {
-    fontSize: 16,
-    color: "#999",
-    fontWeight: "400",
-  },
-  // Footer
-  footer: {
-    width: "100%",
-    padding: "16px 24px 20px",
+  btnTextGroup: {
     display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 6,
-    boxSizing: "border-box",
-    borderTop: "1px solid #f0f0f0",
+    flexDirection: "column" as const,
+    alignItems: "flex-start",
+    gap: 1,
   },
-  footerAddress: {
+  btnTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#1D294E",
+  },
+  btnDesc: {
     fontSize: 12,
-    color: "#aaa",
-    textAlign: "center",
+    color: "#64748b",
+    fontWeight: "400",
   },
-  footerPowered: {
+  deliveryBtn: {
+    width: "100%",
+    height: 70,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    display: "flex",
+    flexDirection: "row" as const,
+    alignItems: "center",
+    gap: 14,
+    padding: "0 20px",
+    cursor: "pointer",
+  },
+  deliveryBtnTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#fff",
+  },
+  deliveryBtnDesc: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.35)",
+    fontWeight: "400",
+  },
+  poweredBy: {
     fontSize: 11,
-    color: "#ccc",
+    color: "rgba(255,255,255,0.1)",
+    marginTop: "auto",
+  },
+  rightPanel: {
+    width: "50%",
+    height: "100%",
+    position: "relative" as const,
+    overflow: "hidden",
+  },
+  heroImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover" as const,
+    objectPosition: "left center",
   },
 };
 

@@ -17,12 +17,7 @@ function PickupDetails() {
 
   return (
     <div style={styles.wrapper}>
-      <div
-        style={{
-          ...styles.fieldsGroup,
-          ...(width < 600 ? { width: "100%" } : {}),
-        }}
-      >
+      <div style={styles.fieldsGroup}>
         <FieldInput
           txtInput="Your full name"
           label="Name"
@@ -77,8 +72,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
   },
   fieldsGroup: {
-    width: 420,
-    maxWidth: "100%",
+    width: "100%",
     gap: 16,
     display: "flex",
     flexDirection: "column",
@@ -88,10 +82,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   continueBtn: {
     width: "100%",
-    maxWidth: 420,
     height: 52,
-    backgroundColor: "#1D294E",
-    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     display: "flex",
@@ -100,9 +93,9 @@ const styles: Record<string, React.CSSProperties> = {
     transition: "opacity 0.2s ease",
   },
   continueBtnTxt: {
-    color: "#fff",
+    color: "#1D294E",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 };
 

@@ -117,17 +117,17 @@ function CheckOutDetails() {
   const CARD_ELEMENT_OPTIONS = {
     style: {
       base: {
-        iconColor: "#1D294E",
-        color: "#0f172a",
+        iconColor: "rgba(255,255,255,0.6)",
+        color: "#ffffff",
         fontWeight: "500",
         fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
         fontSize: "15px",
         fontSmoothing: "antialiased",
         ":-webkit-autofill": {
-          color: "#0f172a",
+          color: "#ffffff",
         },
         "::placeholder": {
-          color: "#94a3b8",
+          color: "rgba(255,255,255,0.3)",
         },
         backgroundColor: "transparent",
       },
@@ -167,15 +167,14 @@ function CheckOutDetails() {
       </div>
 
       {/* Expiry + CVC row */}
-      <div style={styles.row}>
-        <div style={{ ...styles.fieldGroup, flex: 1 }}>
+      <div style={styles.cardRow}>
+        <div style={styles.cardRowField}>
           <span style={styles.fieldLabel}>Expiry Date</span>
           <div style={styles.stripeElementWrapper}>
             <CardExpiryElement options={CARD_ELEMENT_OPTIONS} />
           </div>
         </div>
-        <div style={{ width: 16 }} />
-        <div style={{ ...styles.fieldGroup, flex: 1 }}>
+        <div style={styles.cardRowField}>
           <span style={styles.fieldLabel}>CVC</span>
           <div style={styles.stripeElementWrapper}>
             <CardCvcElement options={CARD_ELEMENT_OPTIONS} />
@@ -188,7 +187,7 @@ function CheckOutDetails() {
         <div style={styles.totalRow}>
           <span style={styles.totalLabel}>Total</span>
           <span style={styles.totalValue}>
-            ${(Number(orderDetails.total) / 100).toFixed(2)} CAD
+            ${Number(orderDetails.total).toFixed(2)} CAD
           </span>
         </div>
       )}
@@ -222,20 +221,33 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: 6,
   },
+  cardRow: {
+    display: "flex",
+    flexDirection: "row" as const,
+    gap: 12,
+    flexWrap: "wrap" as const,
+  },
+  cardRowField: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 6,
+    flex: "1 1 140px",
+    minWidth: 120,
+  },
   fieldLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#475569",
+    color: "rgba(255,255,255,0.6)",
     letterSpacing: 0.2,
   },
   textInput: {
-    height: 52,
-    border: "1px solid #e2e8f0",
+    height: 50,
+    border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 12,
     padding: "0 16px",
     fontSize: 15,
-    color: "#0f172a",
-    backgroundColor: "#fff",
+    color: "#fff",
+    backgroundColor: "rgba(255,255,255,0.06)",
     outline: "none",
     boxSizing: "border-box" as const,
     width: "100%",
@@ -243,14 +255,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
   },
   stripeElementWrapper: {
-    height: 52,
-    border: "1px solid #e2e8f0",
+    height: 50,
+    border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 12,
     padding: "0 16px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(255,255,255,0.06)",
     boxSizing: "border-box" as const,
   },
   row: {
@@ -263,24 +275,24 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
     alignItems: "center",
     padding: "16px 0",
-    borderTop: "1px solid #f1f5f9",
+    borderTop: "1px solid rgba(255,255,255,0.06)",
     marginTop: 4,
   },
   totalLabel: {
     fontSize: 15,
-    color: "#64748b",
+    color: "rgba(255,255,255,0.4)",
     fontWeight: "500",
   },
   totalValue: {
     fontSize: 18,
-    color: "#0f172a",
+    color: "#fff",
     fontWeight: "700",
   },
   payBtn: {
     width: "100%",
     height: 52,
-    backgroundColor: "#1D294E",
-    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderRadius: 14,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -289,9 +301,9 @@ const styles: Record<string, React.CSSProperties> = {
     transition: "opacity 0.15s",
   },
   payBtnTxt: {
-    color: "#ffffff",
+    color: "#1D294E",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: -0.2,
   },
 };

@@ -12,13 +12,10 @@ import {
   orderDetailsState,
   setProductBuilderState,
   setStoreDetailsState,
+  setOnlineStoreState,
 } from "store/appState";
 import { ProductProp, UserStoreStateProps } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
-import plantImg from "assets/images/image_JqcD..png";
-import wingsImg from "assets/images/image_BSgk..png";
-import sideWingsImg from "assets/images/sidewings.png";
-import pizzaImg from "assets/images/image_DrUG..png";
 
 const OrderPage = () => {
   const history = useHistory();
@@ -37,7 +34,6 @@ const OrderPage = () => {
   const customSort = (a: ProductProp, b: ProductProp) => {
     const rankA = parseFloat(a.rank ?? "0") || Number.MAX_SAFE_INTEGER;
     const rankB = parseFloat(b.rank ?? "0") || Number.MAX_SAFE_INTEGER;
-
     return rankA - rankB;
   };
 
@@ -51,53 +47,76 @@ const OrderPage = () => {
           return;
         }
 
-        if (!querySnapshot.docs[0].data().onlineStoreActive) {
-          history.push("/404");
-          return;
-        }
-
         const publicDoc = querySnapshot.docs[0];
-
-        setProductBuilderState({
-          product: null,
-          itemIndex: null,
-          imageUrl: "",
-          isOnlineOrder: true,
-          isOpen: false,
-        });
+        const docData = publicDoc.data();
 
         setStoreDetailsState({
-          ...publicDoc.data().storeDetails,
+          name: docData.storeDetails?.name ?? "",
+          phoneNumber: docData.storeDetails?.phoneNumber ?? "",
+          website: docData.storeDetails?.website ?? "",
+          address: docData.storeDetails?.address ?? null,
+          deliveryPrice: docData.storeDetails?.deliveryPrice ?? "",
+          taxRate: docData.storeDetails?.taxRate ?? "13",
+          hasLogo: docData.storeDetails?.hasLogo ?? false,
+          logoUrl: docData.storeDetails?.logoUrl ?? null,
+          settingsPassword: "",
+          acceptDelivery: docData.storeDetails?.acceptDelivery ?? false,
+          deliveryRange: docData.storeDetails?.deliveryRange ?? "",
+          stripePublicKey: docData.stripePublicKey ?? "",
           docID: publicDoc.id,
-          stripePublicKey: publicDoc.data().stripePublicKey,
         });
 
-        publicDoc.ref
+        setOnlineStoreState({
+          onlineStoreActive: true,
+          onlineStoreSetUp: true,
+          urlEnding: docData.urlEnding ?? "",
+          stripePublicKey: docData.stripePublicKey ?? null,
+          stripeSecretKey: null,
+          paidStatus: null,
+          brandColor: docData.brandColor ?? "#0d0d0d",
+          tagline: docData.tagline ?? "",
+        });
+
+        setProductBuilderState({
+          isOnlineOrder: true,
+          isOpen: false,
+          product: null,
+          itemIndex: null,
+          imageUrl: null,
+        });
+
+        db.collection("public")
+          .doc(publicDoc.id)
           .collection("products")
           .get()
-          .then((docs) => {
+          .then((productSnapshot) => {
             const products: ProductProp[] = [];
-            if (!docs.empty) {
-              docs.forEach((element) => {
-                const productData = element.data();
-                products.push({
-                  ...productData,
-                  name: productData.name,
-                  price: productData.price,
-                  description: productData.description,
-                  options: productData.options,
-                  id: productData.id,
-                });
+            productSnapshot.forEach((element) => {
+              const productData = element.data();
+              products.push({
+                ...productData,
+                options: productData.options ?? [],
+                name: productData.name,
+                price: productData.price,
+                description: productData.description,
+                id: element.id,
+                category: productData.category,
+                rank: productData.rank,
+                imageUrl: productData.imageUrl,
+                hasImage: productData.hasImage,
+                dontDisplayOnOnlineStore: productData.dontDisplayOnOnlineStore,
               });
-            }
+            });
 
-            const sorted = products.sort(customSort);
+            products.sort(customSort);
+
             const grouped: ProductProp[] = [];
-            sorted.forEach((product, index) => {
-              const lastIndex = grouped.reduce(
-                (acc, item, i) => (item.category === product.category ? i : acc),
-                -1
-              );
+            products.forEach((product, index) => {
+              if (product.dontDisplayOnOnlineStore) return;
+              let lastIndex = -1;
+              for (let i = grouped.length - 1; i >= 0; i--) {
+                if (grouped[i].category === product.category) { lastIndex = i; break; }
+              }
               if (lastIndex >= 0) {
                 grouped.splice(lastIndex + 1, 0, { ...product, index: index + 1 });
               } else {
@@ -125,96 +144,18 @@ const OrderPage = () => {
   };
 
   return (
-    <div style={styles.outerContainer}>
-      {/* Background images for storefront/pickup/delivery/checkout/completed pages */}
-      <div style={styles.backgroundContainer}>
-        <div style={styles.plantImgContainer}>
-          <img
-            src={plantImg}
-            style={{
-              ...styles.plantImg,
-              ...(screenWidth < 1000 ? { width: 100 } : {}),
-            }}
-            alt=""
-          />
-          <div style={styles.wingImgContainer}>
-            <img
-              src={
-                screenWidth > 1000
-                  ? wingsImg
-                  : sideWingsImg
-              }
-              style={{
-                ...styles.wingImg,
-                ...(screenWidth < 1000
-                  ? {
-                      width: 200,
-                      position: "absolute" as const,
-                      right: 0,
-                      bottom: "15%",
-                    }
-                  : {}),
-              }}
-              alt=""
-            />
-            <div style={styles.pizzaImgContainer}>
-              <img
-                src={pizzaImg}
-                style={{
-                  ...styles.pizzaImg,
-                  ...(screenWidth < 1000
-                    ? {
-                        height: 350,
-                        width: 200,
-                        right: 0,
-                        top: 0,
-                        position: "absolute" as const,
-                      }
-                    : {}),
-                }}
-                alt=""
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Order page (menu browsing) */}
-      <div
-        style={{
-          flex: 1,
-          position: "absolute",
-          height: "100%",
-          width: "100%",
-          top: 0,
-          left: 0,
-          display: page === 4 ? undefined : "none",
-        }}
-      >
+    <div style={styles.container}>
+      {/* Page content */}
+      {page === 1 && <OnlineOrderHome />}
+      {page === 2 && <OnlineOrderHomePickup />}
+      {page === 3 && <OnlineOrderHomeDelivery />}
+      {page === 4 && (
         <OrderCartMain
           catalog={{ categories: catalog.categories, products: data }}
         />
-      </div>
-
-      {/* Other pages rendered over the background */}
-      {(page === 1 || page === 2 || page === 3 || page === 5 || page === 6) && (
-        <div
-          style={{
-            flex: 1,
-            position: "absolute",
-            height: "100%",
-            width: "100%",
-            top: 0,
-            left: 0,
-          }}
-        >
-          {page === 2 && <OnlineOrderHomePickup />}
-          {page === 3 && <OnlineOrderHomeDelivery />}
-          {page === 5 && <OnlineOrderHomeCheckout />}
-          {page === 6 && <OnlineOrderHomeCompleted />}
-          {page === 1 && <OnlineOrderHome />}
-        </div>
       )}
+      {page === 5 && <OnlineOrderHomeCheckout />}
+      {page === 6 && <OnlineOrderHomeCompleted />}
 
       {/* Loading overlay */}
       {!loaderHidden && (
@@ -226,7 +167,7 @@ const OrderPage = () => {
             }}
           >
             <div style={styles.spinner} />
-            <span style={styles.loaderText}>Loading store...</span>
+            <span style={styles.loaderText}>Loading...</span>
           </div>
         </div>
       )}
@@ -235,61 +176,14 @@ const OrderPage = () => {
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  outerContainer: {
-    flex: 1,
-    height: "100%",
+  container: {
+    height: "100vh",
     width: "100%",
-    backgroundColor: "#f8fafc",
     display: "flex",
     flexDirection: "column",
-  },
-  backgroundContainer: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "rgba(0,0,0,0)",
-  },
-  plantImgContainer: {
-    alignItems: "flex-start",
-    justifyContent: "flex-end",
-    height: "100%",
-    width: "100%",
-    display: "flex",
-  },
-  plantImg: {
-    height: 520,
-    width: 200,
-    objectFit: "contain",
-  },
-  wingImgContainer: {
-    top: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    display: "flex",
-  },
-  wingImg: {
-    height: 200,
-    width: "50%",
-    objectFit: "contain",
-  },
-  pizzaImgContainer: {
-    top: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
-    display: "flex",
-  },
-  pizzaImg: {
-    height: 1000,
-    width: 401,
-    objectFit: "contain",
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "#0d0d0d",
   },
   loaderOverlay: {
     position: "absolute",
@@ -300,11 +194,12 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     display: "flex",
+    zIndex: 100,
   },
   loaderInner: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
     position: "absolute",
     transition: "opacity 0.5s",
     height: "100%",
@@ -313,16 +208,16 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 16,
   },
   spinner: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     border: "3px solid #e2e8f0",
     borderTopColor: "#1D294E",
     borderRadius: "50%",
     animation: "spin 0.8s linear infinite",
   },
   loaderText: {
-    fontSize: 15,
-    color: "#64748b",
+    fontSize: 14,
+    color: "#94a3b8",
     fontWeight: "500",
   },
 };

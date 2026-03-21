@@ -177,6 +177,8 @@ interface OnlineStoreStateProps {
   stripePublicKey: string | null;
   stripeSecretKey: string | null;
   paidStatus: string | null;
+  brandColor?: string;
+  tagline?: string;
 }
 
 export const onlineStoreState = entity<OnlineStoreStateProps>({
