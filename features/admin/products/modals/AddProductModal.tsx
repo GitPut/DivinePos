@@ -171,7 +171,7 @@ function AddProductModal({
       });
   }
 
-  function handleDataUpdate() {
+  async function handleDataUpdate() {
     if (!newProduct.name) {
       alertP.error("Please enter a product name");
       return;
@@ -181,88 +181,41 @@ function AddProductModal({
       return;
     }
 
-    // Clean options before saving
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
     const cleanedOptions = cleanOptions(newProductOptions);
+    const productToSave: ProductProp = { ...newProduct, options: cleanedOptions };
 
-    if (existingProduct && !isProductTemplate) {
-      const copy = structuredClone(catalog.products);
-      const newProductUseRef: ProductProp = {
-        ...newProduct,
-        options: cleanedOptions,
-      };
-      const findIndex = copy.findIndex((e) => e.id === existingProduct.id);
-
-      if (selectedFile) {
-        newProductUseRef.hasImage = true;
-        storage
-          .ref(auth.currentUser?.uid + "/images/" + existingProduct.id)
-          .put(selectedFile)
-          .then(() => {
-            storage
-              .ref(auth.currentUser?.uid + "/images/" + existingProduct.id)
-              .getDownloadURL()
-              .then((url) => {
-                newProductUseRef.hasImage = true;
-                newProductUseRef.imageUrl = url;
-                if (newProductUseRef.hasImage && !selectedFile && !currentImgUrl) {
-                  storage.ref(auth.currentUser?.uid + "/images/" + existingProduct.id).delete();
-                  newProductUseRef.hasImage = false;
-                  newProductUseRef.imageUrl = null;
-                }
-                copy[findIndex] = newProductUseRef;
-                if (!newProductUseRef.id) return;
-                setStoreProductsState({ categories: catalog.categories, products: copy.sort(customSort) });
-                const imgBatch = db.batch();
-                imgBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()), newProductUseRef);
-                if (onlineStoreDetails.onlineStoreSetUp) {
-                  imgBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()), newProductUseRef);
-                }
-                imgBatch.commit();
-              });
-          });
-      } else {
-        if (newProductUseRef.hasImage && !selectedFile && !currentImgUrl) {
-          storage.ref(auth.currentUser?.uid + "/images/" + existingProduct.id).delete();
-          newProductUseRef.hasImage = false;
-          newProductUseRef.imageUrl = null;
-        }
-        copy[findIndex] = newProductUseRef;
-        if (!newProductUseRef.id) return;
-        setStoreProductsState({ categories: catalog.categories, products: copy.sort(customSort) });
-        const updateBatch = db.batch();
-        updateBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()), newProductUseRef);
-        if (onlineStoreDetails.onlineStoreSetUp) {
-          updateBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProductUseRef.id.toString()), newProductUseRef);
-        }
-        updateBatch.commit();
-      }
-    } else {
-      newProduct.isTemplate = false;
-      newProduct.options = cleanedOptions;
-      if (selectedFile) {
-        storage.ref(auth.currentUser?.uid + "/images/" + newProduct.id).put(selectedFile).then(() => {
-          storage.ref(auth.currentUser?.uid + "/images/" + newProduct.id).getDownloadURL().then((url) => {
-            newProduct.hasImage = true;
-            newProduct.imageUrl = url;
-            const newImgBatch = db.batch();
-            newImgBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""), newProduct);
-            if (onlineStoreDetails.onlineStoreSetUp) {
-              newImgBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""), newProduct);
-            }
-            newImgBatch.commit();
-            setStoreProductsState({ categories: catalog.categories, products: [...catalog.products, newProduct].sort(customSort) });
-          });
-        });
-      } else {
-        const newBatch = db.batch();
-        newBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""), newProduct);
-        if (onlineStoreDetails.onlineStoreSetUp) {
-          newBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(newProduct.id?.toString() ?? ""), newProduct);
-        }
-        newBatch.commit();
-        setStoreProductsState({ categories: catalog.categories, products: [...catalog.products, newProduct].sort(customSort) });
-      }
+    // Handle image upload/removal
+    if (selectedFile) {
+      const ref = storage.ref(uid + "/images/" + productToSave.id);
+      await ref.put(selectedFile);
+      const url = await ref.getDownloadURL();
+      productToSave.hasImage = true;
+      productToSave.imageUrl = url;
+    } else if (!currentImgUrl && existingProduct?.hasImage) {
+      try { await storage.ref(uid + "/images/" + productToSave.id).delete(); } catch {}
+      productToSave.hasImage = false;
+      productToSave.imageUrl = null;
     }
+
+    const cleanProduct = JSON.parse(JSON.stringify(productToSave));
+    const batch = db.batch();
+    batch.set(db.collection("users").doc(uid).collection("products").doc(productToSave.id.toString()), cleanProduct);
+    if (onlineStoreDetails.onlineStoreSetUp) {
+      batch.set(db.collection("public").doc(uid).collection("products").doc(productToSave.id.toString()), cleanProduct);
+    }
+    await batch.commit();
+
+    // Update local state
+    if (existingProduct && !isProductTemplate) {
+      const updated = catalog.products.map((p) => p.id === productToSave.id ? productToSave : p);
+      setStoreProductsState({ categories: catalog.categories, products: updated.sort(customSort) });
+    } else {
+      setStoreProductsState({ categories: catalog.categories, products: [...catalog.products, productToSave].sort(customSort) });
+    }
+
     closeModal();
   }
 
