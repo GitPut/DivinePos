@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { addCartState, cartState, ingredientsState, setProductBuilderState } from "store/appState";
 import { shallowEqual } from "simpler-state";
 import ProductImage from "shared/components/ui/ProductImage";
 import { FiImage } from "react-icons/fi";
 import { ProductProp } from "types";
+import { getDisplayPrice } from "utils/getDisplayPrice";
 
 interface ItemContainerProps {
   product: ProductProp;
@@ -37,6 +38,8 @@ function ItemContainer({ product, onLayout, width }: ItemContainerProps) {
       product.stockQuantity > 0 &&
       product.stockQuantity <= product.lowStockThreshold;
   }
+
+  const displayPrice = useMemo(() => getDisplayPrice(product), [product]);
 
   return (
     <div>
@@ -123,7 +126,10 @@ function ItemContainer({ product, onLayout, width }: ItemContainerProps) {
               ...(isOutOfStock ? { color: "#bbb" } : {}),
             }}
           >
-            ${product.price}
+            {displayPrice.isFrom && (
+              <span style={styles.fromLabel}>From </span>
+            )}
+            ${displayPrice.price}
           </span>
         </div>
       </button>
@@ -228,6 +234,11 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#1a1a1a",
     fontSize: 15,
     marginTop: 4,
+  },
+  fromLabel: {
+    fontWeight: "500",
+    fontSize: 12,
+    color: "#94a3b8",
   },
 };
 
