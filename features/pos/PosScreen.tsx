@@ -118,12 +118,7 @@ function PosScreen() {
   return (
     <div style={styles.container}>
       {width > 1250 && <LeftMenuBar />}
-      <div
-        style={{
-          ...styles.menuContainer,
-          ...(width < 1000 ? { width: "100%" } : { flex: 1 }),
-        }}
-      >
+      <div style={styles.menuContainer}>
         {/* Top header bar */}
         <div style={styles.topBar}>
           {width < 1250 && (
@@ -166,10 +161,10 @@ function PosScreen() {
           <TableFloorView />
         ) : (
           catalog.products.length > 0 && (
-            <>
+            <div style={styles.productsArea}>
               <CategorySection catalog={catalog} section={section} />
               <ProductsSection catalog={catalog} searchQuery={searchQuery} section={section} />
-            </>
+            </div>
           )
         )}
       </div>
@@ -328,6 +323,15 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
     minWidth: 0,
   },
+  productsArea: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    minHeight: 0,
+    width: "100%",
+    alignItems: "center",
+  },
   topBar: {
     width: "95%",
     display: "flex",
@@ -336,6 +340,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 10,
     paddingTop: 14,
     paddingBottom: 4,
+    flexShrink: 0,
   },
   searchContainer: {
     flex: 1,
