@@ -75,6 +75,18 @@ const ProductImage = React.memo(({
   const [error, setError] = useState(false);
   const hasAnimated = useRef(alreadyCached);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const prevSourceRef = useRef(source);
+
+  // Reset state when source URL changes (e.g. after image re-upload)
+  if (prevSourceRef.current !== source) {
+    prevSourceRef.current = source;
+    const nowCached = loadedImages.has(source);
+    hasAnimated.current = nowCached;
+    if (!nowCached) {
+      setLoaded(false);
+      setError(false);
+    }
+  }
 
   const drawCanvas = (canvas: HTMLCanvasElement) => {
     const cachedImg = imageObjects.get(source);
