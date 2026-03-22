@@ -212,9 +212,15 @@ const AppRouter = () => {
 
   // ─── Sort helper ─────────────────────────────────────────────────────────
   const sortByRank = (a: ProductProp, b: ProductProp) => {
-    const rankA = parseInt(a.rank ?? "0") || Number.MAX_SAFE_INTEGER;
-    const rankB = parseInt(b.rank ?? "0") || Number.MAX_SAFE_INTEGER;
-    return rankA - rankB;
+    const rawA = parseFloat(a.rank ?? "");
+    const rawB = parseFloat(b.rank ?? "");
+    const hasRankA = !isNaN(rawA) && rawA > 0;
+    const hasRankB = !isNaN(rawB) && rawB > 0;
+
+    if (hasRankA && hasRankB) return rawA - rawB;
+    if (hasRankA && !hasRankB) return -1;
+    if (!hasRankA && hasRankB) return 1;
+    return (a.name ?? "").localeCompare(b.name ?? "");
   };
 
   // ─── App Bootstrap ────────────────────────────────────────────────────────
