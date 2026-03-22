@@ -19,7 +19,16 @@ firebase
   .enablePersistence()
   .catch(function (err) {
     if (err.code === "failed-precondition" && !window.location.pathname.includes("customer-display")) {
-      alert("Please only keep one tab of Divine POS open at a time.");
+      // Show non-blocking banner instead of alert()
+      const banner = document.createElement("div");
+      banner.textContent = "Please only keep one tab of Divine POS open at a time.";
+      Object.assign(banner.style, {
+        position: "fixed", top: "0", left: "0", right: "0", zIndex: "99999",
+        padding: "10px 20px", backgroundColor: "#fef3c7", color: "#92400e",
+        textAlign: "center", fontSize: "14px", fontWeight: "600", fontFamily: "sans-serif",
+      });
+      document.body.appendChild(banner);
+      setTimeout(() => banner.remove(), 8000);
     }
     // err.code === "unimplemented" means the browser doesn't support persistence — silently ignore
   });

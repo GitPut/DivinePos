@@ -9,13 +9,19 @@ import OnlineOrderHomePickup from "./pages/Pickup";
 import OnlineOrderHomeDelivery from "./pages/Delivery";
 import OnlineOrderHomeCheckout from "./pages/Checkout";
 import {
+  cartState,
+  setCartState,
   orderDetailsState,
+  setOrderDetailsState,
   setProductBuilderState,
   setStoreDetailsState,
   setOnlineStoreState,
 } from "store/appState";
 import { ProductProp, UserStoreStateProps } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
+
+const CART_STORAGE_KEY = "divine-pos-online-cart";
+const ORDER_STORAGE_KEY = "divine-pos-online-order";
 
 const OrderPage = () => {
   const history = useHistory();
@@ -135,6 +141,69 @@ const OrderPage = () => {
           });
       });
   }, []);
+
+  // ─── Cart & order persistence (survives refresh) ──────────────────────────
+  // Hydrate from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const savedCart = sessionStorage.getItem(CART_STORAGE_KEY);
+      const savedOrder = sessionStorage.getItem(ORDER_STORAGE_KEY);
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        if (Array.isArray(parsed) && parsed.length > 0) setCartState(parsed);
+      }
+      if (savedOrder) {
+        const parsed = JSON.parse(savedOrder);
+        if (parsed && parsed.page) {
+          // Restore order details but skip date (not serializable) and keep page
+          setOrderDetailsState({
+            customer: parsed.customer,
+            delivery: parsed.delivery,
+            address: parsed.address,
+            method: parsed.method,
+            page: parsed.page > 5 ? 1 : parsed.page, // Don't restore checkout/completed
+          });
+        }
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
+
+  // Persist cart to sessionStorage on change
+  useEffect(() => {
+    const cart = cartState.get();
+    try {
+      if (cart.length > 0) {
+        sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      } else {
+        sessionStorage.removeItem(CART_STORAGE_KEY);
+      }
+    } catch {
+      // Storage full — ignore
+    }
+  }, [cartState.use()]);
+
+  // Persist order details on page/customer change
+  useEffect(() => {
+    try {
+      const { customer, delivery, address, method, page } = orderDetails;
+      sessionStorage.setItem(
+        ORDER_STORAGE_KEY,
+        JSON.stringify({ customer, delivery, address, method, page })
+      );
+    } catch {
+      // Storage full — ignore
+    }
+  }, [orderDetails.page, orderDetails.customer, orderDetails.delivery]);
+
+  // Clear persistence on order completion
+  useEffect(() => {
+    if (page === 6) {
+      sessionStorage.removeItem(CART_STORAGE_KEY);
+      sessionStorage.removeItem(ORDER_STORAGE_KEY);
+    }
+  }, [page]);
 
   const fadeOut = () => {
     setFadeVisible(false);

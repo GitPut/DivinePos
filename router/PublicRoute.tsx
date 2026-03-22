@@ -3,6 +3,7 @@ import Login from "features/auth/Login";
 import Signup from "features/auth/Signup";
 import ResetPassword from "features/auth/ResetPassword";
 import OrderPage from "features/online-store/OrderPage";
+import NotFound from "shared/components/NotFound";
 import {
   RouteComponentProps,
   Switch,
@@ -24,6 +25,7 @@ const PublicRoute: React.FC<PublicRouteProps> = (props) => {
       location.pathname !== "/log-in" &&
       location.pathname !== "/sign-up" &&
       location.pathname !== "/reset-password" &&
+      location.pathname !== "/404" &&
       !location.pathname.includes("/order/")
     ) {
       history.push("/log-in");
@@ -36,6 +38,7 @@ const PublicRoute: React.FC<PublicRouteProps> = (props) => {
       <Route path="/sign-up" component={Signup} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/order/:urlEnding" component={OrderPage} />
+      <Route path="/404" component={NotFound} />
     </Switch>
   );
 };
