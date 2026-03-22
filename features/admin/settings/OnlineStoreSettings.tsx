@@ -114,14 +114,29 @@ function OnlineStoreSettings() {
         hasLogo: logo.hasLogo,
         logoUrl: logo.logoUrl ?? "",
       };
-      const cleanStoreDetailsSetup = JSON.parse(JSON.stringify(updatedStoreDetails));
+
+      // Clean storeDetails for public doc — strip sensitive/internal fields
+      const publicStoreDetails = JSON.parse(JSON.stringify({
+        name: updatedStoreDetails.name ?? "",
+        phoneNumber: updatedStoreDetails.phoneNumber ?? "",
+        website: updatedStoreDetails.website ?? "",
+        address: updatedStoreDetails.address ?? null,
+        deliveryPrice: updatedStoreDetails.deliveryPrice ?? "",
+        taxRate: updatedStoreDetails.taxRate ?? "13",
+        hasLogo: updatedStoreDetails.hasLogo ?? false,
+        logoUrl: updatedStoreDetails.logoUrl ?? "",
+        acceptDelivery: updatedStoreDetails.acceptDelivery ?? false,
+        deliveryRange: updatedStoreDetails.deliveryRange ?? "",
+      }));
+
+      const stripePublicKeyVal = (stripePublicKey ?? "").length > 0 ? stripePublicKey : "";
+      const stripeSecretKeyVal = (stripeSecretKey ?? "").length > 0 ? stripeSecretKey : null;
 
       await db.collection("public").doc(uid).set({
-        storeDetails: cleanStoreDetailsSetup,
+        storeDetails: publicStoreDetails,
         categories: catalog.categories,
         urlEnding: urlEnding,
-        stripePublicKey:
-          stripePublicKey?.length ?? 0 > 0 ? stripePublicKey : "",
+        stripePublicKey: stripePublicKeyVal ?? "",
         brandColor: brandColor || "",
         tagline: tagline || "",
       });
@@ -133,16 +148,15 @@ function OnlineStoreSettings() {
           .doc(uid)
           .collection("products")
           .doc(product.id);
-        batch.set(ref, product);
+        // Clean product to remove undefined values that Firestore rejects
+        batch.set(ref, JSON.parse(JSON.stringify(product)));
       });
       batch.update(db.collection("users").doc(uid), {
         onlineStoreActive: onlineStoreActive,
         onlineStoreSetUp: true,
         urlEnding: urlEnding,
-        stripePublicKey:
-          stripePublicKey?.length ?? 0 > 0 ? stripePublicKey : null,
-        stripeSecretKey:
-          stripeSecretKey?.length ?? 0 > 0 ? stripeSecretKey : null,
+        stripePublicKey: stripePublicKeyVal,
+        stripeSecretKey: stripeSecretKeyVal,
         brandColor: brandColor,
         tagline: tagline,
         "storeDetails.hasLogo": logo.hasLogo,
@@ -156,17 +170,16 @@ function OnlineStoreSettings() {
         onlineStoreActive: onlineStoreActive,
         onlineStoreSetUp: true,
         urlEnding: urlEnding,
-        stripePublicKey:
-          stripePublicKey?.length ?? 0 > 0 ? stripePublicKey : null,
-        stripeSecretKey:
-          stripeSecretKey?.length ?? 0 > 0 ? stripeSecretKey : null,
+        stripePublicKey: stripePublicKeyVal,
+        stripeSecretKey: stripeSecretKeyVal,
         brandColor: brandColor,
         tagline: tagline,
       });
       setLogoFile(null);
       setUploadingLogo(false);
       alertP.success("Online store set up successfully!");
-    } catch {
+    } catch (err) {
+      console.error("startOnlineStore error:", err);
       setUploadingLogo(false);
       alertP.error("An error occurred while setting up the online store.");
     }
@@ -185,8 +198,19 @@ function OnlineStoreSettings() {
         hasLogo: logo.hasLogo,
         logoUrl: logo.logoUrl ?? "",
       };
-      // Remove undefined values before sending to Firestore
-      const cleanStoreDetails = JSON.parse(JSON.stringify(updatedStoreDetails));
+      // Clean storeDetails for public doc — strip sensitive/internal fields
+      const cleanStoreDetails = JSON.parse(JSON.stringify({
+        name: updatedStoreDetails.name ?? "",
+        phoneNumber: updatedStoreDetails.phoneNumber ?? "",
+        website: updatedStoreDetails.website ?? "",
+        address: updatedStoreDetails.address ?? null,
+        deliveryPrice: updatedStoreDetails.deliveryPrice ?? "",
+        taxRate: updatedStoreDetails.taxRate ?? "13",
+        hasLogo: updatedStoreDetails.hasLogo ?? false,
+        logoUrl: updatedStoreDetails.logoUrl ?? "",
+        acceptDelivery: updatedStoreDetails.acceptDelivery ?? false,
+        deliveryRange: updatedStoreDetails.deliveryRange ?? "",
+      }));
 
       const batch = db.batch();
 
@@ -196,7 +220,7 @@ function OnlineStoreSettings() {
           .doc(uid)
           .collection("products")
           .doc(product.id);
-        batch.set(ref, product);
+        batch.set(ref, JSON.parse(JSON.stringify(product)));
       });
 
       batch.update(db.collection("users").doc(uid), {
