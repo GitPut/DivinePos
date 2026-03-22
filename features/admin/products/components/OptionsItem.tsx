@@ -7,6 +7,7 @@ import {
   FiTrash2,
   FiPlus,
 } from "react-icons/fi";
+import { MdDragIndicator } from "react-icons/md";
 import OptionsItemExpanded from "./OptionsItemExpanded";
 import { useAlert } from "react-alert";
 import { Option, ProductProp } from "types";
@@ -29,6 +30,11 @@ interface OptionsItemProps {
   scrollViewRef: RefObject<any>;
   selectedID: string | null;
   setselectedID: (val: string | null) => void;
+  onDragStart?: (index: number) => void;
+  onDragOver?: (index: number) => void;
+  onDragEnd?: () => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
 }
 
 function OptionsItem({
@@ -45,6 +51,11 @@ function OptionsItem({
   scrollViewRef,
   selectedID,
   setselectedID,
+  onDragStart,
+  onDragOver,
+  onDragEnd,
+  isDragging,
+  isDragOver,
 }: OptionsItemProps) {
   const [e, sete] = useState(structuredClone(item));
   const [addOptionClicked, setaddOptionClicked] = useState(true);
@@ -89,6 +100,16 @@ function OptionsItem({
           ...(selectedID === item.id
             ? { borderColor: "#1D294E", boxShadow: "0 0 0 1px #1D294E" }
             : {}),
+          ...(isDragging ? { opacity: 0.4 } : {}),
+          ...(isDragOver ? { borderColor: "#1D294E", borderStyle: "dashed" } : {}),
+        }}
+        onDragOver={(ev) => {
+          ev.preventDefault();
+          onDragOver?.(index);
+        }}
+        onDrop={(ev) => {
+          ev.preventDefault();
+          onDragEnd?.();
         }}
       >
         <button
@@ -106,6 +127,19 @@ function OptionsItem({
           }}
         >
           <div style={styles.headerLeft}>
+            <div
+              draggable
+              onDragStart={(ev) => {
+                ev.stopPropagation();
+                onDragStart?.(index);
+              }}
+              onDragEnd={() => onDragEnd?.()}
+              style={styles.dragHandle}
+              title="Drag to reorder"
+              onClick={(ev) => ev.stopPropagation()}
+            >
+              <MdDragIndicator size={18} color="#94a3b8" />
+            </div>
             <span style={styles.optionIndex}>{index + 1}</span>
             <span style={styles.optionName}>
               {e.label ? e.label : "New Option"}
@@ -355,6 +389,15 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 10,
     flex: 1,
     minWidth: 0,
+  },
+  dragHandle: {
+    cursor: "grab",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 2,
+    borderRadius: 4,
+    flexShrink: 0,
   },
   optionIndex: {
     width: 24,

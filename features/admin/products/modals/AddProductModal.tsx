@@ -76,6 +76,8 @@ function AddProductModal({
   const [selectedID, setselectedID] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(true);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const optionTemplates = optionTemplatesState.use();
   const alertP = useAlert();
 
@@ -566,6 +568,28 @@ function AddProductModal({
                     scrollViewRef={scrollViewRef}
                     selectedID={selectedID}
                     setselectedID={setselectedID}
+                    isDragging={dragIndex === index}
+                    isDragOver={dragOverIndex === index && dragIndex !== index}
+                    onDragStart={(i) => { setDragIndex(i); setindexOn(null); }}
+                    onDragOver={(i) => setDragOverIndex(i)}
+                    onDragEnd={() => {
+                      if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
+                        setnewProductOptions((prev) => {
+                          const clone = structuredClone(prev);
+                          const [moved] = clone.splice(dragIndex, 1);
+                          clone.splice(dragOverIndex, 0, moved);
+                          return clone;
+                        });
+                        setnewProduct((prev) => {
+                          const clone = structuredClone(prev);
+                          const [moved] = clone.options.splice(dragIndex, 1);
+                          clone.options.splice(dragOverIndex, 0, moved);
+                          return clone;
+                        });
+                      }
+                      setDragIndex(null);
+                      setDragOverIndex(null);
+                    }}
                   />
                 ))
               ) : (
