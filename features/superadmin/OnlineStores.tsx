@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db } from "services/firebase/config";
-import { FiSearch, FiGlobe, FiTrash2, FiExternalLink, FiChevronRight } from "react-icons/fi";
+import { FiSearch, FiGlobe, FiTrash2, FiExternalLink, FiEdit3 } from "react-icons/fi";
 import { useAlert } from "react-alert";
 import Swal from "sweetalert2";
 
@@ -144,6 +144,49 @@ const OnlineStores: React.FC = () => {
     }
   };
 
+  const changeUrlEnding = async (store: OnlineStoreItem) => {
+    const { value: newUrl } = await Swal.fire({
+      title: "Change URL Ending",
+      html: `Current: <b>/order/${store.urlEnding}</b>`,
+      input: "text",
+      inputValue: store.urlEnding,
+      inputPlaceholder: "new-url-ending",
+      showCancelButton: true,
+      confirmButtonColor: "#1D294E",
+      confirmButtonText: "Update URL",
+      inputValidator: (value) => {
+        if (!value?.trim()) return "URL ending cannot be empty";
+        if (!/^[a-z0-9-]+$/.test(value)) return "Only lowercase letters, numbers, and dashes allowed";
+        return null;
+      },
+    });
+    if (!newUrl || newUrl === store.urlEnding) return;
+
+    // Check if taken by another store
+    const existing = await db
+      .collection("public")
+      .where("urlEnding", "==", newUrl)
+      .get();
+    if (!existing.empty && existing.docs.some((d) => d.id !== store.uid)) {
+      alertP.error("That URL ending is already taken");
+      return;
+    }
+
+    try {
+      const batch = db.batch();
+      batch.update(db.collection("public").doc(store.uid), { urlEnding: newUrl });
+      batch.update(db.collection("users").doc(store.uid), { urlEnding: newUrl });
+      await batch.commit();
+      setStores((prev) =>
+        prev.map((s) => (s.uid === store.uid ? { ...s, urlEnding: newUrl } : s))
+      );
+      alertP.success(`URL changed to /order/${newUrl}`);
+    } catch (err) {
+      console.error("Change URL error:", err);
+      alertP.error("Failed to change URL ending");
+    }
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.headerRow}>
@@ -207,8 +250,15 @@ const OnlineStores: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div style={{ ...styles.cell, flex: 1.5 }}>
+                <div style={{ ...styles.cell, flex: 1.5, flexDirection: "row", alignItems: "center", gap: 6 }}>
                   <span style={styles.urlText}>/order/{store.urlEnding}</span>
+                  <button
+                    style={styles.editUrlBtn}
+                    onClick={() => changeUrlEnding(store)}
+                    title="Change URL"
+                  >
+                    <FiEdit3 size={12} color="#64748b" />
+                  </button>
                 </div>
                 <div style={{ ...styles.cell, flex: 1.5 }}>
                   <span style={styles.ownerName}>{store.ownerName || store.ownerEmail}</span>
@@ -451,6 +501,19 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     cursor: "pointer",
     textDecoration: "none",
+  },
+  editUrlBtn: {
+    width: 24,
+    height: 24,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 4,
+    cursor: "pointer",
+    padding: 0,
+    flexShrink: 0,
   },
   deleteBtn: {
     width: 30,
