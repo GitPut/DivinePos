@@ -98,7 +98,9 @@ function OnlineStoreSettings() {
       .where("urlEnding", "==", urlEnding)
       .get();
 
-    if (!querySnapshot.empty) {
+    // Allow if the only match is the current user's own doc (partial setup retry)
+    const isTakenByOther = querySnapshot.docs.some((doc) => doc.id !== uid);
+    if (!querySnapshot.empty && isTakenByOther) {
       alertP.error(
         "This url ending is already taken. Please choose another one.",
       );
@@ -139,7 +141,7 @@ function OnlineStoreSettings() {
         stripePublicKey: stripePublicKeyVal ?? "",
         brandColor: brandColor || "",
         tagline: tagline || "",
-      });
+      }, { merge: true });
 
       const batch = db.batch();
       catalog.products.forEach((product) => {
