@@ -32,7 +32,7 @@ function CartItem({
           ...(isOpen && { paddingTop: 15, marginBottom: 30 }),
         }}
         onClick={() => {
-          cartItem.options.length > 0 && setisOpen((prev) => !prev);
+          (cartItem.options.length > 0 || cartItem.extraDetails) && setisOpen((prev) => !prev);
         }}
       >
         {cartItem.imageUrl && (

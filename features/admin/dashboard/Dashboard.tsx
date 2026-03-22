@@ -78,7 +78,12 @@ const getDateRange = (
   const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   const yearStart = new Date(today.getFullYear(), 0, 1);
   const yearEnd = new Date(today.getFullYear(), 11, 31);
-  const fmt = (d: Date) => d.toISOString().split("T")[0];
+  const fmt = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
 
   switch (period) {
     case "Today":

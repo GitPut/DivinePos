@@ -44,11 +44,12 @@ const AuthRoute: React.FC<AuthRouteProps> = (props) => {
   const history = useHistory();
   const [showWalkthrough, setShowWalkthrough] = useState(false);
 
-  // Auto-show walkthrough on first login
+  // Auto-show walkthrough on first login (per-user)
   useEffect(() => {
-    const completed = localStorage.getItem("walkthroughCompleted");
+    const uid = auth.currentUser?.uid;
+    const key = uid ? `walkthroughCompleted_${uid}` : "walkthroughCompleted";
+    const completed = localStorage.getItem(key);
     if (!completed) {
-      // Small delay so the page renders first
       const timer = setTimeout(() => setShowWalkthrough(true), 800);
       return () => clearTimeout(timer);
     }

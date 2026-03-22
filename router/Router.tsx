@@ -482,6 +482,19 @@ const AppRouter = () => {
             });
           });
           setOptionTemplatesState(templatesList);
+        } else {
+          // Auto-import standard templates for new accounts
+          try {
+            const { standardOptionTemplates } = await import("features/admin/products/components/productTemplates");
+            const autoImported: OptionTemplate[] = [];
+            for (const std of standardOptionTemplates) {
+              const ref = userRef.collection("optionTemplates").doc();
+              const template = { name: std.name, option: std.option as any, updatedAt: new Date().toISOString() };
+              await ref.set(template);
+              autoImported.push({ id: ref.id, name: std.name, option: std.option as any, updatedAt: template.updatedAt });
+            }
+            if (autoImported.length > 0) setOptionTemplatesState(autoImported);
+          } catch {}
         }
 
         // ── Handle free trial status ──────────────────────────────────────

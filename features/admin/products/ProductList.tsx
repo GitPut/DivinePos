@@ -131,6 +131,7 @@ function ProductList() {
           <button
             style={styles.addBtn}
             onClick={() => setAddProductModal(true)}
+            data-walkthrough="add-product"
           >
             <FiPlus size={16} color="#fff" />
             <span style={styles.addBtnTxt}>Add Product</span>

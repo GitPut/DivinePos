@@ -29,16 +29,16 @@ Never read, modify, or worry about files in these directories.
 ## Project Structure
 ```
 Divine POS/
-├── src/main.tsx                          # Vite entry → React root
-├── src/global.css                        # Global CSS, RNW defaults, animations
+├── src/main.tsx                          # Vite entry → ErrorBoundary → React root
+├── src/global.css                        # Global CSS, RNW defaults, animations, 3rd-party resets
 ├── index.html                            # HTML entry with #root mount
 ├── vite.config.ts                        # Aliases, node polyfills, port 3000
-├── App.tsx                               # Root: AlertProvider → AppRouter
+├── App.tsx                               # Root: AlertProvider (custom template) → AppRouter
 │
 ├── router/
-│   ├── Router.tsx                        # Bootstrap: auth, data loading, listeners
-│   ├── NavigationContent.tsx             # Subscription gating layer
-│   ├── AuthRoute.tsx                     # Protected routes (/pos, /authed, /customer-display)
+│   ├── Router.tsx                        # Bootstrap: auth, data loading, 3 listeners
+│   ├── NavigationContent.tsx             # Subscription gating layer (superadmin bypass)
+│   ├── AuthRoute.tsx                     # Protected routes (/pos, /authed, /customer-display, /superadmin)
 │   └── PublicRoute.tsx                   # Public routes (/log-in, /sign-up, /order/*)
 │
 ├── features/
@@ -51,218 +51,246 @@ Divine POS/
 │   │   ├── PosScreen.tsx                # Main POS: products grid + cart + sidebar
 │   │   └── components/
 │   │       ├── Products/
-│   │       │   ├── ProductsSection.tsx  # Filtered product grid (useMemo)
-│   │       │   ├── CategorySection.tsx  # Category filter pills
-│   │       │   └── ItemContainer.tsx    # Product card (stock-aware, click→cart/builder)
+│   │       │   ├── ProductsSection.tsx  # Filtered product grid (useMemo, search + category)
+│   │       │   ├── CategorySection.tsx  # Category filter pills (horizontal scroll)
+│   │       │   ├── ItemContainer.tsx    # Product card (stock-aware via recipe OR simple tracking)
+│   │       │   └── LeftMenuBar.tsx      # Sidebar icons (Home, Tables, Orders, Clock, Delivery, Discount, Cash)
 │   │       ├── Cart/
-│   │       │   ├── Cart.tsx             # Desktop cart sidebar (totals, discount, checkout)
-│   │       │   ├── CartItem.tsx         # Cart row (qty controls, edit, expand options)
+│   │       │   ├── Cart.tsx             # Desktop cart sidebar (totals, discount, checkout, customer display broadcast)
+│   │       │   ├── CartItem.tsx         # Cart row (qty controls, edit via ProductBuilder, expandable options)
 │   │       │   ├── CartAmountRow.tsx    # Label + amount display row
 │   │       │   ├── CartMobile.tsx       # Mobile cart (modal drawer)
-│   │       │   ├── CheckoutButton.tsx   # Context-aware payment buttons
-│   │       │   └── print.ts            # Order lifecycle: validate→persist→print→clear
+│   │       │   ├── CheckoutButton.tsx   # Context-aware: table/delivery/in-store/updating order modes
+│   │       │   └── print.ts            # Order lifecycle: validate→discount→customer→persist→print→clear
 │   │       ├── ProductBuilder/
-│   │       │   ├── ProductBuilderModal.tsx  # Product customization modal
-│   │       │   ├── OptionDisplay.tsx        # Routes to correct option component
-│   │       │   ├── DropdownOption.tsx       # Single-select dropdown (portal rendered)
+│   │       │   ├── ProductBuilderModal.tsx  # Product customization (desktop 2-col, mobile single-col)
+│   │       │   ├── OptionDisplay.tsx        # Routes to correct component + conditional display logic
+│   │       │   ├── DropdownOption.tsx       # Single-select dropdown (portal to document.body)
 │   │       │   ├── SingleSelectOptionGroup.tsx  # Pill button options
-│   │       │   ├── MultiSelectOptionGroup.tsx   # Qty grid + half&half
-│   │       │   ├── IncludedSelectionsGroup.tsx  # "Choose N included" options
-│   │       │   ├── TableOption.tsx              # Checkbox grid option
+│   │       │   ├── MultiSelectOptionGroup.tsx   # Qty grid + half&half (left/right/whole)
+│   │       │   ├── IncludedSelectionsGroup.tsx  # "Choose N included, $X each extra"
+│   │       │   ├── TableOption.tsx              # Checkbox grid with qty + half&half
 │   │       │   ├── SingleSelectButton.tsx       # Individual pill button
-│   │       │   ├── AddToCartButton.tsx          # Add/Save button with price
+│   │       │   ├── AddToCartButton.tsx          # Add/Save button with calculated price
 │   │       │   └── GoBackButton.tsx             # Back arrow button
-│   │       ├── Tables/
-│   │       │   ├── TableFloorView.tsx    # Table grid by section (occupied/available)
-│   │       │   ├── TableCard.tsx         # Individual table (color-coded, elapsed time)
-│   │       │   ├── TableCartHeader.tsx   # Active table info bar (auto-save debounce 2s)
-│   │       │   ├── OpenTableModal.tsx    # Initialize table session (guests, server)
-│   │       │   └── TableOrderView.tsx    # Table payment/transfer/close modal
-│   │       └── LeftMenuBar.tsx           # Sidebar icons (Home, Tables, Orders, etc.)
+│   │       └── Tables/
+│   │           ├── TableFloorView.tsx    # Table grid by section (green=available, blue=occupied)
+│   │           ├── TableCard.tsx         # Individual table (elapsed time, guests, total, server)
+│   │           ├── TableCartHeader.tsx   # Active table info bar (auto-save debounce 2s)
+│   │           ├── OpenTableModal.tsx    # Initialize table session (guests, server dropdown)
+│   │           └── TableOrderView.tsx    # Table payment/transfer/close modal (tax calc at payment)
 │   │
 │   ├── admin/
-│   │   ├── AdminContainer.tsx           # Admin layout: sidebar (278px) + content area
+│   │   ├── AdminContainer.tsx           # Admin layout: sidebar (240px) + content area
 │   │   ├── index.tsx                    # Admin route definitions
 │   │   ├── dashboard/
-│   │   │   ├── Dashboard.tsx            # KPI analytics (period filter, stats aggregation)
+│   │   │   ├── Dashboard.tsx            # KPI analytics (4 cards + chart + order types + wait times)
 │   │   │   ├── TotalRevenueBox.tsx      # Revenue bar chart (Recharts)
-│   │   │   ├── MostOrderedItemsBox.tsx  # Top 3 products
-│   │   │   ├── OrderWaitTimeBox.tsx     # Wait time metrics
+│   │   │   ├── MostOrderedItemsBox.tsx  # Top 3 products (gold/silver/bronze badges)
+│   │   │   ├── OrderWaitTimeBox.tsx     # Shortest/Longest/Average/Mean wait times
 │   │   │   ├── PickupOrdersBox.tsx      # Pickup stats
 │   │   │   ├── DeliveryOrdersBox.tsx    # Delivery stats
 │   │   │   ├── InStoreOrdersBox.tsx     # In-store stats
-│   │   │   ├── CustomersBox.tsx         # New customers count
+│   │   │   ├── CustomersBox.tsx         # New customers count by period
 │   │   │   ├── PeriodDropdown.tsx       # Period filter (Today/Week/Month/Year/All)
 │   │   │   └── BarGraph.tsx             # Recharts bar chart component
 │   │   ├── products/
-│   │   │   ├── ProductsPage.tsx         # Product/category router
-│   │   │   ├── ProductList.tsx          # Product CRUD grid with search + filter
-│   │   │   ├── CategoryList.tsx         # Category CRUD list
-│   │   │   ├── AddProductModal.tsx      # Full product editor (options, image, recipe)
+│   │   │   ├── ProductsPage.tsx         # Product/category/templates router
+│   │   │   ├── ProductList.tsx          # Product CRUD grid (search, filter, list/grid view)
+│   │   │   ├── CategoryList.tsx         # Category CRUD list (drag-to-reorder)
+│   │   │   ├── modals/
+│   │   │   │   ├── AddProductModal.tsx  # Full product editor (options, image, recipe, stock)
+│   │   │   │   └── AddCategoryModal.tsx # Category create/edit modal
 │   │   │   ├── ProductOptionBox.tsx     # Product card with edit/delete
 │   │   │   └── ProductBuilderView.tsx   # Product preview with option pricing
 │   │   ├── inventory/
 │   │   │   ├── InventoryPage.tsx        # Ingredients + Stock tabs
-│   │   │   ├── IngredientsTab.tsx       # Ingredient CRUD
-│   │   │   └── StockLevelsList.tsx      # Product stock levels
+│   │   │   ├── IngredientsTab.tsx       # Ingredient CRUD (search, filter, status badges)
+│   │   │   └── StockLevelsList.tsx      # Product stock levels (tracked/untracked)
 │   │   ├── reports/
 │   │   │   ├── ReportsPage.tsx          # Reports router
-│   │   │   ├── Invoices.tsx             # Transaction history (pagination, search, export)
+│   │   │   ├── Invoices.tsx             # Transaction history (pagination 100/page, search, date filter, Excel export)
 │   │   │   ├── EmployeesList.tsx        # Employee list + add modal
-│   │   │   ├── EditEmployee.tsx         # Employee details, hours, permissions
-│   │   │   └── ActivityLog.tsx          # Employee action audit log
+│   │   │   ├── EditEmployee.tsx         # Employee details, hours, permissions toggles
+│   │   │   ├── components/HoursItem.tsx # Individual time clock entry row
+│   │   │   └── ActivityLog.tsx          # Employee action audit log (last 100)
 │   │   ├── settings/
 │   │   │   ├── SettingsPage.tsx         # Settings router
 │   │   │   ├── GeneralSettings.tsx      # Store name, address, tax, delivery config
-│   │   │   ├── DeviceSettings.tsx       # Multi-device management + printer config
-│   │   │   ├── OnlineStoreSettings.tsx  # Online store URL, Stripe keys, product sync
+│   │   │   ├── DeviceSettings.tsx       # Multi-device management + printer config + QZ Tray
+│   │   │   ├── OnlineStoreSettings.tsx  # URL slug, Stripe keys, brand color, tagline, logo, product sync
 │   │   │   ├── WooCommerceSettings.tsx  # WooCommerce API credentials (Pro only)
 │   │   │   ├── TableSettings.tsx        # Table definitions + sections (Pro only)
-│   │   │   └── BillingSettings.tsx      # Plan selection, Stripe portal
-│   │   └── help/HelpPage.tsx            # Help stub
+│   │   │   └── BillingSettings.tsx      # Plan cards ($29/$69), Stripe portal, plan switching
+│   │   └── help/HelpPage.tsx            # 5 help pages with expandable FAQ sections
 │   │
 │   └── online-store/
-│       ├── OrderPage.tsx                # Storefront entry: loads public store data
+│       ├── OrderPage.tsx                # Storefront entry: loads /public/{uid} data, filters products
 │       ├── pages/
-│       │   ├── StoreFront.tsx           # Landing: store branding + Pickup/Delivery buttons
+│       │   ├── StoreFront.tsx           # Landing: hero image, logo, tagline, Pickup/Delivery CTAs
 │       │   ├── Pickup.tsx               # Customer name + phone form
 │       │   ├── Delivery.tsx             # Address form + distance validation (Haversine)
-│       │   ├── Order.tsx                # Menu browsing + cart (reuses POS components)
-│       │   ├── Checkout.tsx             # Stripe Elements payment form
-│       │   └── Completed.tsx            # Thank you confirmation
+│       │   ├── Order.tsx                # Menu browsing + cart (reuses POS ProductBuilder/Cart)
+│       │   ├── Checkout.tsx             # Stripe Elements (loadStripe memoized) payment form
+│       │   └── Completed.tsx            # Thank you confirmation + "Place Another Order"
 │       └── components/
-│           ├── PickupDetails.tsx         # Pickup form fields
-│           ├── DeliveryDetails.tsx       # Delivery form + Google Places + distance check
-│           ├── CheckOutDetails.tsx       # Email + Stripe card elements → processPayment
-│           └── FieldInput.tsx            # Flexible input wrapper (memo'd)
+│           ├── PickupDetails.tsx         # Pickup form fields (name, phone)
+│           ├── DeliveryDetails.tsx       # Google Places + getLatLng Cloud Function + Haversine
+│           ├── CheckOutDetails.tsx       # Email + Stripe CardNumber/Expiry/CVC → processPayment
+│           └── FieldInput.tsx            # Flexible input wrapper (memo'd, custom areEqual)
 │
 ├── shared/
 │   ├── components/
 │   │   ├── ui/
-│   │   │   ├── Modal.tsx               # Custom modal (slide/fade animations, backdrop)
+│   │   │   ├── Modal.tsx               # Portal modal (slide/fade animations, transitionend cleanup)
 │   │   │   ├── InputWithLabel.tsx       # Label + input pair
-│   │   │   ├── Switch.tsx              # Toggle (isActive, toggleSwitch)
-│   │   │   ├── DropdownArrayOptions.tsx # Select from {label,value,id} array
-│   │   │   ├── DropdownStringOptions.tsx# Select from string array
-│   │   │   ├── ProductImage.tsx         # Canvas-cached image with skeleton loading
+│   │   │   ├── Switch.tsx              # Toggle (isActive, toggleSwitch, 0.3s transition)
+│   │   │   ├── DropdownArrayOptions.tsx # Portal select from {label,value,id} array (z:100001)
+│   │   │   ├── DropdownStringOptions.tsx# Portal select from string array
+│   │   │   ├── ProductImage.tsx         # Canvas-cached image (prefetch, loadedImages Set, ResizeObserver)
 │   │   │   ├── ComponentLoader.tsx      # Centered loading spinner overlay
-│   │   │   └── Loader.tsx              # Fullscreen white loader
+│   │   │   ├── Loader.tsx              # Fullscreen white loader
+│   │   │   └── ErrorBoundary.tsx       # React Error Boundary → logs to /systemErrors
 │   │   ├── header/
 │   │   │   ├── Header.tsx              # 75px top bar (logo, Customer Display btn, logout)
-│   │   │   └── LogoutDropdown.tsx      # User menu dropdown
+│   │   │   └── LogoutDropdown.tsx      # User avatar + name + logout dropdown
 │   │   ├── modals/
-│   │   │   ├── AuthModal.tsx           # Manager code authorization
-│   │   │   ├── CashPaymentModal.tsx    # Cash payment with change calculation
-│   │   │   ├── CustomCashModal.tsx     # Custom cash payment (custom total)
-│   │   │   ├── SettingsPasswordModal.tsx# Settings access authorization
-│   │   │   ├── PhoneOrderModal.tsx     # Phone delivery order form + distance validation
-│   │   │   ├── PendingOrdersModal/     # Pending orders list + details + kitchen view
-│   │   │   ├── DiscountModal/          # Discount entry + percentage buttons
-│   │   │   ├── ClockInModal/           # Employee clock-in list
-│   │   │   └── SavedCustomersModal/    # Customer search + details
-│   │   └── billing/
-│   │       ├── NewUserPayment.tsx       # Onboarding Stripe payment
-│   │       ├── TrialEnded.tsx          # Plan selection (Starter $29 / Pro $69)
-│   │       └── PaymentUpdateNotification.tsx  # Canceled/failed payment screen
+│   │   │   ├── AuthModal.tsx           # Manager code OR employee PIN authorization
+│   │   │   ├── CashPaymentModal.tsx    # Cash payment with auto change calculation
+│   │   │   ├── CustomCashModal.tsx     # Custom payment (arbitrary total) + Open Register
+│   │   │   ├── SettingsPasswordModal.tsx# Settings auth (password OR PIN) + "Forgot Password" email
+│   │   │   ├── PhoneOrderModal/        # Phone order form (name, phone, address, distance check)
+│   │   │   ├── PendingOrdersModal/     # Pending orders list + details + kitchen view + complete/cancel
+│   │   │   ├── DiscountModal/          # Discount entry + 5%/10%/15% presets + manager code
+│   │   │   ├── ClockInModal/           # Employee clock-in/out list (PIN verification)
+│   │   │   └── SavedCustomersModal/    # Customer search + details + order history + reorder
+│   │   ├── billing/
+│   │   │   ├── NewUserPayment/         # Onboarding Stripe payment (Starter/Professional)
+│   │   │   ├── TrialEnded.tsx          # Plan selection (Starter $29 / Pro $69)
+│   │   │   └── PaymentUpdateNotification.tsx  # Canceled/failed payment screen
+│   │   └── Walkthrough.tsx             # 20+ step interactive onboarding (spotlight overlay, data-walkthrough attrs)
 │   └── hooks/
 │       ├── useWindowSize.ts            # {width, height} from window resize
-│       └── useInterval.ts             # setInterval hook with cleanup
+│       └── useInterval.ts             # setInterval hook with ref-based cleanup
 │
 ├── services/
 │   ├── firebase/
-│   │   ├── config.ts                   # Firebase init, auth/db/storage exports, OWNER_OVERRIDE_UID
-│   │   └── functions.ts               # ALL Firebase CRUD operations (see below)
+│   │   ├── config.ts                   # Firebase init, auth/db/storage exports, OWNER_OVERRIDE_UID, STRIPE_PUBLIC_KEY
+│   │   ├── functions.ts               # ALL Firebase CRUD (auth, store, products, stock, customers, stripe, templates, superadmin)
+│   │   ├── errorLogging.ts            # Global error handlers (window.onerror, unhandledrejection) → /systemErrors
+│   │   └── systemLogging.ts           # System event logging (login/logout/signup) → /systemLogs
 │   ├── printing/
-│   │   └── receiptPrint.tsx           # ESC/POS receipt formatter
+│   │   └── receiptPrint.tsx           # ESC/POS receipt formatter (4 order types, drawer kick)
 │   └── woocommerce/                    # WooCommerce API client
 │
 ├── store/
-│   ├── appState.ts                     # All global state entities (simpler-state)
-│   └── posState.ts                    # POS UI state entity
+│   ├── appState.ts                     # All global state entities (simpler-state) — 18 entities
+│   └── posState.ts                    # POS UI state entity (38 fields)
 │
 ├── types/
-│   ├── index.ts                       # All TypeScript interfaces
-│   └── global.ts                      # Legacy/ambient types
+│   ├── index.ts                       # All TypeScript interfaces (31 types)
+│   └── global.ts                      # Legacy/outdated subset (missing inventory, recipes, table fields)
 │
 ├── utils/
 │   ├── cartCalculations.ts            # SINGLE SOURCE OF TRUTH for cart math
 │   ├── dateFormatting.ts              # parseDate(Timestamp|Date|string) → Date|null
 │   ├── generateId.ts                  # Random alphanumeric ID generator
 │   ├── resolveOptionPrice.ts          # Size-linked option price resolution
+│   ├── employeeAuth.ts               # verifyEmployeePin(pin, permission) + logEmployeeActivity()
+│   ├── customerDisplayBroadcast.ts    # localStorage-based POS ↔ Customer Display sync (500ms poll)
 │   ├── searchFilters.ts              # Date range filters for customers/transactions
 │   ├── scrollToTop.ts               # Scroll restoration on route change
-│   └── googlePlacesStyles.ts         # Google Places autocomplete CSS-in-JS styles
+│   └── googlePlacesStyles.ts         # Google Places CSS-in-JS (light + dark themes)
 │
 └── functions/
-    └── index.mjs                      # Firebase Cloud Functions (7 functions)
+    └── index.mjs                      # Firebase Cloud Functions (9+ functions)
 ```
 
 ## App Bootstrap Flow (Router.tsx)
-1. `auth.onAuthStateChanged()` fires
-2. If authenticated → parallel fetch: user doc + 7 subcollections (products, employees, subscriptions, customers, devices, wooOrders, ingredients)
-3. Process products: sort by `rank`, prefetch images (async, non-blocking)
-4. Process subscriptions: check role + status → set `activePlanState` (starter/professional/none)
+1. `src/main.tsx` installs global error handlers → wraps App in ErrorBoundary → renders
+2. `App.tsx` wraps in AlertProvider (timeout 5s, TOP_CENTER, z-index 100000, custom SVG template)
+3. `auth.onAuthStateChanged()` fires
+4. If authenticated → pre-fetch chunks (NavigationContent, AuthRoute, PosScreen) + parallel fetch: user doc + 9 subcollections (products, employees, subscriptions, customers, devices, wooOrders, ingredients, optionTemplates)
+5. Process products: sort by `rank` (parseFloat), prefetch images (async, non-blocking via `prefetchImage()`)
+6. Process subscriptions: check role + status → set `activePlanState` (starter/professional/none)
    - Backward-compat role names: "Test Plan"→starter, "Pos Software Plan"→starter, "Premium Plan"→professional
    - Online store access: granted by Professional plan or standalone "Online Store" subscription
-5. Process free trial: check `freeTrial` field, clear if subscription active
-6. Resolve device ID from `deviceID` cookie (generate if missing, expires year 9999)
-7. Set up 3 real-time listeners:
-   - **Print listener**: watches `printRequests` subcollection → QZ Tray
-   - **Pending orders listener**: watches `pendingOrders` → `ongoingListState`, auto-prints online orders
-   - **WooCommerce polling**: every 10s via `useInterval` (if enabled + subscribed + <3 errors)
-8. `NavigationContent.tsx` gates access: trial ended → `TrialEnded`, new user → `NewUserPayment`, canceled → `PaymentUpdateNotification`, else → `AuthRoute`
+   - If no online store subscription: deactivates online store (batch update users + public docs)
+7. Process option templates: load existing or auto-import `standardOptionTemplates` for new accounts
+8. Process free trial: check `freeTrial` field (Firestore Timestamp), clear if subscription active
+9. Resolve device ID from `deviceID` cookie (generate if missing, expires year 9999)
+10. Log login event (once per session via `sessionStorage.loginLogged`)
+11. Set up 3 real-time listeners:
+    - **Print listener**: watches `devices/{docID}/printRequests` → QZ Tray → deletes after printing
+    - **Pending orders listener**: watches `pendingOrders` → `ongoingListState`, auto-prints online orders (if `printOnlineOrders` enabled, marks `printed: true`)
+    - **WooCommerce polling**: every 10s via `useInterval` (if enabled + subscribed + <3 errors)
+12. `NavigationContent.tsx` gates access:
+    - Superadmin (OWNER_OVERRIDE_UID) → bypasses ALL gating → AuthRoute
+    - Trial ended → `TrialEnded`, new user → `NewUserPayment`, canceled → `PaymentUpdateNotification`, else → `AuthRoute`
 
-## 3 Main Routes + Public Routes
-- `/pos` → POS interface (`PosScreen.tsx`)
+## Routes
+**Authenticated (AuthRoute.tsx):**
+- `/pos` → POS interface (`PosScreen.tsx`) — default redirect for unmatched routes
 - `/authed` → Admin panel (`AdminContainer.tsx`) — requires `localStorage.isAuthedBackend`
-- `/customer-display` → Secondary display for customers
+- `/customer-display` → Secondary display for customers (localStorage broadcast sync)
 - `/order/:urlEnding` → Online storefront (`OrderPage.tsx`) — works both authed & public
-- `/log-in`, `/sign-up`, `/reset-password` → Auth pages (public only)
+- `/superadmin` → SuperAdmin console — OWNER_OVERRIDE_UID only, lazy-loaded
 
-## Admin Sidebar Routes
+**Public (PublicRoute.tsx):**
+- `/log-in`, `/sign-up`, `/reset-password` → Auth pages
+- `/order/:urlEnding` → Online storefront (public ordering)
+
+**Walkthrough:** Auto-shows on first login per user (`localStorage.walkthroughCompleted_{uid}`), 20+ guided steps with spotlight overlay. Sidebar can trigger via exported `triggerWalkthrough` function.
+
+## Admin Sidebar (240px fixed, collapsible sections)
 | Section | Route | Component |
 |---------|-------|-----------|
 | Dashboard | `/authed/dashboard` | Dashboard |
-| Category Mgmt | `/authed/product/categorylist-product` | CategoryList |
-| Product Mgmt | `/authed/product/productlist-product` | ProductList |
-| Ingredients | `/authed/inventory/ingredients` | IngredientsTab |
-| Product Stock | `/authed/inventory/stocklevels` | StockLevelsList |
-| Invoices | `/authed/report/invoicereport` | Invoices |
-| Employees | `/authed/report/employeesreport` | EmployeesList |
-| Edit Employee | `/authed/report/editemployee/:id` | EditEmployee |
-| Activity Log | `/authed/report/activitylog` | ActivityLog |
-| General Settings | `/authed/settings/generalsettings` | GeneralSettings |
-| Device Settings | `/authed/settings/devicesettings` | DeviceSettings |
-| Online Store | `/authed/settings/onlinestoresettings` | OnlineStoreSettings |
-| WooCommerce | `/authed/settings/woocommerce` | WooCommerceSettings |
-| Tables | `/authed/settings/tablesettings` | TableSettings |
-| Billing | `/authed/settings/billingsettings` | BillingSettings |
-| Help | `/authed/help/{1-5}` | HelpPage |
+| Menu > Categories | `/authed/product/categorylist-product` | CategoryList (drag-to-reorder) |
+| Menu > Products | `/authed/product/productlist-product` | ProductList (search, filter, list/grid) |
+| Menu > Templates | `/authed/product/option-templates` | OptionTemplatesList |
+| Inventory > Ingredients | `/authed/inventory/ingredients` | IngredientsTab |
+| Inventory > Stock | `/authed/inventory/stocklevels` | StockLevelsList |
+| Reports > Invoices | `/authed/report/invoicereport` | Invoices (pagination, Excel export) |
+| Reports > Employees | `/authed/report/employeesreport` | EmployeesList |
+| Reports > Edit Employee | `/authed/report/editemployee/:id` | EditEmployee |
+| Reports > Activity Log | `/authed/report/activitylog` | ActivityLog |
+| Settings > General | `/authed/settings/generalsettings` | GeneralSettings |
+| Settings > Devices | `/authed/settings/devicesettings` | DeviceSettings |
+| Settings > Online Store | `/authed/settings/onlinestoresettings` | OnlineStoreSettings |
+| Settings > WooCommerce | `/authed/settings/woocommerce` | WooCommerceSettings |
+| Settings > Tables | `/authed/settings/tablesettings` | TableSettings |
+| Settings > Billing | `/authed/settings/billingsettings` | BillingSettings |
+| Help | `/authed/help/{1-5}` | HelpPage (5 pages, expandable FAQ) |
+| Walkthrough | (triggers overlay) | Walkthrough.tsx via triggerWalkthrough() |
 
 ## State Management (simpler-state)
 
 ### store/appState.ts — All Global Entities
 ```
-cartState: CartItemProp[]                    — Shopping cart (deduped by name+price+options+extraDetails)
-storeProductsState: {products, categories}   — Product catalog
+cartState: CartItemProp[]                    — Shopping cart (deduped by name+price+JSON(options)+extraDetails)
+storeProductsState: {products, categories}   — Product catalog (sorted by rank)
 storeDetailsState: StoreDetailsProps          — Store config (name, tax, delivery, address, etc.)
-customersState: CustomerProp[]                — Saved customers
+customersState: CustomerProp[]                — Saved customers (with orders[] history)
 employeesState: Employee[]                    — Staff (name, pin, role, permissions)
 deviceState: MyDeviceDetailsProps             — Current device (printer config)
 deviceIdState: string|null                    — Browser cookie device ID
 deviceTreeState: {devices: Device[]}          — All registered devices
 trialDetailsState: {endDate, hasEnded}        — Free trial info
-activePlanState: "none"|"trial"|"starter"|"professional"  — Current plan
+activePlanState: "none"|"trial"|"starter"|"professional"  — Current plan (type: ActivePlan)
 wooCommerceState: {apiUrl, ck, cs, useWoocommerce}       — WooCommerce creds
-onlineStoreState: OnlineStoreStateProps       — Online store config (URL, Stripe keys, active)
+onlineStoreState: OnlineStoreStateProps       — Online store config (URL, Stripe keys, active, brandColor, tagline)
 transListState: TransListStateItem[]          — Completed transactions
 settingsAuthState: boolean                    — Manager auth status
 productBuilderState: {product, itemIndex, imageUrl, isOnlineOrder, isOpen}
-orderDetailsState: {date, total, method, customer, cart, page, delivery, address}
+orderDetailsState: {date, total, method, customer, cart, page, delivery, address}  — Online store flow state
 ingredientsState: Ingredient[]                — Inventory ingredients
+optionTemplatesState: OptionTemplate[]        — Reusable option templates (auto-imported for new accounts)
 tablesState: Table[]                          — Restaurant table definitions
 tableSectionsState: string[]                  — Table section names (e.g. "Patio", "Bar")
 ```
+
+**Key functions:** `addCartState(val, currentState)` deduplicates by name+price+options+extraDetails, increments qty if match. `resetPosState()` preserves `section` + `tableViewActive`. `setOrderDetailsState()` does shallow merge + nested customer merge. `resetProductBuilderState()` closes modal first (200ms delay) then resets.
 
 ### store/posState.ts — POS UI State
 ```
@@ -298,61 +326,79 @@ tableOrderTarget: TransListStateItem|null  — Table order being viewed
   │               onlineStoreSetUp, onlineStoreActive, urlEnding,
   │               tables[], tableSections[], ownerDetails, deliveryPlatforms
   ├── products/{id}           — Product catalog (sorted by rank)
-  ├── customers/{id}          — Saved customers (with orders[] history)
+  │   └── stockHistory/{id}   — Product stock change audit trail
+  ├── customers/{id}          — Saved customers (with orders[] history, createdAt)
   ├── employees/{id}          — Staff (name, pin, role, permissions, clockedIn)
-  │   └── hours/{id}          — Time clock entries
+  │   └── hours/{id}          — Time clock entries (date, startTime, endTime, paid)
   ├── devices/{id}            — Registered POS devices
-  │   └── printRequests/{id}  — Queued print jobs (picked up by target device)
-  ├── subscriptions/{id}      — Stripe subscription records (role, status)
-  ├── transList/{id}          — Completed transactions
-  ├── pendingOrders/{id}      — In-progress orders (table, delivery, pickup, online)
-  ├── deliveryOrders/{id}     — Delivery webhook audit trail
-  ├── stats/monthly           — Aggregated analytics (days map with revenue/orders/etc.)
-  ├── activityLog/{id}        — Employee action audit entries
-  ├── wooOrders/{id}          — Synced WooCommerce orders
+  │   └── printRequests/{id}  — Queued print jobs (picked up by target device, deleted after)
+  ├── subscriptions/{id}      — Stripe subscription records (role, status) — READ ONLY from client
+  ├── payments/{id}           — Stripe payment records — READ ONLY from client
+  ├── transList/{id}          — Completed transactions (dateCompleted added on write)
+  ├── pendingOrders/{id}      — In-progress orders (table, delivery, pickup, online, deliveryPlatform)
+  ├── deliveryOrders/{id}     — Delivery webhook audit trail (platformOrderId, platform, status)
+  ├── stats/monthly           — Aggregated analytics (days map with revenue/orders/productCounts/waitTime)
+  ├── activityLog/{id}        — Employee action audit entries (employeeName, action, timestamp)
+  ├── wooOrders/{id}          — Synced WooCommerce orders (printed flag)
   ├── ingredients/{id}        — Inventory ingredients (stock tracking)
-  │   └── stockHistory/{id}   — Stock change audit trail
-  └── checkout_sessions/{id}  — Stripe checkout sessions (created by client, watched for redirect)
+  │   └── stockHistory/{id}   — Ingredient stock change audit trail
+  ├── optionTemplates/{id}    — Reusable option templates (name, option, updatedAt)
+  └── checkout_sessions/{id}  — Stripe checkout sessions (watched for sessionId → redirect)
 
 /public/{uid}
   ├── (root doc): urlEnding, storeDetails, categories, stripePublicKey,
-  │               onlineStoreActive, onlineStoreSetUp
+  │               onlineStoreActive, onlineStoreSetUp, brandColor, tagline
   └── products/{id}           — Public product data for online ordering
+
+/systemLogs/{id}              — System event logging (login, logout, signup, subscription_change)
+/systemErrors/{id}            — Error logging (rate-limited 10/60s, from ErrorBoundary + global handlers)
 ```
 
 ## Firebase Services (services/firebase/functions.ts)
-**Auth:** `signIn(email, pw)`, `signUp(email, pw, name, phone)`, `logout()`
+**Auth:** `signIn(email, pw)`, `signUp(email, pw, name, phone)` (creates initial doc with categories, wooCredentials, storeDetails), `logout()` (clears localStorage/sessionStorage, logs event, redirects to divinepos.com)
 **Store:** `updateStoreDetails(partial)` — syncs to `/public/{uid}` if online store active
 **Data:** `updateData(categories)`, `saveTables(tables)`, `saveTableSections(sections)`
-**Transactions:** `updateTransList(receipt)` — adds to transList, timestamps, calls updateStats, deducts stock
-**Stats:** `updateStats(uid, receipt)` — Firestore transaction on `/stats/monthly` with daily breakdowns
-**Stock:** `deductStockForCart(uid, cart, txnId)` — batch: recipe→ingredients OR simple→product stock, creates stockHistory, syncs public
-**Inventory:** `adjustStockManually()`, `fetchStockHistory()`, `addIngredient()`, `updateIngredient()`, `deleteIngredient()`, `adjustIngredientStockManually()`, `fetchIngredientStockHistory()`
+**Transactions:** `updateTransList(receipt)` — adds dateCompleted, strips undefined, calls updateStats + deductStockForCart
+**Stats:** `updateStats(uid, receipt)` — Firestore transaction on `/stats/monthly` with daily breakdowns (revenue, orders, inStore, delivery, pickup, productCounts, waitTime)
+**Stock:** `deductStockForCart(uid, cart, txnId)` — dual path: recipe→ingredients OR simple→product stock. Batch writes: updates stock, creates stockHistory, syncs public
+**Inventory:** `adjustStockManually()`, `fetchStockHistory(limit=50)`, `addIngredient()`, `updateIngredient()`, `deleteIngredient()`, `adjustIngredientStockManually()`, `fetchIngredientStockHistory()`
 **Customers:** `addCustomerDetailsToDb(customer)` — with createdAt timestamp
-**Trial:** `updateFreeTrial(endDate)`
-**Stripe:** `createCheckoutSession(priceId, successUrl, cancelUrl)` — writes to checkout_sessions, watches for sessionId redirect. `openStripePortal()` — calls Cloud Function for portal URL
+**Trial:** `updateFreeTrial(endDate)` — null deletes field via FieldValue.delete()
+**Stripe:** `createCheckoutSession(priceId, successUrl, cancelUrl, onError?, quantity?)` — writes to checkout_sessions, watches for sessionId redirect. `openStripePortal(onError?)` — calls Cloud Function for portal URL
+**Templates:** `saveOptionTemplate(template)` — saves to optionTemplates, updates local state. `deleteOptionTemplate(id)`. `syncOptionTemplateToProducts(template)` — batch updates all products using that template
+**Superadmin:** `setUserAccountPlan(uid, plan)` — cancels existing subs, creates new. `deleteUserAccount(uid)` — recursively deletes user + public + auth
+**Logging:** `services/firebase/systemLogging.ts` — `logSystemEvent(type, metadata?)` writes to /systemLogs. `services/firebase/errorLogging.ts` — global handlers + `logErrorToFirestore()` writes to /systemErrors (rate-limited 10/60s)
 
 ## Cloud Functions (functions/index.mjs)
-7 HTTPS Cloud Functions, all use CORS:
-1. **sendCustomEmail** — Generic email via nodemailer (Office365 SMTP)
-2. **sendPasswordResetEmail** — Firebase auth reset link, custom email template
+Cloud Functions using Firebase Functions v2, Firestore admin SDK, Nodemailer (Office365 SMTP), Stripe, Axios:
+
+**Auth Triggers:**
+- **onUserCreated** — Auth trigger on signup: writes to /systemLogs with type "signup", uid, email, metadata
+
+**Callable Functions (require auth):**
+- **deleteAccount(data, context)** — Superadmin only (verifies SUPERADMIN_UID). Recursively deletes user doc + public doc + Firebase Auth user
+- **setAccountPlan(data, context)** — Superadmin only. Cancels existing subs, sets trial or active subscription
+
+**HTTPS Functions (CORS-enabled):**
+1. **sendCustomEmail** — Generic email via nodemailer (Office365 SMTP, support@divinepos.com)
+2. **sendPasswordResetEmail** — Firebase auth reset link, custom email template (replaces posmate domain → auth.divinepos)
 3. **sendSettingsPass** — Sends settings password to email
-4. **processPayment** — Stripe charge (reads store's secret key from Firestore), creates pendingOrder, sends confirmation email
-5. **getLatLng** — Google Places → lat/lng for distance validation
+4. **processPayment** — Stripe charge (reads store's secret key from Firestore), creates pendingOrder, sends confirmation email. Amount in cents, currency CAD
+5. **getLatLng** — Google Places API → lat/lng for distance validation (v2 function)
 6. **sendWelcomeEmail** — Welcome email (free trial vs paid templates)
 7. **deliveryWebhook** — Webhook receiver for DoorDash/UberEats/SkipTheDishes/Grubhub:
-   - URL: `/deliveryWebhook/{uid}/{platform}`
+   - URL: `/deliveryWebhook/{uid}/{platform}` (v2, POST only)
    - Validates: user exists, Professional plan active, platform enabled
-   - HMAC-SHA256 signature verification (timingSafeEqual)
-   - Normalizes payload per platform → standardized order
-   - Deduplicates by platformOrderId
-   - Creates pendingOrder + deliveryOrders audit doc
+   - HMAC-SHA256 signature verification (timingSafeEqual) — headers: x-doordash-signature, x-uber-signature, x-skip-signature, x-grubhub-signature
+   - Normalizes payload per platform → standardized order (cart, customer, total)
+   - Deduplicates by platformOrderId in deliveryOrders collection
+   - Creates pendingOrder (method: "deliveryOrder", online: true, printed: false) + deliveryOrders audit doc
    - Platform prefixes: DD (DoorDash), UE (UberEats), SK (Skip), GH (Grubhub)
 
 ## Subscription & Billing
 - **Plans:** Free (1 device), Starter $29/mo (1 device), Professional $69/mo (unlimited devices)
 - **Stripe Price IDs:** Starter=`price_1T8TIlCIw3L7DOwIDUpngIcI`, Professional=`price_1T8s0hCIw3L7DOwIuHk36Ly3`
-- **Owner override:** `OWNER_OVERRIDE_UID` = "J6rAf2opwnSKAhefbOZW6HJdx1h2" (+3 free devices)
+- **Owner override:** `OWNER_OVERRIDE_UID` = "0IV6GKQazUcp8hqoTsDG9dXIqrA3" (+3 free devices, bypasses all subscription gating, superadmin access)
 - **Plan gating:** Tables + WooCommerce + delivery platforms = Professional only
 - **Online store:** Professional plan OR standalone "Online Store" subscription
 - **Trial:** 1 month free, freeTrial field is Firestore Timestamp
@@ -460,15 +506,35 @@ AddressType: { label?, value?: { description, place_id?, reference?, structured_
 - **State read:** `const x = someState.use()` (React hook) or `someState.get()` (non-reactive)
 - **State write:** `setSomeState(val)` (full replace) or `updateSomeState({...})` (partial merge)
 - **Modals:** Always mounted, controlled by `isVisible` prop. Lazy-loaded via `React.lazy()`.
-- **Portal dropdowns:** `DropdownOption` renders to `document.body` for z-index control
+- **Portal dropdowns:** `DropdownOption` + `DropdownArrayOptions` render to `document.body` (z-index: 9999/100001)
 - **Auto-save:** TableCartHeader debounces cart saves by 2 seconds
-- **Image caching:** `ProductImage` uses global `loadedImages` Set + Canvas prerendering
-- **Employee auth:** Check settingsPassword OR `verifyEmployeePin(permission)` for gated actions
+- **Image caching:** `ProductImage` uses global `loadedImages` Set + Canvas prerendering + ResizeObserver
+- **Employee auth:** Check settingsPassword OR `verifyEmployeePin(pin, permission)` from `utils/employeeAuth.ts`. `logEmployeeActivity()` writes to activityLog
 - **Settings access:** `localStorage.isAuthedBackend` + redirect guard in AuthRoute
+- **Customer Display:** `broadcastCartUpdate()` / `onCartUpdate()` from `utils/customerDisplayBroadcast.ts` — localStorage-based POS ↔ customer display sync (500ms poll)
 - **Responsive breakpoints:** Desktop ≥ 1250px (3-column POS), Tablet 1000-1250px, Mobile < 1000px
+- **Error handling:** ErrorBoundary at root + global window.onerror/unhandledrejection → /systemErrors (rate-limited)
+- **Delete confirmations:** SweetAlert2 for all destructive actions (two-step: confirm + success)
+- **Google Places:** `menuPortalTarget: document.body`, region "CA", debounce 800ms. Light + Dark theme styles in `googlePlacesStyles.ts`
+- **Numeric strings:** All prices, quantities, taxes, percentages stored as strings, parsed with `parseFloat()` before arithmetic
+
+## localStorage / sessionStorage Keys
+- `savedUserState` — "true" when logged in (cleared on logout)
+- `isAuthedBackend` — "true" when settings password entered (gates /authed routes)
+- `walkthroughCompleted_{uid}` — per-user walkthrough completion flag
+- `sessionStorage.loginLogged` — prevents duplicate login event logging per session
+- `deviceID` cookie — browser device identifier (expires year 9999)
+- `divine-pos-cart-sync` — customer display cart broadcast data
+
+## Firestore Security Rules
+- User-scoped: owner read/write on all subcollections
+- Superadmin (OWNER_OVERRIDE_UID) has read access to all user data
+- `/public/{uid}` — fully readable by anyone (online store data)
+- `/systemLogs`, `/systemErrors` — anyone can create, only superadmin can read
+- `/subscriptions`, `/payments` — read-only from client (Stripe extension manages writes)
+- `/deliveryOrders` — anyone can write (Cloud Function), owner/superadmin read
+- **Storage rules: OPEN** (all files readable/writable by anyone — security risk)
+- **RTDB rules: DISABLED** (all reads/writes blocked, not used)
 
 ## Owner Override
-`OWNER_OVERRIDE_UID` in `services/firebase/config.ts` = "J6rAf2opwnSKAhefbOZW6HJdx1h2" (gets +3 free devices)
-
-## Full Documentation
-See `instructions.md` in project root for the complete developer guide.
+`OWNER_OVERRIDE_UID` in `services/firebase/config.ts` = "0IV6GKQazUcp8hqoTsDG9dXIqrA3" (gets +3 free devices, bypasses subscription gating, superadmin console access)

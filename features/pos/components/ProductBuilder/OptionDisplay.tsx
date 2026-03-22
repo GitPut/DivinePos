@@ -53,22 +53,16 @@ const OptionDisplay = ({
       setIsConditionMet(isMet);
       if (!isMet) {
         setMyObjProfile((prev: ProductProp) => {
-          const newOptions = [...prev.options];
-          const newProfile = structuredClone(prev);
+          const clone = structuredClone(prev);
 
-          newProfile.options[index].optionsList.forEach(
+          clone.options[index].optionsList.forEach(
             (option: OptionsList) => {
               option.selected = false;
               option.selectedTimes = "0";
             }
           );
 
-          newOptions[index] = newProfile.options[index];
-
-          return {
-            ...prev,
-            options: newOptions,
-          };
+          return clone;
         });
 
         setOptionVal(null);
@@ -118,7 +112,8 @@ const OptionDisplay = ({
   }) => {
     setMyObjProfile((prev: ProductProp) => {
       if (!option || isNaN(listIndex!) || listIndex === null) return prev;
-      const newOptions = [...prev.options];
+      const clone = structuredClone(prev);
+      const newOptions = clone.options;
 
       const selectedOptions = newOptions[index].optionsList.filter(
         (op) => op.selected
@@ -145,10 +140,7 @@ const OptionDisplay = ({
           !newOptions[index].optionsList[listIndex].selected;
       }
 
-      return {
-        ...prev,
-        options: newOptions,
-      };
+      return clone;
     });
   };
 

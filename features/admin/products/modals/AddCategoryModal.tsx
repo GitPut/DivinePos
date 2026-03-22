@@ -83,6 +83,7 @@ function AddCategoryModal({
               placeholder="e.g. Appetizers, Drinks, Desserts"
               value={categoryName}
               onChange={(e) => setcategoryName(e.target.value)}
+              data-walkthrough="category-name-input"
             />
           </div>
 
@@ -124,7 +125,7 @@ function AddCategoryModal({
           >
             <span style={styles.cancelTxt}>Cancel</span>
           </button>
-          <button onClick={Update} style={styles.saveBtn}>
+          <button onClick={Update} style={styles.saveBtn} data-walkthrough="save-category">
             <span style={styles.saveTxt}>
               {existingCategory ? "Save Changes" : "Add Category"}
             </span>

@@ -184,7 +184,7 @@ function DeviceSettings() {
           </span>
         </div>
         {canAddDevice && (
-          <button style={styles.addBtn} onClick={handleAddDevice}>
+          <button style={styles.addBtn} onClick={handleAddDevice} data-walkthrough="add-device">
             <FiPlus size={18} color="#fff" />
             <span style={styles.addBtnText}>Add Device</span>
           </button>
@@ -237,7 +237,7 @@ function DeviceSettings() {
             <div style={styles.card}>
               <span style={styles.cardTitle}>Device Information</span>
               <div style={styles.fieldGrid}>
-                <div style={styles.fieldGroup}>
+                <div style={styles.fieldGroup} data-walkthrough="device-name">
                   <span style={styles.fieldLabel}>Device Name</span>
                   <input
                     style={styles.input}
@@ -262,6 +262,7 @@ function DeviceSettings() {
                       style={styles.setIdBtn}
                       onClick={handleSetToMyID}
                       title="Set to this browser's device ID"
+                      data-walkthrough="set-device-id"
                     >
                       <IoKey size={14} color="#fff" />
                       <span style={styles.setIdBtnText}>Set to This Device</span>
@@ -320,6 +321,7 @@ function DeviceSettings() {
                   <input
                     style={styles.input}
                     placeholder="Enter printer name"
+                    data-walkthrough="printer-name"
                     value={device.printToPrinter ?? ""}
                     onChange={(e) => {
                       const clone = { ...deviceTree };
@@ -370,7 +372,7 @@ function DeviceSettings() {
 
             {/* Actions */}
             <div style={styles.actionsRow}>
-              <button style={styles.saveBtn} onClick={handleSaveDevice}>
+              <button style={styles.saveBtn} onClick={handleSaveDevice} data-walkthrough="save-device">
                 Save Device
               </button>
               <button style={styles.deleteBtn} onClick={handleDeleteDevice}>
@@ -390,7 +392,7 @@ function DeviceSettings() {
         )}
 
         {/* Download Helper Card */}
-        <div style={styles.card}>
+        <div style={styles.card} data-walkthrough="download-helper">
           <div style={styles.downloadHeader}>
             <FiDownload size={18} color="#1D294E" />
             <span style={styles.cardTitle}>Printer Helper Software</span>
@@ -572,13 +574,18 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    height: 42,
+    minHeight: 42,
+    flexWrap: "wrap" as const,
   },
   deviceIdText: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#64748b",
     fontFamily: "monospace",
     letterSpacing: 0.5,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+    maxWidth: 200,
   },
   setIdBtn: {
     display: "flex",
@@ -590,6 +597,8 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     borderRadius: 6,
     cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+    flexShrink: 0,
   },
   setIdBtnText: {
     fontSize: 12,

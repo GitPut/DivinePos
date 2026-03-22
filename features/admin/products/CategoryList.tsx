@@ -18,6 +18,7 @@ function CategoryList() {
   const [addCategoryModal, setAddCategoryModal] = useState<
     boolean | string | null
   >(false);
+  const lastEditCategory = useRef<string | null>(null);
   const [editCategoryModal, setEditCategoryModal] = useState<string | null>(
     null
   );
@@ -120,6 +121,7 @@ function CategoryList() {
           <button
             style={styles.addBtn}
             onClick={() => setAddCategoryModal(true)}
+            data-walkthrough="add-category"
           >
             <FiPlus size={16} color="#fff" />
             <span style={styles.addBtnTxt}>Add Category</span>
@@ -222,7 +224,7 @@ function CategoryList() {
                   <div style={styles.actionBtns}>
                     <button
                       style={styles.editBtn}
-                      onClick={() => setEditCategoryModal(category)}
+                      onClick={() => { lastEditCategory.current = category; setEditCategoryModal(category); }}
                     >
                       <FiEdit3 size={14} color="#64748b" />
                     </button>
@@ -278,8 +280,8 @@ function CategoryList() {
                 setAddCategoryModal(val);
               }
             }}
-            index={catalog.categories.findIndex((e) => e === editCategoryModal)}
-            existingCategory={editCategoryModal}
+            index={catalog.categories.findIndex((e) => e === (editCategoryModal || lastEditCategory.current))}
+            existingCategory={editCategoryModal || lastEditCategory.current}
           />
         </div>
       </Modal>

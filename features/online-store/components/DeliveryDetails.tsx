@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import FieldInput from "./FieldInput";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
-import { GooglePlacesStyles } from "utils/googlePlacesStyles";
+import { GooglePlacesStylesDark as GooglePlacesStyles } from "utils/googlePlacesStyles";
 const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 import { useAlert } from "react-alert";
 import {

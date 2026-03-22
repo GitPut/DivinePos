@@ -74,7 +74,7 @@ function AddProductModal({
   const [scrollY, setScrollY] = useState(0);
   const scrollViewRef = useRef<HTMLDivElement>(null);
   const [selectedID, setselectedID] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const optionTemplates = optionTemplatesState.use();
   const alertP = useAlert();
@@ -328,7 +328,7 @@ function AddProductModal({
           <button style={styles.cancelBtn} onClick={closeModal}>
             <span style={styles.cancelTxt}>Cancel</span>
           </button>
-          <button style={styles.saveBtn} onClick={handleDataUpdate}>
+          <button style={styles.saveBtn} onClick={handleDataUpdate} data-walkthrough="save-product">
             <span style={styles.saveTxt}>
               {isProductTemplate ? "Add Product" : existingProduct ? "Save Changes" : "Add Product"}
             </span>
@@ -357,6 +357,7 @@ function AddProductModal({
                   onChange={(ev) => setnewProduct((prev) => ({ ...prev, name: ev.target.value }))}
                   value={newProduct?.name}
                   autoFocus
+                  data-walkthrough="product-name-input"
                 />
               </div>
               <div style={styles.fieldGroup}>
@@ -374,6 +375,7 @@ function AddProductModal({
                     }
                   }}
                   value={newProduct?.price.toString()}
+                  data-walkthrough="product-price-input"
                 />
               </div>
             </div>
@@ -382,7 +384,7 @@ function AddProductModal({
             <div style={styles.card}>
               <span style={styles.cardTitle}>Details</span>
               <div style={styles.fieldsRow}>
-                <div style={styles.fieldGroup}>
+                <div style={styles.fieldGroup} data-walkthrough="product-category">
                   <span style={styles.fieldLabel}>Category</span>
                   <DropdownStringOptions
                     placeholder="Choose category"
@@ -424,7 +426,7 @@ function AddProductModal({
             {/* Image Card */}
             <div style={styles.card}>
               <span style={styles.cardTitle}>Image <span style={styles.optionalTag}>optional</span></span>
-              <button onClick={handleClick} style={styles.imageUploadArea}>
+              <button onClick={handleClick} style={styles.imageUploadArea} data-walkthrough="product-image-upload">
                 {selectedFile ? (
                   <>
                     <img src={URL.createObjectURL(selectedFile)} style={styles.previewImage} key={selectedFile.name} alt="" />
@@ -572,7 +574,7 @@ function AddProductModal({
                   <span style={styles.emptyOptionsHint}>
                     Create options like "Size" with choices like Small, Medium, Large — each with optional price changes
                   </span>
-                  <div style={styles.optionBtnsRow}>
+                  <div style={styles.optionBtnsRow} data-walkthrough="product-options-area">
                     {optionTemplates.length > 0 && (
                       <button
                         style={styles.templatePickerBtn}

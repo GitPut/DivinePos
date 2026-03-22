@@ -46,7 +46,7 @@ function HoursItem({
               .collection("hours")
               .doc(hour.id.toString())
               .update({ paid: newPaid });
-            const newHours = [...allHours];
+            const newHours = structuredClone(allHours);
             newHours[index].paid = newPaid;
             setallHours(newHours);
           }}

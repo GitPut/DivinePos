@@ -160,7 +160,8 @@ export const updateStats = async (
       return;
     }
 
-    const transactionDate = receipt.date.toDate().toISOString().slice(0, 10);
+    const d = receipt.date.toDate();
+    const transactionDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
     if (!statsData.days[transactionDate]) {
       statsData.days[transactionDate] = initializeDayStats();
