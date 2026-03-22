@@ -286,20 +286,61 @@ function AddProductModal({
           {existingProduct && !isProductTemplate && (
             <button
               style={styles.duplicateBtn}
-              onClick={() => {
-                const copy: ProductProp = { ...existingProduct };
-                copy.name = copy.name + " Copy";
-                copy.imageUrl = "";
-                copy.hasImage = false;
-                copy.id = Math.random().toString(36).substr(2, 9);
-                const dupBatch = db.batch();
-                dupBatch.set(db.collection("users").doc(auth.currentUser?.uid).collection("products").doc(copy.id.toString()), copy);
-                if (onlineStoreDetails.onlineStoreSetUp) {
-                  dupBatch.set(db.collection("public").doc(auth.currentUser?.uid).collection("products").doc(copy.id.toString()), copy);
+              onClick={async () => {
+                const uid = auth.currentUser?.uid;
+                if (!uid) return;
+
+                // Save current edits first
+                const cleanedOptions = cleanOptions(newProductOptions);
+                const currentProduct = { ...newProduct, options: cleanedOptions };
+
+                // Upload image if new file selected
+                let savedProduct = { ...currentProduct };
+                if (selectedFile) {
+                  const ref = storage.ref(uid + "/images/" + currentProduct.id);
+                  await ref.put(selectedFile);
+                  const url = await ref.getDownloadURL();
+                  savedProduct.hasImage = true;
+                  savedProduct.imageUrl = url;
                 }
-                dupBatch.commit();
-                setStoreProductsState({ categories: catalog.categories, products: [...catalog.products, copy] });
+
+                // Save the original product
+                const cleanSaved = JSON.parse(JSON.stringify(savedProduct));
+                const saveBatch = db.batch();
+                saveBatch.set(db.collection("users").doc(uid).collection("products").doc(savedProduct.id), cleanSaved);
+                if (onlineStoreDetails.onlineStoreSetUp) {
+                  saveBatch.set(db.collection("public").doc(uid).collection("products").doc(savedProduct.id), cleanSaved);
+                }
+
+                // Create the duplicate
+                const copy: ProductProp = {
+                  ...savedProduct,
+                  name: savedProduct.name + " Copy",
+                  id: Math.random().toString(36).substr(2, 9),
+                };
+                const cleanCopy = JSON.parse(JSON.stringify(copy));
+                saveBatch.set(db.collection("users").doc(uid).collection("products").doc(copy.id), cleanCopy);
+                if (onlineStoreDetails.onlineStoreSetUp) {
+                  saveBatch.set(db.collection("public").doc(uid).collection("products").doc(copy.id), cleanCopy);
+                }
+
+                await saveBatch.commit();
+
+                // Update local state with both saved original + new copy
+                const updatedProducts = catalog.products.map((p) =>
+                  p.id === savedProduct.id ? savedProduct : p
+                );
+                updatedProducts.push(copy);
+                updatedProducts.sort(customSort);
+                setStoreProductsState({ categories: catalog.categories, products: updatedProducts });
+
+                // Open the copy for editing
+                setSelectedFile(null);
                 setexistingProduct(copy);
+                setnewProduct(copy);
+                setnewProductOptions(copy.options);
+                setcurrentImgUrl(copy.imageUrl ?? null);
+                alertP.success("Saved & duplicated as \"" + copy.name + "\"");
               }}
             >
               <IoCopy size={14} color="#475569" />
