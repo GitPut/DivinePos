@@ -269,7 +269,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     backgroundColor: "#ffffff",
     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-    height: "100%",
+    flex: 1,
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
