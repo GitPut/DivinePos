@@ -27,7 +27,7 @@ function OnlineStoreSettings() {
     onlineStoreDetails.stripeSecretKey,
   );
   const [onlineStoreActive, setonlineStoreActive] = useState(
-    onlineStoreDetails.onlineStoreActive,
+    onlineStoreDetails.onlineStoreActive ?? false,
   );
   const [loading, setloading] = useState(false);
   const [brandColor, setBrandColor] = useState(onlineStoreDetails.brandColor || "#0d0d0d");
@@ -154,7 +154,7 @@ function OnlineStoreSettings() {
         batch.set(ref, JSON.parse(JSON.stringify(product)));
       });
       batch.update(db.collection("users").doc(uid), {
-        onlineStoreActive: onlineStoreActive,
+        onlineStoreActive: onlineStoreActive ?? false,
         onlineStoreSetUp: true,
         urlEnding: urlEnding,
         stripePublicKey: stripePublicKeyVal,
@@ -169,7 +169,7 @@ function OnlineStoreSettings() {
       setStoreDetailsState(updatedStoreDetails);
       setOnlineStoreState({
         ...onlineStoreDetails,
-        onlineStoreActive: onlineStoreActive,
+        onlineStoreActive: onlineStoreActive ?? false,
         onlineStoreSetUp: true,
         urlEnding: urlEnding,
         stripePublicKey: stripePublicKeyVal,
@@ -226,7 +226,7 @@ function OnlineStoreSettings() {
       });
 
       batch.update(db.collection("users").doc(uid), {
-        onlineStoreActive: onlineStoreActive,
+        onlineStoreActive: onlineStoreActive ?? false,
         onlineStoreSetUp: true,
         urlEnding: urlEnding,
         stripePublicKey: stripePublicKey,
@@ -238,7 +238,7 @@ function OnlineStoreSettings() {
       });
 
       batch.update(db.collection("public").doc(uid), {
-        onlineStoreActive: onlineStoreActive,
+        onlineStoreActive: onlineStoreActive ?? false,
         onlineStoreSetUp: true,
         urlEnding: urlEnding,
         storeDetails: cleanStoreDetails,
@@ -253,7 +253,7 @@ function OnlineStoreSettings() {
       setStoreDetailsState(updatedStoreDetails);
       setOnlineStoreState({
         ...onlineStoreDetails,
-        onlineStoreActive: onlineStoreActive,
+        onlineStoreActive: onlineStoreActive ?? false,
         stripePublicKey: stripePublicKey,
         stripeSecretKey: stripeSecretKey,
         brandColor: brandColor,
