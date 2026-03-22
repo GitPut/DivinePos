@@ -305,12 +305,14 @@ function PosScreen() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    flex: 1,
     backgroundColor: "#f8f9fc",
     flexDirection: "row",
     alignItems: "stretch",
-    height: "100vh",
-    width: "100%",
+    position: "fixed" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     display: "flex",
     overflow: "hidden",
   },
