@@ -4,3 +4,7 @@ dist
 .expo
 .firebase
 .vscode
+.env
+.env.*
+*.pem
+credentials.json

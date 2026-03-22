@@ -78,7 +78,14 @@ function CheckOutDetails() {
             currency,
             storeUID: storeDetails.docID,
             orderDetails: newOrderDetails,
-            storeDetails: storeDetails,
+            storeDetails: {
+              name: storeDetails.name,
+              phoneNumber: storeDetails.phoneNumber,
+              address: storeDetails.address,
+              website: storeDetails.website,
+              deliveryPrice: storeDetails.deliveryPrice,
+              taxRate: storeDetails.taxRate,
+            },
           }),
         }
       );

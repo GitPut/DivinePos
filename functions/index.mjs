@@ -8,30 +8,45 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as functions from "firebase-functions/v1";
 
 // Additional constants
-const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 
-// Handling the cors initialization separately as it needs specific handling
-const corsHandler = cors({ origin: true });
+// CORS whitelist for production domains
+const corsHandler = cors({
+  origin: [
+    "https://posmate-5fc0a.web.app",
+    "https://posmate-5fc0a.firebaseapp.com",
+    "https://divinepos.com",
+    "https://www.divinepos.com",
+    "http://localhost:3000",
+  ],
+});
 
 admin.initializeApp();
 
 const db = admin.firestore();
 
-//create and config transporter
-let transporter = nodemailer.createTransport({
-  // name: "outlook.office365.com",
-  host: "smtp.office365.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  requireTLS: true,
-  auth: {
-    user: "support@divinepos.com",
-    pass: "20Peter12",
-  },
-  tls: {
-    ciphers: "SSLv3",
-  },
-});
+//create and config transporter (lazy init so env secrets are resolved at runtime)
+let _transporter = null;
+function getTransporter() {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host: "smtp.office365.com",
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      auth: {
+        user: process.env.SMTP_USER || "support@divinepos.com",
+        pass: process.env.SMTP_PASS || "",
+      },
+      tls: {
+        ciphers: "SSLv3",
+      },
+    });
+  }
+  return _transporter;
+}
+// Backward compat — existing code references `transporter` directly
+const transporter = { sendMail: (...args) => getTransporter().sendMail(...args) };
 
 // ─── Auth Trigger: Log new user signups ───
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
@@ -258,36 +273,77 @@ export const processPayment = functions.https.onRequest(async (req, res) => {
       const { token, amount, currency, storeUID, orderDetails, storeDetails } =
         req.body;
 
-      // Fetch the secret key from Firestore or Realtime Database
+      // Validate required fields
+      if (!token || !storeUID || !orderDetails) {
+        return res.status(400).json({ success: false, message: "Missing required fields" });
+      }
+
+      // Validate amount is a positive number within reasonable bounds
+      const parsedAmount = parseFloat(amount);
+      if (!parsedAmount || parsedAmount <= 0 || parsedAmount > 100000) {
+        return res.status(400).json({ success: false, message: "Invalid payment amount" });
+      }
+
+      // Server-side cart total validation
+      if (orderDetails.cart && Array.isArray(orderDetails.cart)) {
+        let serverTotal = 0;
+        for (const item of orderDetails.cart) {
+          const price = parseFloat(item.price) || 0;
+          const qty = parseFloat(item.quantity ?? "1") || 1;
+          serverTotal += price * qty;
+        }
+        // Add delivery fee if applicable
+        if (orderDetails.delivery && storeDetails?.deliveryPrice) {
+          serverTotal += parseFloat(storeDetails.deliveryPrice) || 0;
+        }
+        // Apply tax
+        const taxRate = parseFloat(storeDetails?.taxRate) || 13;
+        serverTotal = serverTotal * (1 + taxRate / 100);
+        // Allow 5% tolerance for rounding differences
+        if (Math.abs(serverTotal - parsedAmount) > serverTotal * 0.05 + 1) {
+          console.warn(`Amount mismatch: client=${parsedAmount}, server=${serverTotal.toFixed(2)}`);
+          return res.status(400).json({ success: false, message: "Payment amount does not match order total" });
+        }
+      }
+
+      // Fetch the secret key from Firestore
       const configSnapshot = await db.collection("users").doc(storeUID).get();
+      if (!configSnapshot.exists) {
+        return res.status(404).json({ success: false, message: "Store not found" });
+      }
       const secretKey = configSnapshot.data().stripeSecretKey;
+      if (!secretKey) {
+        return res.status(400).json({ success: false, message: "Store payment not configured" });
+      }
 
       const charge = await stripe(secretKey).charges.create({
-        amount: amount * 100,
+        amount: Math.round(parsedAmount * 100),
         currency: currency || "cad",
         source: token,
       });
 
-      // console.log("Payment succeeded:", charge);
-
+      // Create the pending order
       await db
         .collection("users")
         .doc(storeUID)
         .collection("pendingOrders")
         .add(orderDetails);
 
-      const mailOptions = {
-        from: "support@divinepos.com",
-        to: orderDetails.customer.email,
-        subject: "Order Confirmation",
-        html: OrderConfirmationEmailHtml(orderDetails, storeDetails),
-      };
-      return transporter.sendMail(mailOptions, (error, data) => {
-        if (error) {
-          return res.send(error.toString());
-        }
-        res.status(200).json({ success: true, message: "Payment succeeded" });
-      });
+      // Send success response immediately (don't wait for email)
+      res.status(200).json({ success: true, message: "Payment succeeded" });
+
+      // Send confirmation email asynchronously (fire-and-forget)
+      try {
+        const mailOptions = {
+          from: "support@divinepos.com",
+          to: orderDetails.customer.email,
+          subject: "Order Confirmation",
+          html: OrderConfirmationEmailHtml(orderDetails, storeDetails),
+        };
+        await transporter.sendMail(mailOptions);
+      } catch (emailErr) {
+        console.warn("Confirmation email failed (payment succeeded):", emailErr.message);
+      }
     } catch (error) {
       console.error("Error during payment:", error);
       res
@@ -3542,6 +3598,7 @@ export const deliveryWebhook = onRequest(async (req, res) => {
       const isValid = verifyWebhookSignature(platform, rawBody, platformConfig.webhookSecret, req.headers);
       if (!isValid) {
         console.warn(`Invalid webhook signature for ${platform}, uid: ${uid}`);
+        return res.status(401).json({ error: "Invalid webhook signature" });
       }
     }
 

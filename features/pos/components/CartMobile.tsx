@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import noItemsImg from "assets/images/noItemsImg.png";
 import Modal from "shared/components/ui/Modal";
 import {
@@ -15,6 +15,7 @@ import { FiChevronDown, FiShoppingCart } from "react-icons/fi";
 import { updatePosState } from "store/posState";
 import firebase from "firebase/compat/app";
 import useWindowSize from "shared/hooks/useWindowSize";
+import { calculateCartTotals } from "utils/cartCalculations";
 
 interface CartMobileProps {
   cartOpen: boolean;
@@ -29,38 +30,25 @@ const CartMobile = ({ cartOpen, setCartOpen, cartSub }: CartMobileProps) => {
   const orderDetails = orderDetailsState.use();
   const isOnlineOrder = productBuilderState.use().isOnlineOrder;
 
+  const totals = useMemo(
+    () =>
+      calculateCartTotals(
+        cart,
+        storeDetails.taxRate,
+        storeDetails.deliveryPrice,
+        orderDetails.delivery ?? false
+      ),
+    [cart, storeDetails.taxRate, storeDetails.deliveryPrice, orderDetails.delivery]
+  );
+
   useEffect(() => {
     if (isOnlineOrder) {
-      if (cart.length > 0) {
-        let newVal = 0;
-        for (let i = 0; i < cart.length; i++) {
-          try {
-            if (cart[i].quantity ?? 0 > 1) {
-              newVal +=
-                parseFloat(cart[i].price) * parseFloat(cart[i].quantity ?? "1");
-            } else {
-              newVal += parseFloat(cart[i].price);
-            }
-          } catch (error) {
-            // noop
-          }
-        }
-        if (orderDetails.delivery) {
-          newVal += parseFloat(storeDetails.deliveryPrice);
-        }
-
-        updatePosState({
-          cartSub: newVal,
-          deliveryChecked: orderDetails.delivery,
-        });
-      } else {
-        updatePosState({
-          cartSub: 0,
-          deliveryChecked: orderDetails.delivery,
-        });
-      }
+      updatePosState({
+        cartSub: totals.itemsSubtotal + totals.deliveryFee,
+        deliveryChecked: orderDetails.delivery,
+      });
     }
-  }, [isOnlineOrder, cart, orderDetails]);
+  }, [isOnlineOrder, totals, orderDetails.delivery]);
 
   return (
     <Modal
@@ -174,52 +162,27 @@ const CartMobile = ({ cartOpen, setCartOpen, cartSub }: CartMobileProps) => {
         )}
         <div style={{ ...styles.totalsContainer, height: 150 }}>
           <div style={styles.topGroupTotalsContainer}>
-            {orderDetails.delivery &&
-              parseFloat(storeDetails.deliveryPrice) && (
-                <CartAmountRow
-                  amountValue={`$${parseFloat(
-                    storeDetails.deliveryPrice
-                  ).toFixed(2)}`}
-                  amountLbl="Delivery"
-                  style={styles.discountRow}
-                />
-              )}
+            {totals.deliveryFee > 0 && (
+              <CartAmountRow
+                amountValue={`$${totals.deliveryFee.toFixed(2)}`}
+                amountLbl="Delivery"
+                style={styles.discountRow}
+              />
+            )}
             <CartAmountRow
-              amountValue={
-                orderDetails.delivery &&
-                parseFloat(storeDetails.deliveryPrice) &&
-                cartSub > 0
-                  ? `$${(
-                      cartSub - parseFloat(storeDetails.deliveryPrice)
-                    ).toFixed(2)}`
-                  : `$${cartSub.toFixed(2)}`
-              }
+              amountValue={`$${totals.itemsSubtotal.toFixed(2)}`}
               amountLbl="Subtotal"
               style={styles.subtotalRow}
             />
             <CartAmountRow
-              amountValue={`$${(
-                cartSub *
-                (storeDetails.taxRate
-                  ? parseFloat(storeDetails.taxRate) / 100
-                  : 0.13)
-              ).toFixed(2)}`}
+              amountValue={`$${totals.tax.toFixed(2)}`}
               amountLbl="Tax"
               style={styles.taxRow}
             />
             <div style={styles.totalRow}>
               <span style={styles.total2}>Total</span>
               <span style={styles.totalValue}>
-                $
-                {(
-                  Math.ceil(
-                    cartSub *
-                      (storeDetails.taxRate
-                        ? 1 + parseFloat(storeDetails.taxRate) / 100
-                        : 1.13) *
-                      10
-                  ) / 10
-                ).toFixed(2)}
+                ${totals.total.toFixed(2)}
               </span>
             </div>
           </div>
@@ -235,43 +198,17 @@ const CartMobile = ({ cartOpen, setCartOpen, cartSub }: CartMobileProps) => {
             const today = firebase.firestore.Timestamp.now();
             const transNum = Math.random().toString(36).substr(2, 9);
 
-            if (orderDetails.delivery) {
-              setOrderDetailsState({
-                date: today,
-                transNum: transNum,
-                total: (
-                  cartSub *
-                  (storeDetails.taxRate
-                    ? 1 + parseFloat(storeDetails.taxRate) / 100
-                    : 1.13)
-                ).toFixed(2),
-                method: "deliveryOrder",
-                online: true,
-                cart: cart,
-                page: 5,
-              });
-              setCartOpen(false);
-            } else {
-              setOrderDetailsState({
-                date: today,
-                transNum: transNum,
-                total: (
-                  cartSub *
-                  (storeDetails.taxRate
-                    ? 1 + parseFloat(storeDetails.taxRate) / 100
-                    : 1.13)
-                ).toFixed(2),
-                method: "pickupOrder",
-                online: true,
-                cart: cart,
-                customer: {
-                  ...orderDetails.customer,
-                  address: null,
-                },
-                page: 5,
-              });
-              setCartOpen(false);
-            }
+            setOrderDetailsState({
+              date: today,
+              transNum: transNum,
+              total: totals.total.toFixed(2),
+              method: orderDetails.delivery ? "deliveryOrder" : "pickupOrder",
+              online: true,
+              cart: cart,
+              ...(orderDetails.delivery ? {} : { customer: { ...orderDetails.customer, address: null } }),
+              page: 5,
+            });
+            setCartOpen(false);
           }}
         >
           <span style={styles.checkoutLbl}>Checkout</span>

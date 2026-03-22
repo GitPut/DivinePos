@@ -25,6 +25,15 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          firebase: ["firebase/compat/app", "firebase/compat/firestore", "firebase/compat/auth", "firebase/compat/storage", "firebase/compat/functions"],
+          stripe: ["@stripe/stripe-js", "@stripe/react-stripe-js"],
+          charts: ["recharts"],
+        },
+      },
+    },
   },
   server: {
     port: 3000,
