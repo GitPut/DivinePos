@@ -228,22 +228,18 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "column",
-    flex: 1,
-    backgroundColor: "#f8fafc",
-    minHeight: "100vh",
+    height: "100vh",
+    backgroundColor: "#fff",
+    overflow: "hidden",
   },
   bottom: {
     display: "flex",
     flexDirection: "row",
-    backgroundColor: "#f8fafc",
-    position: "relative",
-    zIndex: 1,
     flex: 1,
     overflow: "hidden",
   },
   leftMenu: {
     width: 240,
-    height: "100%",
     display: "flex",
     flexDirection: "column",
     borderRight: "1px solid #e2e8f0",
@@ -260,7 +256,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   rightSide: {
     flex: 1,
-    height: "100%",
     display: "flex",
     minWidth: 0,
     overflow: "hidden",
