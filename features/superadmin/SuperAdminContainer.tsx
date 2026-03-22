@@ -9,10 +9,12 @@ const AccountsList = React.lazy(() => import("./AccountsList"));
 const AccountDetail = React.lazy(() => import("./AccountDetail"));
 const ActivityFeed = React.lazy(() => import("./ActivityFeed"));
 const ErrorFeed = React.lazy(() => import("./ErrorFeed"));
+const OnlineStores = React.lazy(() => import("./OnlineStores"));
 
 const TABS = [
   { label: "Overview", path: "/superadmin", exact: true },
   { label: "Accounts", path: "/superadmin/accounts" },
+  { label: "Online Stores", path: "/superadmin/online-stores" },
   { label: "Activity", path: "/superadmin/activity" },
   { label: "Errors", path: "/superadmin/errors" },
 ];
@@ -32,7 +34,7 @@ const SuperAdminContainer: React.FC = () => {
             const isActive = tab.exact
               ? location.pathname === tab.path
               : location.pathname.startsWith(tab.path) &&
-                !(tab.path === "/superadmin/accounts" && location.pathname === "/superadmin");
+                location.pathname !== "/superadmin";
             return (
               <button
                 key={tab.path}
@@ -67,6 +69,7 @@ const SuperAdminContainer: React.FC = () => {
                 path="/superadmin/accounts/:uid"
                 component={AccountDetail}
               />
+              <Route path="/superadmin/online-stores" component={OnlineStores} />
               <Route path="/superadmin/activity" component={ActivityFeed} />
               <Route path="/superadmin/errors" component={ErrorFeed} />
             </Switch>
