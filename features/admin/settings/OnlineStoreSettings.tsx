@@ -225,14 +225,17 @@ function OnlineStoreSettings() {
         batch.set(ref, JSON.parse(JSON.stringify(product)));
       });
 
+      const stripePublicKeyVal = (stripePublicKey ?? "").length > 0 ? stripePublicKey : null;
+      const stripeSecretKeyVal = (stripeSecretKey ?? "").length > 0 ? stripeSecretKey : null;
+
       batch.update(db.collection("users").doc(uid), {
         onlineStoreActive: onlineStoreActive ?? false,
         onlineStoreSetUp: true,
-        urlEnding: urlEnding,
-        stripePublicKey: stripePublicKey,
-        stripeSecretKey: stripeSecretKey,
-        brandColor: brandColor,
-        tagline: tagline,
+        urlEnding: urlEnding ?? "",
+        stripePublicKey: stripePublicKeyVal,
+        stripeSecretKey: stripeSecretKeyVal,
+        brandColor: brandColor ?? "",
+        tagline: tagline ?? "",
         "storeDetails.hasLogo": logo.hasLogo,
         "storeDetails.logoUrl": logo.logoUrl ?? "",
       });
@@ -240,12 +243,12 @@ function OnlineStoreSettings() {
       batch.update(db.collection("public").doc(uid), {
         onlineStoreActive: onlineStoreActive ?? false,
         onlineStoreSetUp: true,
-        urlEnding: urlEnding,
+        urlEnding: urlEnding ?? "",
         storeDetails: cleanStoreDetails,
         categories: catalog.categories,
-        stripePublicKey: stripePublicKey || "",
-        brandColor: brandColor || "",
-        tagline: tagline || "",
+        stripePublicKey: stripePublicKeyVal ?? "",
+        brandColor: brandColor ?? "",
+        tagline: tagline ?? "",
       });
 
       await batch.commit();
@@ -254,10 +257,10 @@ function OnlineStoreSettings() {
       setOnlineStoreState({
         ...onlineStoreDetails,
         onlineStoreActive: onlineStoreActive ?? false,
-        stripePublicKey: stripePublicKey,
-        stripeSecretKey: stripeSecretKey,
-        brandColor: brandColor,
-        tagline: tagline,
+        stripePublicKey: stripePublicKeyVal,
+        stripeSecretKey: stripeSecretKeyVal,
+        brandColor: brandColor ?? "",
+        tagline: tagline ?? "",
       });
       setLogoFile(null);
       setUploadingLogo(false);
