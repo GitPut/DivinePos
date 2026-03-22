@@ -78,6 +78,7 @@ function AddProductModal({
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const optionTemplates = optionTemplatesState.use();
   const alertP = useAlert();
 
@@ -428,7 +429,31 @@ function AddProductModal({
             {/* Image Card */}
             <div style={styles.card}>
               <span style={styles.cardTitle}>Image <span style={styles.optionalTag}>optional</span></span>
-              <button onClick={handleClick} style={styles.imageUploadArea} data-walkthrough="product-image-upload">
+              <button
+                onClick={handleClick}
+                style={{
+                  ...styles.imageUploadArea,
+                  ...(isDragOver ? styles.imageUploadAreaDragOver : {}),
+                }}
+                data-walkthrough="product-image-upload"
+                onDragOver={(ev) => { ev.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(ev) => {
+                  ev.preventDefault();
+                  setIsDragOver(false);
+                  const file = ev.dataTransfer.files?.[0];
+                  if (!file) return;
+                  if (!file.type.startsWith("image/")) {
+                    alertP.error("Please drop an image file");
+                    return;
+                  }
+                  if (file.size > 5000000) {
+                    alertP.error("Sorry, 5MB files are the max!");
+                    return;
+                  }
+                  setSelectedFile(file);
+                }}
+              >
                 {selectedFile ? (
                   <>
                     <img src={URL.createObjectURL(selectedFile)} style={styles.previewImage} key={selectedFile.name} alt="" />
@@ -445,8 +470,8 @@ function AddProductModal({
                   </>
                 ) : (
                   <div style={styles.uploadPlaceholder}>
-                    <FiUpload size={20} color="#94a3b8" />
-                    <span style={styles.uploadTxt}>Click to upload</span>
+                    <FiUpload size={20} color={isDragOver ? "#1D294E" : "#94a3b8"} />
+                    <span style={styles.uploadTxt}>{isDragOver ? "Drop image here" : "Click or drag image to upload"}</span>
                     <span style={styles.uploadHint}>PNG, JPG up to 5MB</span>
                   </div>
                 )}
@@ -951,6 +976,11 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     position: "relative" as const,
     overflow: "hidden",
+    transition: "border-color 0.15s, background-color 0.15s",
+  },
+  imageUploadAreaDragOver: {
+    borderColor: "#1D294E",
+    backgroundColor: "#eff6ff",
   },
   previewImage: {
     width: "100%",
