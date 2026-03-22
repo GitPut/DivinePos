@@ -235,10 +235,11 @@ const styles: Record<string, React.CSSProperties> = {
   bottom: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between",
     backgroundColor: "#f8fafc",
     position: "relative",
     zIndex: 1,
+    flex: 1,
+    overflow: "hidden",
   },
   leftMenu: {
     width: 240,
@@ -261,6 +262,8 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     height: "100%",
     display: "flex",
+    minWidth: 0,
+    overflow: "hidden",
   },
   page: {
     width: "100%",
