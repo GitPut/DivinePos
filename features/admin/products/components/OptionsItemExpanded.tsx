@@ -240,6 +240,7 @@ function OptionsItemExpanded({
           sethighlightedOptionID={sethighlightedOptionID}
           scrollToPositionIncluding={scrollToPositionIncluding}
           sizeLinkedLabels={sizeLinkedLabels}
+          allOptions={newProductOptions}
         />
       ))}
       <div style={styles.addBtnRow}>

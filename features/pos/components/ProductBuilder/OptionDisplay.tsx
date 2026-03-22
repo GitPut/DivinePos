@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import DropdownOption from "./DropdownOption";
 import MultiSelectOptionGroup from "./MultiSelectOptionGroup";
 import TableOption from "./TableOption";
 import SingleSelectOptionGroup from "./SingleSelectOptionGroup";
 import IncludedSelectionsGroup from "./IncludedSelectionsGroup";
 import { Option, OptionsList, ProductProp } from "types";
+import { filterVisibleChoices } from "utils/filterVisibleChoices";
 
 interface OptionDisplayProps {
   e: Option;
@@ -144,10 +145,44 @@ const OptionDisplay = ({
     });
   };
 
+  // ─── Per-choice visibility filtering ───────────────────────────────────────
+  const visibleChoices = useMemo(
+    () => filterVisibleChoices(e.optionsList, myObjProfile.options),
+    [e.optionsList, myObjProfile.options]
+  );
+
+  // Auto-deselect choices that became hidden
+  useEffect(() => {
+    const hiddenIds = new Set(
+      e.optionsList
+        .filter((c) => !visibleChoices.some((vc) => vc.id === c.id))
+        .filter((c) => c.selected || parseFloat(c.selectedTimes ?? "0") > 0)
+        .map((c) => c.id)
+    );
+    if (hiddenIds.size > 0) {
+      setMyObjProfile((prev: ProductProp) => {
+        const clone = structuredClone(prev);
+        clone.options[index].optionsList.forEach((opt: OptionsList) => {
+          if (hiddenIds.has(opt.id)) {
+            opt.selected = false;
+            opt.selectedTimes = "0";
+          }
+        });
+        return clone;
+      });
+    }
+  }, [visibleChoices]);
+
+  // Create a filtered version of the option for rendering
+  const filteredOption: Option = useMemo(
+    () => ({ ...e, optionsList: visibleChoices }),
+    [e, visibleChoices]
+  );
+
   const renderOptionByType = () => {
     if (!isConditionMet) return null;
 
-    const optionsSelectedLabel = e.optionsList
+    const optionsSelectedLabel = filteredOption.optionsList
       .filter((op) => parseFloat(op.selectedTimes ?? "0") > 0)
       .map(
         (op, idx, arr) =>
@@ -162,22 +197,26 @@ const OptionDisplay = ({
             id={index.toString()}
             setopenDropdown={setOpenOptions}
             openDropdown={openOptions}
-            label={e.label ?? ""}
-            isRequired={e.isRequired ? true : false}
-            options={e.optionsList}
+            label={filteredOption.label ?? ""}
+            isRequired={filteredOption.isRequired ? true : false}
+            options={filteredOption.optionsList}
             setValue={({
               option,
               listIndex,
             }: {
               option: OptionsList | null;
               listIndex: number | null;
-            }) =>
+            }) => {
+              // Map filtered index back to original index
+              const originalIndex = option
+                ? e.optionsList.findIndex((o) => o.id === option.id)
+                : listIndex;
               handleValueChange({
                 option,
-                listIndex,
+                listIndex: originalIndex,
                 isOnlyOneSelectable: true,
-              })
-            }
+              });
+            }}
             value={optionVal}
             scrollY={scrollY}
             optionGroup={e}
@@ -187,15 +226,15 @@ const OptionDisplay = ({
       case "Quantity Dropdown":
         return (
           <MultiSelectOptionGroup
-            e={e}
+            e={filteredOption}
             index={index}
             myObjProfile={myObjProfile}
             setmyObjProfile={setMyObjProfile}
             id={index.toString()}
             setopenDropdown={setOpenOptions}
             openDropdown={openOptions}
-            label={e.label ?? ""}
-            isRequired={e.isRequired ? true : false}
+            label={filteredOption.label ?? ""}
+            isRequired={filteredOption.isRequired ? true : false}
             optionsSelectedLabel={optionsSelectedLabel}
             scrollY={scrollY}
           />
@@ -203,22 +242,22 @@ const OptionDisplay = ({
       case "Table View":
         return (
           <TableOption
-            e={e}
+            e={filteredOption}
             index={index}
             myObjProfile={myObjProfile}
             setMyObjProfile={setMyObjProfile}
-            label={e.label ?? ""}
-            isRequired={e.isRequired ? true : false}
+            label={filteredOption.label ?? ""}
+            isRequired={filteredOption.isRequired ? true : false}
             optionsSelectedLabel={optionsSelectedLabel}
           />
         );
       case "Included Selections": {
-        const displayStyle = e.includedDisplayStyle ?? "Quantity Dropdown";
+        const displayStyle = filteredOption.includedDisplayStyle ?? "Quantity Dropdown";
 
-        const includedCount = parseFloat(e.includedSelections ?? "0");
-        const extraPrice = parseFloat(e.extraSelectionPrice ?? "0");
+        const includedCount = parseFloat(filteredOption.includedSelections ?? "0");
+        const extraPrice = parseFloat(filteredOption.extraSelectionPrice ?? "0");
         let totalSelected = 0;
-        e.optionsList.forEach((item) => {
+        filteredOption.optionsList.forEach((item) => {
           totalSelected += parseFloat(item.selectedTimes ?? "0");
         });
         const extraSelections = Math.max(0, totalSelected - includedCount);
@@ -250,25 +289,25 @@ const OptionDisplay = ({
             </div>
             {displayStyle === "Table View" ? (
               <TableOption
-                e={e}
+                e={filteredOption}
                 index={index}
                 myObjProfile={myObjProfile}
                 setMyObjProfile={setMyObjProfile}
-                label={e.label ?? ""}
-                isRequired={e.isRequired ? true : false}
+                label={filteredOption.label ?? ""}
+                isRequired={filteredOption.isRequired ? true : false}
                 optionsSelectedLabel={optionsSelectedLabel}
               />
             ) : (
               <IncludedSelectionsGroup
-                e={e}
+                e={filteredOption}
                 index={index}
                 myObjProfile={myObjProfile}
                 setmyObjProfile={setMyObjProfile}
                 id={index.toString()}
                 setopenDropdown={setOpenOptions}
                 openDropdown={openOptions}
-                label={e.label ?? ""}
-                isRequired={e.isRequired ? true : false}
+                label={filteredOption.label ?? ""}
+                isRequired={filteredOption.isRequired ? true : false}
                 optionsSelectedLabel={optionsSelectedLabel}
                 scrollY={scrollY}
               />
@@ -279,18 +318,24 @@ const OptionDisplay = ({
       default:
         return (
           <SingleSelectOptionGroup
-            label={e.label ?? ""}
-            isRequired={e.isRequired ? true : false}
-            options={e.optionsList}
+            label={filteredOption.label ?? ""}
+            isRequired={filteredOption.isRequired ? true : false}
+            options={filteredOption.optionsList}
             setValue={({
               option,
               listIndex,
             }: {
               option: OptionsList | null;
               listIndex: number | null;
-            }) => handleValueChange({ option, listIndex })}
+            }) => {
+              // Map filtered index back to original index
+              const originalIndex = option
+                ? e.optionsList.findIndex((o) => o.id === option.id)
+                : listIndex;
+              handleValueChange({ option, listIndex: originalIndex });
+            }}
             value={
-              parseFloat(e.numOfSelectable ?? "0") === 1 ? optionVal : null
+              parseFloat(filteredOption.numOfSelectable ?? "0") === 1 ? optionVal : null
             }
             optionGroup={e}
             allOptions={myObjProfile.options}

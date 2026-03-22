@@ -1,6 +1,6 @@
-import React from "react";
-import { FiChevronDown, FiChevronUp, FiTrash2 } from "react-icons/fi";
-import { Option, OptionsList } from "types";
+import React, { useState } from "react";
+import { FiChevronDown, FiChevronUp, FiTrash2, FiEye } from "react-icons/fi";
+import { Option, OptionsList, SelectedCaseListItem } from "types";
 
 interface OptionSelectionItemProps {
   style?: React.CSSProperties;
@@ -15,6 +15,7 @@ interface OptionSelectionItemProps {
   sethighlightedOptionID: (val: string | null) => void;
   scrollToPositionIncluding: (val: number) => void;
   sizeLinkedLabels?: string[];
+  allOptions?: Option[];
 }
 
 function OptionSelectionItem({
@@ -30,8 +31,26 @@ function OptionSelectionItem({
   sethighlightedOptionID,
   scrollToPositionIncluding,
   sizeLinkedLabels,
+  allOptions,
 }: OptionSelectionItemProps) {
   const eInnerList = structuredClone(eInnerListStart);
+  const [showVisibility, setShowVisibility] = useState(
+    (eInnerList.selectedCaseList?.length ?? 0) > 0
+  );
+
+  const otherOptions = (allOptions ?? []).filter((_, i) => i !== index);
+  const hasRules = (eInnerList.selectedCaseList?.length ?? 0) > 0;
+
+  const updateChoiceField = (updater: (choice: OptionsList) => void) => {
+    const cloneOuter = structuredClone(testMap);
+    updater(cloneOuter[indexInnerList]);
+    setnewProductOptions((prev) => {
+      const clone = structuredClone(prev);
+      clone[index].optionsList = cloneOuter;
+      return clone;
+    });
+    settestMap(cloneOuter);
+  };
 
   return (
     <div
@@ -120,6 +139,18 @@ function OptionSelectionItem({
         )}
       </div>
       <div style={styles.btnsRow}>
+        {otherOptions.length > 0 && (
+          <button
+            style={{
+              ...styles.iconBtn,
+              ...(hasRules ? { backgroundColor: "#eff6ff", borderColor: "#bfdbfe" } : {}),
+            }}
+            onClick={() => setShowVisibility(!showVisibility)}
+            title="Visibility rules"
+          >
+            <FiEye size={14} color={hasRules ? "#1D294E" : "#64748b"} />
+          </button>
+        )}
         <button
           style={styles.iconBtn}
           onClick={() => {
@@ -180,6 +211,90 @@ function OptionSelectionItem({
           <FiTrash2 size={14} color="#ef4444" />
         </button>
       </div>
+      {showVisibility && otherOptions.length > 0 && (
+        <div style={styles.visibilitySection}>
+          <span style={styles.visibilityLabel}>Only show this choice when:</span>
+          {(eInnerList.selectedCaseList ?? []).map(
+            (rule: SelectedCaseListItem, ruleIdx: number) => {
+              const targetOption = otherOptions.find(
+                (op) => op.label === rule.selectedCaseKey
+              );
+              return (
+                <div key={rule.id ?? ruleIdx} style={styles.visibilityRow}>
+                  <select
+                    style={styles.visibilitySelect}
+                    value={rule.selectedCaseKey ?? ""}
+                    onChange={(ev) => {
+                      updateChoiceField((choice) => {
+                        if (!choice.selectedCaseList) choice.selectedCaseList = [];
+                        choice.selectedCaseList[ruleIdx] = {
+                          ...choice.selectedCaseList[ruleIdx],
+                          selectedCaseKey: ev.target.value || null,
+                          selectedCaseValue: null,
+                        };
+                      });
+                    }}
+                  >
+                    <option value="">Select option...</option>
+                    {otherOptions.map((op) => (
+                      <option key={op.id ?? op.label} value={op.label ?? ""}>
+                        {op.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span style={styles.visibilityEquals}>=</span>
+                  <select
+                    style={styles.visibilitySelect}
+                    value={rule.selectedCaseValue ?? ""}
+                    onChange={(ev) => {
+                      updateChoiceField((choice) => {
+                        if (!choice.selectedCaseList) choice.selectedCaseList = [];
+                        choice.selectedCaseList[ruleIdx] = {
+                          ...choice.selectedCaseList[ruleIdx],
+                          selectedCaseValue: ev.target.value || null,
+                        };
+                      });
+                    }}
+                  >
+                    <option value="">Select value...</option>
+                    {(targetOption?.optionsList ?? []).map((opL) => (
+                      <option key={opL.id} value={opL.label ?? ""}>
+                        {opL.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    style={styles.visibilityDeleteBtn}
+                    onClick={() => {
+                      updateChoiceField((choice) => {
+                        if (!choice.selectedCaseList) return;
+                        choice.selectedCaseList.splice(ruleIdx, 1);
+                      });
+                    }}
+                  >
+                    <FiTrash2 size={12} color="#ef4444" />
+                  </button>
+                </div>
+              );
+            }
+          )}
+          <button
+            style={styles.addRuleBtn}
+            onClick={() => {
+              updateChoiceField((choice) => {
+                if (!choice.selectedCaseList) choice.selectedCaseList = [];
+                choice.selectedCaseList.push({
+                  selectedCaseKey: null,
+                  selectedCaseValue: null,
+                  id: Math.random().toString(36).substr(2, 9),
+                });
+              });
+            }}
+          >
+            <span style={styles.addRuleTxt}>+ Add condition</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -275,6 +390,68 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     cursor: "pointer",
     padding: 0,
+  },
+  visibilitySection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    padding: "8px 0 4px",
+    borderTop: "1px dashed #e2e8f0",
+    marginTop: 4,
+  },
+  visibilityLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#64748b",
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+  },
+  visibilityRow: {
+    display: "flex",
+    flexDirection: "row" as const,
+    alignItems: "center",
+    gap: 6,
+  },
+  visibilitySelect: {
+    height: 32,
+    border: "1px solid #e2e8f0",
+    borderRadius: 6,
+    padding: "0 8px",
+    fontSize: 12,
+    color: "#0f172a",
+    flex: 1,
+    minWidth: 80,
+    boxSizing: "border-box" as const,
+  },
+  visibilityEquals: {
+    fontSize: 12,
+    color: "#94a3b8",
+    fontWeight: "600",
+  },
+  visibilityDeleteBtn: {
+    width: 24,
+    height: 24,
+    backgroundColor: "#fef2f2",
+    border: "1px solid #fee2e2",
+    borderRadius: 4,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+    flexShrink: 0,
+  },
+  addRuleBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "2px 0",
+    alignSelf: "flex-start",
+  },
+  addRuleTxt: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#1D294E",
   },
 };
 

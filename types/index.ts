@@ -86,6 +86,7 @@ export type OptionsList = {
   priceIncrease?: string | null;
   priceBySize?: Record<string, string>;
   halfSide?: "left" | "right" | "whole";
+  selectedCaseList?: SelectedCaseListItem[];
 };
 
 export type CartItemProp = {
