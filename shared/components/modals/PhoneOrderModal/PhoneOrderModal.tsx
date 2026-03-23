@@ -14,6 +14,7 @@ import { posState, updatePosState } from "store/posState";
 import { shallowEqual } from "simpler-state";
 import { useAlert } from "react-alert";
 import { AddressType } from "types";
+import { sanitizePhone } from "utils/phoneValidation";
 
 const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 
@@ -152,7 +153,7 @@ const PhoneOrderModal = () => {
               <span style={styles.fieldLabel}>Phone Number</span>
               <div style={styles.inputRow}>
                 <FiPhone size={16} color="#94a3b8" />
-                <input style={styles.input} placeholder="Enter phone number" value={phone} onChange={(e) => updatePosState({ phone: e.target.value })} />
+                <input style={styles.input} placeholder="Enter phone number" value={phone} onChange={(e) => updatePosState({ phone: sanitizePhone(e.target.value) })} maxLength={10} />
               </div>
             </div>
 

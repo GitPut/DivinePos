@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiPlus, FiEdit3, FiTrash2, FiCopy, FiLayers, FiDownload } from "react-icons/fi";
+import { FiPlus, FiEdit3, FiTrash2, FiCopy, FiLayers, FiDownload, FiClipboard } from "react-icons/fi";
 import { optionTemplatesState } from "store/appState";
 import {
   saveOptionTemplate,
@@ -69,13 +69,13 @@ function OptionTemplatesList() {
       alertP.error("Please fill in the option name and type");
       return;
     }
-    // Clean selections
-    const cleanedOpt = {
+    // Clean selections and strip undefined values for Firestore
+    const cleanedOpt = JSON.parse(JSON.stringify({
       ...opt,
       optionsList: (opt.optionsList ?? []).filter(
         (s) => s.label && s.label.trim().length > 0
       ),
-    };
+    }));
 
     const template: OptionTemplate = {
       id: editingTemplate.id,
@@ -83,16 +83,21 @@ function OptionTemplatesList() {
       option: cleanedOpt,
     };
 
-    await saveOptionTemplate(template);
+    try {
+      await saveOptionTemplate(template);
 
-    // Sync to products that use this template
-    const count = await syncOptionTemplateToProducts(template);
-    if (count > 0) {
-      alertP.show(`Updated ${count} product${count !== 1 ? "s" : ""}`);
+      // Sync to products that use this template
+      const count = await syncOptionTemplateToProducts(template);
+      if (count > 0) {
+        alertP.show(`Updated ${count} product${count !== 1 ? "s" : ""}`);
+      }
+
+      setEditingTemplate(null);
+      setNewProductOptions([]);
+    } catch (err) {
+      console.error("Failed to save template:", err);
+      alertP.error("Failed to save template. Please try again.");
     }
-
-    setEditingTemplate(null);
-    setNewProductOptions([]);
   };
 
   const handleDelete = (template: OptionTemplate) => {
@@ -120,6 +125,50 @@ function OptionTemplatesList() {
       option: { ...structuredClone(template.option), id: generateId(10) },
     };
     saveOptionTemplate(newTemplate);
+  };
+
+  const handlePasteOption = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const parsed = JSON.parse(text);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        !("label" in parsed) ||
+        typeof parsed.label !== "string" ||
+        parsed.label.trim().length === 0 ||
+        !Array.isArray(parsed.optionsList) ||
+        !("id" in parsed) ||
+        !("optionType" in parsed) ||
+        typeof parsed.optionType !== "string"
+      ) {
+        alertP.error("Clipboard data is not a valid option");
+        return;
+      }
+
+      const { templateId, ...rest } = parsed;
+      const newOption: Option = {
+        ...rest,
+        id: generateId(10),
+      };
+      const newTemplate: OptionTemplate = {
+        id: generateId(10),
+        name: parsed.label,
+        option: newOption,
+      };
+
+      setEditingTemplate(newTemplate);
+      setLocalOption(newOption);
+      setNewProductOptions([newOption]);
+      setTemplateName(parsed.label);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "NotAllowedError") {
+        alertP.error("Clipboard access denied. Try copying again and clicking Paste right after.");
+      } else {
+        alertP.error("Invalid or blocked clipboard content.");
+      }
+    }
   };
 
   // Dummy product for the OptionsItemExpanded (it only needs options for conditional logic)
@@ -219,6 +268,13 @@ function OptionTemplatesList() {
               </span>
             </div>
             <div style={{ display: "flex", flexDirection: "row", gap: 8 }}>
+              <button
+                style={styles.importBtn}
+                onClick={handlePasteOption}
+              >
+                <FiClipboard size={15} color="#475569" />
+                <span style={styles.importBtnTxt}>Paste Option</span>
+              </button>
               {standardOptionTemplates.length > 0 && (
                 <button
                   style={styles.importBtn}

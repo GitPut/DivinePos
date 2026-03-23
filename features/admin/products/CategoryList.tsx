@@ -43,7 +43,7 @@ function CategoryList() {
         });
         const localCatalog = structuredClone(catalog);
         if (localCatalog.categories.length > 1) {
-          localCatalog.categories = catalog.categories.filter(
+          localCatalog.categories = localCatalog.categories.filter(
             (e) => e !== category
           );
         } else {

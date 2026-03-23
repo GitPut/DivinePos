@@ -27,6 +27,27 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
   const getPrice = () => {
     let total = parseFloat(myObjProfile.price);
     myObjProfile.options.forEach((op) => {
+      if (op.optionType === "Included Selections") {
+        const includedCount = parseFloat(op.includedSelections ?? "0");
+        const flatExtraPrice = parseFloat(op.extraSelectionPrice ?? "0");
+        let freeRemaining = includedCount;
+        op.optionsList
+          .filter((item) => parseFloat(item.selectedTimes ?? "0") > 0)
+          .forEach((item) => {
+            const qty = parseFloat(item.selectedTimes ?? "0");
+            const freeFromThis = Math.min(qty, freeRemaining);
+            const extraFromThis = qty - freeFromThis;
+            freeRemaining -= freeFromThis;
+            if (extraFromThis > 0) {
+              const resolved = op.sizeLinkedOptionLabel
+                ? parseFloat(resolveOptionPrice(item, op, myObjProfile.options))
+                : 0;
+              const perItemPrice = resolved > 0 ? resolved : flatExtraPrice;
+              total += extraFromThis * perItemPrice;
+            }
+          });
+        return;
+      }
       op.optionsList
         .filter((f) => f.selected === true)
         .map((e) => {
@@ -35,8 +56,9 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
         });
     });
     myObjProfile.options.forEach((op) => {
+      if (op.optionType === "Included Selections") return;
       op.optionsList
-        .filter((f) => f.selectedTimes ?? 0 > 0)
+        .filter((f) => parseFloat(f.selectedTimes ?? "0") > 0)
         .map((e) => {
           const thisItemSelectedTimes = e.selectedTimes
             ? parseInt(e.selectedTimes)

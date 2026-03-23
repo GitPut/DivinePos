@@ -19,7 +19,7 @@ const SettingsPasswordModal = () => {
   const alertP = useAlert();
 
   const tryAuthorize = () => {
-    if (password == storeDetails.settingsPassword) {
+    if (password === storeDetails.settingsPassword) {
       setSettingsAuthState(true);
       history.push("/authed/dashboard");
       localStorage.setItem("isAuthedBackend", "true");
@@ -64,7 +64,7 @@ const SettingsPasswordModal = () => {
 
     Axios(config)
       .then(function () {
-        alertP.error("Settings password has been sent to your account email");
+        alertP.success("Settings password has been sent to your account email");
       })
       .catch(function (error) {
         alertP.error(error);

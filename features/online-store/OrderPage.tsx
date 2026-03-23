@@ -221,16 +221,18 @@ const OrderPage = () => {
   return (
     <div style={styles.container}>
       {/* Page content */}
-      {page === 1 && <OnlineOrderHome />}
-      {page === 2 && <OnlineOrderHomePickup />}
-      {page === 3 && <OnlineOrderHomeDelivery />}
+      {page === 1 && <div key="p1" className="online-store-page"><OnlineOrderHome /></div>}
+      {page === 2 && <div key="p2" className="online-store-page"><OnlineOrderHomePickup /></div>}
+      {page === 3 && <div key="p3" className="online-store-page"><OnlineOrderHomeDelivery /></div>}
       {page === 4 && (
-        <OrderCartMain
-          catalog={{ categories: catalog.categories, products: data }}
-        />
+        <div key="p4" className="online-store-page">
+          <OrderCartMain
+            catalog={{ categories: catalog.categories, products: data }}
+          />
+        </div>
       )}
-      {page === 5 && <OnlineOrderHomeCheckout />}
-      {page === 6 && <OnlineOrderHomeCompleted />}
+      {page === 5 && <div key="p5" className="online-store-page"><OnlineOrderHomeCheckout /></div>}
+      {page === 6 && <div key="p6" className="online-store-page"><OnlineOrderHomeCompleted /></div>}
 
       {/* Loading overlay */}
       {!loaderHidden && (

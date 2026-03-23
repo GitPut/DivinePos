@@ -225,15 +225,7 @@ const Cart = () => {
             />
           )}
           <CartAmountRow
-            amountValue={
-              deliveryChecked &&
-              parseFloat(storeDetails.deliveryPrice) &&
-              cartSub > 0
-                ? `$${(
-                    cartSub - parseFloat(storeDetails.deliveryPrice)
-                  ).toFixed(2)}`
-                : `$${cartSub.toFixed(2)}`
-            }
+            amountValue={`$${cartSub.toFixed(2)}`}
             amountLbl="Subtotal"
             style={styles.subtotalRow}
           />

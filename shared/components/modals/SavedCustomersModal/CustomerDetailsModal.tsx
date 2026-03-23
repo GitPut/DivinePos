@@ -13,6 +13,7 @@ import { GooglePlacesStyles } from "utils/googlePlacesStyles";
 import { updatePosState } from "store/posState";
 import { CustomerProp } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
+import { sanitizePhone } from "utils/phoneValidation";
 
 const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 
@@ -88,7 +89,7 @@ function CustomerDetailsModal({
               </div>
               <div style={styles.editRow}>
                 <span style={styles.editLabel}>Phone</span>
-                <input style={styles.editInput} value={newPhoneNumber} onChange={(e) => setnewPhoneNumber(e.target.value)} placeholder="Phone" />
+                <input style={styles.editInput} value={newPhoneNumber} onChange={(e) => setnewPhoneNumber(sanitizePhone(e.target.value))} maxLength={10} placeholder="Phone" />
               </div>
               <div style={styles.editRow}>
                 <span style={styles.editLabel}>Address</span>

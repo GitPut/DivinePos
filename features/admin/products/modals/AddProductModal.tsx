@@ -14,6 +14,7 @@ import {
   storeProductsState,
 } from "store/appState";
 import { auth, db, storage } from "services/firebase/config";
+import { updateData } from "services/firebase/functions";
 import Switch from "shared/components/ui/Switch";
 import ProductBuilderView from "../components/ProductBuilderView";
 import { useAlert } from "react-alert";
@@ -85,6 +86,8 @@ function AddProductModal({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState("");
   const optionTemplates = optionTemplatesState.use();
   const alertP = useAlert();
 
@@ -95,9 +98,24 @@ function AddProductModal({
   };
 
   const confirmDiscard = () => {
-    const hasChanges = existingProduct
-      ? JSON.stringify(existingProduct) !== JSON.stringify(newProduct)
-      : newProduct.name.length > 0;
+    let hasChanges = false;
+    if (existingProduct) {
+      hasChanges =
+        newProduct.name !== existingProduct.name ||
+        newProduct.price !== existingProduct.price ||
+        newProduct.description !== existingProduct.description ||
+        newProduct.category !== existingProduct.category ||
+        JSON.stringify(newProductOptions) !== JSON.stringify(existingProduct.options) ||
+        selectedFile != null ||
+        currentImgUrl !== (existingProduct.imageUrl ?? null);
+    } else {
+      hasChanges =
+        newProduct.name.length > 0 ||
+        newProduct.price !== "0" ||
+        (newProduct.description?.length ?? 0) > 0 ||
+        newProductOptions.length > 0 ||
+        selectedFile != null;
+    }
 
     if (hasChanges) {
       Swal.fire({
@@ -236,7 +254,7 @@ function AddProductModal({
       {/* Top Bar */}
       <div style={styles.topBar}>
         <div style={styles.topBarLeft}>
-          <button style={styles.closeBtn} onClick={closeModal}>
+          <button style={styles.closeBtn} onClick={confirmDiscard}>
             <FiX size={18} color="#64748b" />
           </button>
           <span style={styles.topBarTitle}>{modalTitle}</span>
@@ -328,9 +346,6 @@ function AddProductModal({
               <span style={styles.actionBtnTxt}>{showPreview ? "Hide Preview" : "Show Preview"}</span>
             </button>
           )}
-          <button style={styles.cancelBtn} onClick={closeModal}>
-            <span style={styles.cancelTxt}>Cancel</span>
-          </button>
           <button style={styles.saveBtn} onClick={handleDataUpdate} data-walkthrough="save-product">
             <span style={styles.saveTxt}>
               {isProductTemplate ? "Add Product" : existingProduct ? "Save Changes" : "Add Product"}
@@ -395,10 +410,16 @@ function AddProductModal({
                     setValue={(val) => setnewProduct((prev) => ({ ...prev, category: val }))}
                     options={selectValues}
                     scrollY={scrollY}
+                    onCreateNew={(name) => {
+                      const updated = [...selectValues, name];
+                      setselectValues(updated);
+                      updateData(updated);
+                      setStoreProductsState({ ...catalog, categories: updated });
+                    }}
                   />
                 </div>
                 <div style={styles.fieldGroup}>
-                  <span style={styles.fieldLabel}>Display Order</span>
+                  <span style={styles.fieldLabel}>Sort Position <span style={styles.optionalTag}>optional</span></span>
                   <input
                     style={styles.input}
                     placeholder="Auto"
@@ -413,6 +434,7 @@ function AddProductModal({
                     }}
                     value={newProduct?.rank?.toString()}
                   />
+                  <span style={{ fontSize: 11, color: "#94a3b8", marginTop: -2 }}>Lower numbers appear first on the menu</span>
                 </div>
               </div>
               <div style={styles.fieldGroup}>
@@ -505,19 +527,19 @@ function AddProductModal({
                 <span style={styles.cardTitle}>Inventory</span>
                 <div style={styles.trackingToggleRow}>
                   <button
-                    style={{ ...styles.trackingToggleBtn, ...(!newProduct.recipe || newProduct.recipe.length === 0 ? styles.trackingToggleBtnActive : {}) }}
+                    style={{ ...styles.trackingToggleBtn, ...(!Array.isArray(newProduct.recipe) ? styles.trackingToggleBtnActive : {}) }}
                     onClick={() => setnewProduct((prev) => { const clone = { ...prev }; delete clone.recipe; return clone; })}
                   >
-                    <span style={{ ...styles.trackingToggleTxt, ...(!newProduct.recipe || newProduct.recipe.length === 0 ? styles.trackingToggleTxtActive : {}) }}>Simple Count</span>
+                    <span style={{ ...styles.trackingToggleTxt, ...(!Array.isArray(newProduct.recipe) ? styles.trackingToggleTxtActive : {}) }}>Simple Count</span>
                   </button>
                   <button
-                    style={{ ...styles.trackingToggleBtn, ...(newProduct.recipe && newProduct.recipe.length > 0 ? styles.trackingToggleBtnActive : {}) }}
-                    onClick={() => setnewProduct((prev) => ({ ...prev, recipe: prev.recipe && prev.recipe.length > 0 ? prev.recipe : [] }))}
+                    style={{ ...styles.trackingToggleBtn, ...(Array.isArray(newProduct.recipe) ? styles.trackingToggleBtnActive : {}) }}
+                    onClick={() => setnewProduct((prev) => ({ ...prev, recipe: prev.recipe ?? [] }))}
                   >
-                    <span style={{ ...styles.trackingToggleTxt, ...(newProduct.recipe && newProduct.recipe.length > 0 ? styles.trackingToggleTxtActive : {}) }}>Recipe Based</span>
+                    <span style={{ ...styles.trackingToggleTxt, ...(Array.isArray(newProduct.recipe) ? styles.trackingToggleTxtActive : {}) }}>Recipe Based</span>
                   </button>
                 </div>
-                {(!newProduct.recipe || newProduct.recipe.length === 0) && !Array.isArray(newProduct.recipe) && (
+                {!Array.isArray(newProduct.recipe) && (
                   <div style={styles.fieldsRow}>
                     <div style={styles.fieldGroup}>
                       <span style={styles.fieldLabel}>Stock Quantity</span>

@@ -13,8 +13,9 @@ import Switch from "shared/components/ui/Switch";
 function EditEmployee() {
   const { employeeId } = useParams<{ employeeId: string }>();
   const employees = employeesState.use();
+  const foundEmployee = employees.find((e) => e.id === employeeId);
   const [employee, setemployee] = useState<Employee>(
-    employees[employees.findIndex((e) => e.id === employeeId)]
+    foundEmployee || { name: "", pin: "", id: employeeId }
   );
   const [dateSelected, setdateSelected] = useState<Date | null>(null);
   const [startTime, setstartTime] = useState<string | null>(null);
@@ -24,12 +25,10 @@ function EditEmployee() {
   const history = useHistory();
 
   useEffect(() => {
-    if (!employee) {
+    if (!foundEmployee) {
       history.push("/authed/report/employeesreport");
       return;
     }
-
-    setemployee(employee);
     db.collection("users")
       .doc(auth?.currentUser?.uid)
       .collection("employees")

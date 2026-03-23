@@ -124,34 +124,37 @@ function CartItem({
         </div>
       </div>
       {isOpen && (
-        <div
-          style={{
-            width: "90%",
-            padding: 10,
-            backgroundColor: "#f0f2f8",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
-        >
+        <div style={styles.optionsPanel}>
           {cartItem.options &&
-            cartItem.options.map((option, key) => (
-              <span
-                key={key}
-              >
-                {option}
-              </span>
-            ))}
+            cartItem.options.map((option, key) => {
+              const colonIdx = option.indexOf(":");
+              const label = colonIdx > -1 ? option.slice(0, colonIdx) : null;
+              const value = colonIdx > -1 ? option.slice(colonIdx + 1).trim() : option;
+              const isLast = key === cartItem.options.length - 1 && !cartItem.description && !cartItem.extraDetails;
+              return (
+                <div key={key} style={{ ...styles.optionRow, ...(isLast && { borderBottom: "none" }) }}>
+                  {label ? (
+                    <>
+                      <span style={styles.optionLabel}>{label}</span>
+                      <span style={styles.optionValue}>{value}</span>
+                    </>
+                  ) : (
+                    <span style={styles.optionValue}>{option}</span>
+                  )}
+                </div>
+              );
+            })}
           {cartItem.description && (
-            <span
-            >
-              Description: {cartItem.description}
-            </span>
+            <div style={{ ...styles.optionRow, ...(!cartItem.extraDetails && { borderBottom: "none" }) }}>
+              <span style={styles.optionLabel}>Description</span>
+              <span style={styles.optionValue}>{cartItem.description}</span>
+            </div>
           )}
           {cartItem.extraDetails && (
-            <span
-            >
-              Written Note: {cartItem.extraDetails}
-            </span>
+            <div style={{ ...styles.optionRow, borderBottom: "none" }}>
+              <span style={styles.optionLabel}>Note</span>
+              <span style={styles.optionValue}>{cartItem.extraDetails}</span>
+            </div>
           )}
         </div>
       )}
@@ -262,6 +265,31 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #e0e0e0",
     cursor: "pointer",
     display: "flex",
+  },
+  optionsPanel: {
+    width: "90%",
+    padding: "6px 10px",
+    backgroundColor: "#f0f2f8",
+    borderRadius: 8,
+    gap: 1,
+  },
+  optionRow: {
+    padding: "4px 0",
+    borderBottom: "1px solid #e4e7ee",
+    gap: 2,
+  },
+  optionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#475569",
+    display: "block",
+  },
+  optionValue: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#1a1a1a",
+    display: "block",
+    lineHeight: "1.4",
   },
   cartItemEditBtn: {
     width: 26,

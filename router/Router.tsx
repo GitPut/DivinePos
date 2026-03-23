@@ -567,10 +567,12 @@ const AppRouter = () => {
 
         // ── All data loaded, dismiss loading screen ───────────────────────
         setloading(false);
-      } catch {
+      } catch (err) {
+        console.error("Bootstrap error:", err);
         alertP.error(
           "An error has occured with starting up the app. Please refresh the page. 4"
         );
+        setloading(false);
       }
     });
 

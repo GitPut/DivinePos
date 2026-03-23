@@ -4,6 +4,7 @@ import { useHistory } from "react-router-dom";
 import { FiEyeOff, FiEye, FiUser, FiMail, FiLock, FiPhone, FiArrowRight } from "react-icons/fi";
 import { useAlert } from "react-alert";
 import logoImg from "assets/dpos-logo-black.png";
+import { sanitizePhone, isValidPhone } from "utils/phoneValidation";
 
 function Signup() {
   const [email, setEmail] = useState("");
@@ -15,13 +16,15 @@ function Signup() {
   const alertP = useAlert();
 
   const attemptSignUp = () => {
-    if (email && password) {
-      signUp(email, password, name, phoneNumber).catch(() => {
-        alertP.error("There was a issue signing up. Please try again.");
-      });
-    } else {
-      alertP.error("Please enter your email and password");
+    if (!email || !password) {
+      return alertP.error("Please enter your email and password");
     }
+    if (phoneNumber && !isValidPhone(phoneNumber)) {
+      return alertP.error("Please enter a valid 10-digit phone number");
+    }
+    signUp(email, password, name, phoneNumber).catch(() => {
+      alertP.error("There was a issue signing up. Please try again.");
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -77,7 +80,8 @@ function Signup() {
                 style={styles.input}
                 placeholder="(555) 123-4567"
                 value={phoneNumber}
-                onChange={(e) => setphoneNumber(e.target.value)}
+                onChange={(e) => setphoneNumber(sanitizePhone(e.target.value))}
+                maxLength={10}
                 onKeyDown={handleKeyDown}
               />
             </div>

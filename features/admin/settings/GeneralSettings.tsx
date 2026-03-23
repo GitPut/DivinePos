@@ -11,6 +11,7 @@ import { GooglePlacesStyles } from "utils/googlePlacesStyles";
 const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 import { useAlert } from "react-alert";
 import { AddressType } from "types";
+import { sanitizePhone } from "utils/phoneValidation";
 
 function GeneralSettings() {
   const storeDetails = storeDetailsState.use();
@@ -115,7 +116,8 @@ function GeneralSettings() {
                 style={styles.input}
                 placeholder="Enter store phone number"
                 value={phoneNumber}
-                onChange={(e) => setphoneNumber(e.target.value)}
+                onChange={(e) => setphoneNumber(sanitizePhone(e.target.value))}
+                maxLength={10}
               />
             </div>
             <div style={styles.fieldGroup}>

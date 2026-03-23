@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { auth } from "services/firebase/config";
+import { auth, db } from "services/firebase/config";
 import { updateFreeTrial, updateStoreDetails, createCheckoutSession } from "services/firebase/functions";
-import { storeDetailsState } from "store/appState";
+import firebase from "firebase/compat/app";
+import { storeDetailsState, setStoreDetailsState } from "store/appState";
 import Axios from "axios";
 import { useAlert } from "react-alert";
 import PlanStage from "./components/PlanStage";
@@ -55,37 +56,66 @@ const NewUserPayment = () => {
   };
 
   const CheckOutFunc = async () => {
-    updateStoreDetails({
-      name: storeName,
-      phoneNumber: phoneNumber,
-      address: address ?? undefined,
-      website: website ? website : "",
-      deliveryPrice: "",
-      settingsPassword: "",
-      taxRate: "13",
-    });
-
-    if (planType === "freeTrial") {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 31);
-      await updateFreeTrial(tomorrow);
-      SendEmail();
-      window.location.href = "/pos";
-    } else {
-      let priceId;
-      if (planType === "starter") {
-        priceId = STARTER_PRICE_ID;
-      } else if (planType === "professional") {
-        priceId = PROFESSIONAL_PRICE_ID;
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        alertP.error("Not authenticated. Please try signing up again.");
+        return;
       }
-      if (!priceId) return;
 
-      await createCheckoutSession(
-        priceId,
-        `${window.location.origin}/success`,
-        `${window.location.origin}/cancelled`,
-        (msg) => alertP.error(msg || "An error occurred")
-      );
+      // Use set with merge to ensure doc exists (handles case where signup
+      // created the auth user but failed to create the Firestore doc)
+      const userRef = db.collection("users").doc(uid);
+      await userRef.set({
+        storeDetails: {
+          name: storeName,
+          phoneNumber: phoneNumber,
+          address: address ?? null,
+          website: website ? website : "",
+          deliveryPrice: "",
+          settingsPassword: "",
+          taxRate: "13",
+        },
+      }, { merge: true });
+
+      setStoreDetailsState({
+        name: storeName,
+        phoneNumber: phoneNumber,
+        address: address ?? null,
+        website: website ? website : "",
+        deliveryPrice: "",
+        settingsPassword: "",
+        taxRate: "13",
+        acceptDelivery: false,
+        deliveryRange: "",
+      });
+
+      if (planType === "freeTrial") {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 31);
+        const timestamp = firebase.firestore.Timestamp.fromDate(tomorrow);
+        await userRef.set({ freeTrial: timestamp }, { merge: true });
+        SendEmail();
+        window.location.href = "/pos";
+      } else {
+        let priceId;
+        if (planType === "starter") {
+          priceId = STARTER_PRICE_ID;
+        } else if (planType === "professional") {
+          priceId = PROFESSIONAL_PRICE_ID;
+        }
+        if (!priceId) return;
+
+        await createCheckoutSession(
+          priceId,
+          `${window.location.origin}/success`,
+          `${window.location.origin}/cancelled`,
+          (msg) => alertP.error(msg || "An error occurred")
+        );
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+      alertP.error("Something went wrong. Please try again.");
     }
   };
 

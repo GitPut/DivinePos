@@ -3,8 +3,9 @@ import FieldInput from "./FieldInput";
 import { useAlert } from "react-alert";
 import { orderDetailsState, setOrderDetailsState } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
+import { sanitizePhone, isValidPhone, isValidFullName } from "utils/phoneValidation";
 
-function PickupDetails() {
+function PickupDetails({ contrast }: { contrast?: any }) {
   const orderDetails = orderDetailsState.use();
   const [localName, setlocalName] = useState(orderDetails.customer.name);
   const [localPhoneNumber, setlocalPhoneNumber] = useState(
@@ -26,26 +27,33 @@ function PickupDetails() {
           onChangeText={(text) => setlocalName(text)}
           textContentType="name"
           maxLength={25}
+          contrast={contrast}
         />
         <FieldInput
           txtInput="(123) 456-7890"
           label="Phone Number"
           style={styles.field}
           value={localPhoneNumber}
-          onChangeText={(text) => setlocalPhoneNumber(text)}
+          onChangeText={(text) => setlocalPhoneNumber(sanitizePhone(text))}
           textContentType="telephoneNumber"
           maxLength={10}
+          contrast={contrast}
         />
       </div>
       <button
         style={{
           ...styles.continueBtn,
+          ...(contrast ? { backgroundColor: contrast.btnBg } : {}),
           ...(isDisabled ? { opacity: 0.5, cursor: "not-allowed" } : {}),
         }}
         disabled={isDisabled}
         onClick={() => {
           if (localName === "" || localPhoneNumber === "")
             return alertP.error("Please fill in all fields");
+          if (!isValidFullName(localName))
+            return alertP.error("Please enter your full name (first and last)");
+          if (!isValidPhone(localPhoneNumber))
+            return alertP.error("Please enter a valid 10-digit phone number");
           setOrderDetailsState({
             customer: {
               ...orderDetails.customer,
@@ -57,7 +65,7 @@ function PickupDetails() {
           setOrderDetailsState({ page: 4 });
         }}
       >
-        <span style={styles.continueBtnTxt}>Continue</span>
+        <span style={{ ...styles.continueBtnTxt, ...(contrast ? { color: contrast.btnText } : {}) }}>Continue</span>
       </button>
     </div>
   );

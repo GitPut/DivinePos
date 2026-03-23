@@ -123,7 +123,7 @@ const PendingOrdersModal = () => {
                     if (cartItem.quantity) {
                       cartString += `   Qty: ${cartItem.quantity}  •  $${(parseFloat(cartItem.price) * parseFloat(cartItem.quantity)).toFixed(2)}\n`;
                     } else {
-                      cartString += `   $${cartItem.price}\n`;
+                      cartString += `   $${parseFloat(cartItem.price).toFixed(2)}\n`;
                     }
                     if (cartItem.options) {
                       cartItem.options.map((option) => {

@@ -173,7 +173,56 @@ function PendingOrderDetails({
           )}
         </div>
         <div style={styles.cartScroll}>
-          <span style={styles.cartDetails}>{cartString}</span>
+          {element?.cart?.map((cartItem, idx) => {
+            const qty = parseFloat(cartItem.quantity ?? "1");
+            const price = parseFloat(cartItem.price ?? "0");
+            const lineTotal = price * qty;
+            return (
+              <div key={idx} style={styles.cartItemBlock}>
+                <div style={styles.cartItemHeader}>
+                  <span style={styles.cartItemName}>
+                    {qty > 1 ? `${qty}x ` : ""}{cartItem.name}
+                  </span>
+                  {cartItem.price && (
+                    <span style={styles.cartItemPrice}>${lineTotal.toFixed(2)}</span>
+                  )}
+                </div>
+                {cartItem.options && cartItem.options.length > 0 && (
+                  <div style={styles.cartItemOptions}>
+                    {cartItem.options.map((option, optIdx) => {
+                      const colonIdx = option.indexOf(":");
+                      const label = colonIdx > -1 ? option.slice(0, colonIdx) : null;
+                      const value = colonIdx > -1 ? option.slice(colonIdx + 1).trim() : option;
+                      return (
+                        <div key={optIdx} style={styles.cartOptionRow}>
+                          {label ? (
+                            <>
+                              <span style={styles.cartOptionLabel}>{label}</span>
+                              <span style={styles.cartOptionValue}>{value}</span>
+                            </>
+                          ) : (
+                            <span style={styles.cartOptionValue}>{option}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {cartItem.extraDetails && (
+                  <div style={styles.cartItemNote}>
+                    <span style={styles.cartOptionLabel}>Note</span>
+                    <span style={styles.cartOptionValue}>{cartItem.extraDetails}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {element?.cartNote && (
+            <div style={styles.orderNote}>
+              <span style={styles.cartOptionLabel}>Order Note</span>
+              <span style={styles.cartOptionValue}>{element.cartNote}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -376,12 +425,63 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     overflow: "auto",
     padding: "0 20px 16px",
+    gap: 0,
   },
-  cartDetails: {
+  cartItemBlock: {
+    padding: "12px 0",
+    borderBottom: "1px solid #f1f5f9",
+  },
+  cartItemHeader: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  cartItemName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0f172a",
+    flex: 1,
+  },
+  cartItemPrice: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0f172a",
+    flexShrink: 0,
+  },
+  cartItemOptions: {
+    marginTop: 6,
+    gap: 2,
+    paddingLeft: 2,
+  },
+  cartOptionRow: {
+    padding: "2px 0",
+  },
+  cartOptionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748b",
+    display: "block",
+  },
+  cartOptionValue: {
     fontSize: 13,
+    fontWeight: "500",
     color: "#334155",
-    lineHeight: "1.7",
-    whiteSpace: "pre-line" as const,
+    display: "block",
+    lineHeight: "1.4",
+  },
+  cartItemNote: {
+    marginTop: 6,
+    padding: "6px 8px",
+    backgroundColor: "#fef3c7",
+    borderRadius: 6,
+  },
+  orderNote: {
+    marginTop: 12,
+    padding: "8px 10px",
+    backgroundColor: "#fef3c7",
+    borderRadius: 6,
   },
   footer: {
     display: "flex",

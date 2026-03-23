@@ -56,7 +56,7 @@ const TableOrderView = () => {
 
     // Update pending order with payment details and free up the table
     db.collection("users")
-      .doc(auth.currentUser.uid)
+      .doc(auth.currentUser?.uid)
       .collection("pendingOrders")
       .doc(tableOrderTarget.id)
       .update({

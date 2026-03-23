@@ -16,12 +16,6 @@ import PhoneOrderModal from "shared/components/modals/PhoneOrderModal/PhoneOrder
 import SavedCustomersModal from "shared/components/modals/SavedCustomersModal/SavedCustomersModal";
 import ClockInModal from "shared/components/modals/ClockInModal/ClockInModal";
 import LeftMenuBar from "./components/Products/LeftMenuBar";
-import pendingOrderIcon from "assets/images/pendingOrderIcon.png";
-import clockInIcon from "assets/images/clockInIcon.png";
-import phoneOrderIcon from "assets/images/phoneOrderIcon.png";
-import percentIcon from "assets/images/percentIcon.png";
-import dollarSignIcon from "assets/images/dollarSignIcon.png";
-import settingsIcon from "assets/images/settingsIcon.png";
 import { settingsAuthState } from "store/appState";
 import { useHistory } from "react-router-dom";
 import Cart from "./components/Cart/Cart";
@@ -35,7 +29,7 @@ import CartMobile from "./components/CartMobile";
 import TableFloorView from "./components/Tables/TableFloorView";
 import OpenTableModal from "./components/Tables/OpenTableModal";
 import TableOrderView from "./components/Tables/TableOrderView";
-import { FiLogOut, FiShoppingCart, FiMenu, FiX, FiSearch } from "react-icons/fi";
+import { FiLogOut, FiShoppingCart, FiMenu, FiX, FiSearch, FiHome, FiGrid, FiClipboard, FiClock, FiPhone, FiPercent, FiDollarSign, FiSettings } from "react-icons/fi";
 import useWindowSize from "shared/hooks/useWindowSize";
 const CategorySection = React.lazy(
   () => import("./components/Products/CategorySection")
@@ -233,13 +227,14 @@ function PosScreen() {
             <FiX size={22} color="#333" />
           </button>
           {[
-            ...(activePlan === "professional" ? [{ label: "Tables", icon: settingsIcon, action: () => { updatePosState({ tableViewActive: true }); setMobileMenuOpen(false); } }] : []),
-            { label: "Pending Orders", icon: pendingOrderIcon, action: () => { updatePosState({ ongoingOrderListModal: true }); setMobileMenuOpen(false); } },
-            { label: "Clock In", icon: clockInIcon, action: () => { updatePosState({ clockinModal: true }); setMobileMenuOpen(false); } },
-            { label: "Phone Order", icon: phoneOrderIcon, action: () => { updatePosState({ deliveryModal: true }); setMobileMenuOpen(false); } },
-            { label: "Discount", icon: percentIcon, action: () => { updatePosState({ discountModal: true }); setMobileMenuOpen(false); } },
-            { label: "Custom Cash", icon: dollarSignIcon, action: () => { updatePosState({ customCashModal: true }); setMobileMenuOpen(false); } },
-            { label: "Settings", icon: settingsIcon, action: () => {
+            { label: "Home", Icon: FiHome, action: () => { updatePosState({ tableViewActive: false, ongoingOrderListModal: false, clockinModal: false, deliveryModal: false, discountModal: false, customCashModal: false }); setMobileMenuOpen(false); } },
+            ...(activePlan === "professional" ? [{ label: "Tables", Icon: FiGrid, action: () => { updatePosState({ tableViewActive: true }); setMobileMenuOpen(false); } }] : []),
+            { label: "Pending Orders", Icon: FiClipboard, action: () => { updatePosState({ ongoingOrderListModal: true }); setMobileMenuOpen(false); } },
+            { label: "Clock In", Icon: FiClock, action: () => { updatePosState({ clockinModal: true }); setMobileMenuOpen(false); } },
+            { label: "Phone Order", Icon: FiPhone, action: () => { updatePosState({ deliveryModal: true }); setMobileMenuOpen(false); } },
+            { label: "Discount", Icon: FiPercent, action: () => { updatePosState({ discountModal: true }); setMobileMenuOpen(false); } },
+            { label: "Custom Cash", Icon: FiDollarSign, action: () => { updatePosState({ customCashModal: true }); setMobileMenuOpen(false); } },
+            { label: "Settings", Icon: FiSettings, action: () => {
               setMobileMenuOpen(false);
               if (storeDetails.settingsPassword?.length > 0) {
                 updatePosState({ settingsPasswordModalVis: true });
@@ -266,7 +261,7 @@ function PosScreen() {
                 textAlign: "left",
               }}
             >
-              <img src={item.icon} style={{ width: 22, height: 22 }} alt="" />
+              <item.Icon size={22} color="#1e293b" />
               <span style={{ fontSize: 15, color: "#1a1a1a", fontWeight: "500" }}>{item.label}</span>
             </button>
           ))}

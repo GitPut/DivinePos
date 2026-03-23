@@ -158,9 +158,11 @@ const Print = ({ ...props }: PrintProps) => {
       const indexOfCustomer = customers.findIndex(
         (customer) => customer.id === savedCustomerDetails.id
       );
-      const newCustomers = structuredClone(customers);
-      newCustomers[indexOfCustomer].orders = newOrders;
-      setCustomersState(newCustomers);
+      if (indexOfCustomer >= 0) {
+        const newCustomers = structuredClone(customers);
+        newCustomers[indexOfCustomer].orders = newOrders;
+        setCustomersState(newCustomers);
+      }
     }
 
     const transNum = Math.random().toString(36).substr(2, 9);
@@ -364,6 +366,8 @@ const Print = ({ ...props }: PrintProps) => {
     setCartState([]);
     resetPosState();
   } catch (error) {
+    console.error("Print/order error:", error);
+    alert("An error occurred while processing the order. Please try again.");
   }
 };
 
@@ -417,7 +421,7 @@ export const sendTableOrder = async (props: {
   try {
     await db
       .collection("users")
-      .doc(auth.currentUser.uid)
+      .doc(auth.currentUser?.uid)
       .collection("pendingOrders")
       .doc(activeTableSessionId)
       .update({

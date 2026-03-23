@@ -112,37 +112,49 @@ const KitchenViewOrders = () => {
                   <div style={styles.itemsList}>
                     {(order.cart ?? []).map((item, idx) => {
                       const qty = parseFloat(item.quantity ?? "1");
-                      const price = parseFloat(item.price ?? "0");
                       return (
                         <div
                           key={idx}
                           style={{
                             ...styles.cartItem,
                             ...(idx < (order.cart?.length ?? 0) - 1
-                              ? { borderBottom: "1px solid #f1f5f9" }
+                              ? { borderBottom: "1px dashed #e2e8f0" }
                               : {}),
                           }}
                         >
-                          <div style={styles.cartItemLeft}>
+                          <div style={styles.cartItemTop}>
                             <div style={styles.qtyBadge}>
                               <span style={styles.qtyText}>{qty}</span>
                             </div>
-                            <div style={styles.itemInfo}>
-                              <span style={styles.cartItemName}>{item.name}</span>
-                              {item.options && item.options.length > 0 && (
-                                <span style={styles.itemOptions}>
-                                  {item.options.slice(0, 3).join(" · ")}
-                                  {item.options.length > 3 ? ` +${item.options.length - 3}` : ""}
-                                </span>
-                              )}
-                              {item.extraDetails && (
-                                <span style={styles.itemNote}>Note: {item.extraDetails}</span>
-                              )}
-                            </div>
+                            <span style={styles.cartItemName}>{item.name}</span>
                           </div>
-                          <span style={styles.cartItemPrice}>
-                            ${(price * qty).toFixed(2)}
-                          </span>
+                          {item.options && item.options.length > 0 && (
+                            <div style={styles.optionsList}>
+                              {item.options.map((option, optIdx) => {
+                                const colonIdx = option.indexOf(":");
+                                const label = colonIdx > -1 ? option.slice(0, colonIdx) : null;
+                                const value = colonIdx > -1 ? option.slice(colonIdx + 1).trim() : option;
+                                return (
+                                  <div key={optIdx} style={styles.optionRow}>
+                                    {label ? (
+                                      <>
+                                        <span style={styles.optionLabel}>{label}</span>
+                                        <span style={styles.optionValue}>{value}</span>
+                                      </>
+                                    ) : (
+                                      <span style={styles.optionValue}>{option}</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {item.extraDetails && (
+                            <div style={styles.itemNoteBox}>
+                              <span style={styles.itemNoteLabel}>NOTE</span>
+                              <span style={styles.itemNoteText}>{item.extraDetails}</span>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -151,7 +163,8 @@ const KitchenViewOrders = () => {
                   {/* Order note */}
                   {order.cartNote && (
                     <div style={styles.noteRow}>
-                      <span style={styles.noteText}>Note: {order.cartNote}</span>
+                      <span style={styles.noteLabel}>ORDER NOTE</span>
+                      <span style={styles.noteText}>{order.cartNote}</span>
                     </div>
                   )}
 
@@ -310,89 +323,105 @@ const styles: Record<string, React.CSSProperties> = {
   // Items
   itemsList: {
     flex: 1,
-    padding: "4px 18px",
-    maxHeight: 220,
+    padding: "0 18px",
+    maxHeight: 450,
     overflowY: "auto" as const,
   },
   cartItem: {
     display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "8px 0",
+    flexDirection: "column",
+    padding: "12px 0",
+    gap: 6,
   },
-  cartItemLeft: {
+  cartItemTop: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    flex: 1,
-    minWidth: 0,
+    gap: 10,
   },
   qtyBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
-    backgroundColor: "#f1f5f9",
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#1D294E",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   qtyText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  itemInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 1,
-    flex: 1,
-    minWidth: 0,
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#fff",
   },
   cartItemName: {
-    fontWeight: "600",
-    color: "#0f172a",
-    fontSize: 13,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
-  },
-  itemOptions: {
-    fontSize: 11,
-    color: "#94a3b8",
-    fontWeight: "500",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
-  },
-  itemNote: {
-    fontSize: 11,
-    color: "#f59e0b",
-    fontWeight: "500",
-    fontStyle: "italic" as const,
-  },
-  cartItemPrice: {
     fontWeight: "700",
     color: "#0f172a",
+    fontSize: 15,
+    flex: 1,
+  },
+  optionsList: {
+    marginLeft: 40,
+    gap: 2,
+  },
+  optionRow: {
+    padding: "2px 0",
+  },
+  optionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748b",
+    display: "block",
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.3,
+  },
+  optionValue: {
     fontSize: 13,
-    flexShrink: 0,
-    marginLeft: 8,
+    fontWeight: "600",
+    color: "#0f172a",
+    display: "block",
+    lineHeight: "1.4",
+  },
+  itemNoteBox: {
+    marginLeft: 40,
+    marginTop: 2,
+    padding: "5px 8px",
+    backgroundColor: "#fef3c7",
+    borderRadius: 6,
+    borderLeft: "3px solid #f59e0b",
+  },
+  itemNoteLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#92400e",
+    letterSpacing: 0.5,
+    display: "block",
+  },
+  itemNoteText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#92400e",
+    display: "block",
   },
   // Note
   noteRow: {
-    padding: "6px 18px",
-    backgroundColor: "#fffbeb",
-    borderTop: "1px solid #fef3c7",
+    padding: "10px 18px",
+    backgroundColor: "#fef3c7",
+    borderTop: "1px solid #fde68a",
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  },
+  noteLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#92400e",
+    letterSpacing: 0.5,
   },
   noteText: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600",
     color: "#92400e",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
   },
   // Footer
   orderFooter: {

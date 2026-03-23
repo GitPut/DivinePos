@@ -154,12 +154,8 @@ function MultiSelectOptionGroup({
               key={option.id ?? listIndex}
               style={{
                 ...styles.gridItem,
-                ...(isSelected
-                  ? {
-                      backgroundColor: "#eef2ff",
-                      borderColor: "#1e293b",
-                    }
-                  : {}),
+                backgroundColor: isSelected ? "#eef2ff" : "#ffffff",
+                borderColor: isSelected ? "#1e293b" : "#e2e8f0",
               }}
             >
               <div style={styles.gridItemLeft}>

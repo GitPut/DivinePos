@@ -5,8 +5,16 @@ type FieldInputProps = {
   label?: string;
   customInput?: React.ComponentType<any>;
   customInputProps?: object;
+  renderCustomInput?: () => React.ReactNode;
   txtInput?: string;
   value?: string;
+  contrast?: {
+    text: string;
+    textMuted: string;
+    inputBg: string;
+    inputBorder: string;
+    inputText: string;
+  };
   textContentType?:
     | "none"
     | "URL"
@@ -61,15 +69,24 @@ const FieldInput = memo((props: FieldInputProps) => {
 
   return (
     <div style={containerStyle}>
-      <span style={styles.label}>{props.label || "Label"}</span>
-      {props.customInput ? (
+      <span style={{ ...styles.label, ...(props.contrast ? { color: props.contrast.textMuted } : {}) }}>{props.label || "Label"}</span>
+      {props.renderCustomInput ? (
+        props.renderCustomInput()
+      ) : props.customInput ? (
         React.createElement(props.customInput, {
           ...props.customInputProps,
         })
       ) : (
         <input
           placeholder={props.txtInput || "Placeholder"}
-          style={styles.txtInput}
+          style={{
+            ...styles.txtInput,
+            ...(props.contrast ? {
+              color: props.contrast.inputText,
+              backgroundColor: props.contrast.inputBg,
+              borderColor: props.contrast.inputBorder,
+            } : {}),
+          }}
           value={props.value}
           onChange={(e) => props.onChangeText?.(e.target.value)}
           maxLength={props.maxLength}
@@ -85,6 +102,8 @@ function areEqual(
   prevProps: FieldInputProps,
   nextProps: FieldInputProps
 ) {
+  if (prevProps.renderCustomInput || nextProps.renderCustomInput) return false;
+  if (prevProps.customInput || nextProps.customInput) return false;
   return prevProps.value === nextProps.value;
 }
 

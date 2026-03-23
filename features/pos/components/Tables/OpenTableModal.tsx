@@ -38,7 +38,7 @@ const OpenTableModal = () => {
 
       const docRef = await db
         .collection("users")
-        .doc(auth.currentUser.uid)
+        .doc(auth.currentUser?.uid)
         .collection("pendingOrders")
         .add({
           date: now,

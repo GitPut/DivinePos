@@ -8,6 +8,7 @@ import {
   onlineStoreState,
 } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
+import { getContrastStyles } from "utils/colorContrast";
 
 function OnlineOrderHomeDelivery() {
   const storeDetails = storeDetailsState.use();
@@ -15,6 +16,7 @@ function OnlineOrderHomeDelivery() {
   const onlineStore = onlineStoreState.use();
   const { width: screenWidth } = useWindowSize();
   const isMobile = screenWidth < 640;
+  const c = getContrastStyles(onlineStore.brandColor || "#0d0d0d");
 
   const handleBack = () => {
     setOrderDetailsState({ ...orderDetails, delivery: false, address: null });
@@ -24,28 +26,28 @@ function OnlineOrderHomeDelivery() {
   return (
     <div style={{ ...styles.page, backgroundColor: onlineStore.brandColor || "#0d0d0d" }}>
       {/* Header bar */}
-      <div style={styles.header}>
-        <button style={styles.backBtn} onClick={handleBack}>
-          <FiArrowLeft size={18} color="#fff" />
+      <div style={{ ...styles.header, borderBottomColor: c.divider }}>
+        <button style={{ ...styles.backBtn, backgroundColor: c.overlay, borderColor: c.overlayBorder }} onClick={handleBack}>
+          <FiArrowLeft size={18} color={c.text} />
         </button>
-        <span style={styles.headerTitle}>{storeDetails.name}</span>
+        <span style={{ ...styles.headerTitle, color: c.textMuted }}>{storeDetails.name}</span>
         <div style={{ width: 40 }} />
       </div>
 
       {/* Centered content */}
       <div style={styles.center}>
         <div style={{ ...styles.formBox, maxWidth: isMobile ? "100%" : 400 }}>
-          <div style={styles.iconCircle}>
-            <FiTruck size={20} color="#1D294E" />
+          <div style={{ ...styles.iconCircle, backgroundColor: c.btnBg }}>
+            <FiTruck size={20} color={c.btnText} />
           </div>
-          <span style={styles.title}>Delivery Order</span>
-          <span style={styles.subtitle}>
+          <span style={{ ...styles.title, color: c.text }}>Delivery Order</span>
+          <span style={{ ...styles.subtitle, color: c.textFaint }}>
             Enter your details and address — we'll bring it to you
             {storeDetails.deliveryPrice && parseFloat(storeDetails.deliveryPrice) > 0
               ? ` ($${parseFloat(storeDetails.deliveryPrice).toFixed(2)} delivery fee)`
               : ""}
           </span>
-          <DeliveryDetails />
+          <DeliveryDetails contrast={c} />
         </div>
       </div>
     </div>

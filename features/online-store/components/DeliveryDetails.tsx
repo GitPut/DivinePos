@@ -11,8 +11,9 @@ import {
 } from "store/appState";
 import { AddressType } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
+import { sanitizePhone, isValidPhone, isValidFullName } from "utils/phoneValidation";
 
-function DeliveryDetails() {
+function DeliveryDetails({ contrast }: { contrast?: any }) {
   const orderDetails = orderDetailsState.use();
   const storeDetails = storeDetailsState.use();
   const [localName, setlocalName] = useState(orderDetails.customer.name);
@@ -111,21 +112,23 @@ function DeliveryDetails() {
           onChangeText={(text) => setlocalName(text)}
           textContentType="name"
           maxLength={25}
+          contrast={contrast}
         />
         <FieldInput
           txtInput="(123) 456-7890"
           label="Phone Number"
           style={styles.field}
           value={localPhoneNumber}
-          onChangeText={(text) => setlocalPhoneNumber(text)}
+          onChangeText={(text) => setlocalPhoneNumber(sanitizePhone(text))}
           textContentType="telephoneNumber"
           maxLength={10}
+          contrast={contrast}
         />
         <FieldInput
           txtInput="Delivery Address"
           label="Delivery Address"
           style={styles.field}
-          customInput={() => (
+          renderCustomInput={() => (
             <GooglePlacesAutocomplete
               apiOptions={{
                 region: "CA",
@@ -150,6 +153,7 @@ function DeliveryDetails() {
             value={localBuzzCode}
             onChangeText={(text) => setlocalBuzzCode(text)}
             textContentType="none"
+            contrast={contrast}
           />
           <FieldInput
             txtInput="Unit #"
@@ -158,19 +162,31 @@ function DeliveryDetails() {
             value={localUnitNumber}
             onChangeText={(text) => setlocalUnitNumber(text)}
             textContentType="none"
+            contrast={contrast}
           />
         </div>
       </div>
       <button
         style={{
           ...styles.continueBtn,
+          ...(contrast ? { backgroundColor: contrast.btnBg } : {}),
           ...(isDisabled ? { opacity: 0.5, cursor: "not-allowed" } : {}),
         }}
         disabled={isDisabled}
         onClick={() => {
           setcheckingDeliveryRange(true);
-          if (localName === "" || localPhoneNumber === "" || !localAddress)
+          if (localName === "" || localPhoneNumber === "" || !localAddress) {
+            setcheckingDeliveryRange(false);
             return alertP.error("Please fill in all fields");
+          }
+          if (!isValidFullName(localName)) {
+            setcheckingDeliveryRange(false);
+            return alertP.error("Please enter your full name (first and last)");
+          }
+          if (!isValidPhone(localPhoneNumber)) {
+            setcheckingDeliveryRange(false);
+            return alertP.error("Please enter a valid 10-digit phone number");
+          }
 
           calculateDistanceBetweenAddresses(
             storeDetails.address?.value?.reference ?? "",
@@ -212,15 +228,15 @@ function DeliveryDetails() {
                 setcheckingDeliveryRange(false);
               }
             } else {
-              alert(
-                "Distance calculation between the store and your location failed. Please refresh page.",
+              alertP.error(
+                "Distance calculation failed. Please try selecting your address again.",
               );
               setcheckingDeliveryRange(false);
             }
           });
         }}
       >
-        <span style={styles.continueBtnTxt}>
+        <span style={{ ...styles.continueBtnTxt, ...(contrast ? { color: contrast.btnText } : {}) }}>
           {checkingDeliveryRange ? "Checking..." : "Continue"}
         </span>
       </button>

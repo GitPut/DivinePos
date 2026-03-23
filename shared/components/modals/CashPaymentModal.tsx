@@ -113,7 +113,7 @@ const CashPaymentModal = () => {
                   });
                 } else if (!val) {
                   setCash("");
-                  updatePosState({ changeDue: total });
+                  updatePosState({ changeDue: "0.00" });
                 }
               }}
               onKeyDown={handleKeyDown}
@@ -126,8 +126,8 @@ const CashPaymentModal = () => {
             <span style={styles.changeDueValue}>
               $
               {parseFloat(cash) > 0
-                ? (parseFloat(total) - parseFloat(cash)).toFixed(2)
-                : total}
+                ? (parseFloat(cash) - parseFloat(total)).toFixed(2)
+                : "0.00"}
             </span>
           </div>
 

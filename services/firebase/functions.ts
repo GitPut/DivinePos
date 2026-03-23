@@ -14,7 +14,7 @@ import { auth, db, STRIPE_PUBLIC_KEY } from "./config";
 import { logSystemEvent } from "./systemLogging";
 import { loadStripe } from "@stripe/stripe-js";
 import firebase from "firebase/compat/app";
-import { Timestamp } from "firebase/firestore";
+const Timestamp = firebase.firestore.Timestamp;
 import {
   ingredientsState,
   onlineStoreState,

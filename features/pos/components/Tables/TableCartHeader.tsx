@@ -6,7 +6,8 @@ import { FiArrowLeft, FiUsers, FiClock } from "react-icons/fi";
 import { parseDate } from "utils/dateFormatting";
 import { setCartState } from "store/appState";
 import { auth, db } from "services/firebase/config";
-import { cartState } from "store/appState";
+import { cartState, storeDetailsState } from "store/appState";
+import { calculateCartTotals } from "utils/cartCalculations";
 
 const TableCartHeader = () => {
   const { activeTableId, activeTableSessionId, ongoingListState } = posState.use(
@@ -49,17 +50,16 @@ const TableCartHeader = () => {
   useEffect(() => {
     if (!activeTableSessionId || !auth.currentUser) return;
     const timeout = setTimeout(() => {
-      const total = cart.reduce((sum, item) => {
-        return sum + parseFloat(item.price || "0") * parseFloat(item.quantity || "1");
-      }, 0);
+      const storeDetails = storeDetailsState.get();
+      const totals = calculateCartTotals(cart, storeDetails.taxRate, storeDetails.deliveryPrice, false);
 
       db.collection("users")
-        .doc(auth.currentUser!.uid)
+        .doc(auth.currentUser?.uid)
         .collection("pendingOrders")
         .doc(activeTableSessionId)
         .update({
           cart,
-          total: total.toFixed(2),
+          total: totals.itemsSubtotal.toFixed(2),
         })
         .catch(() => {});
     }, 2000);

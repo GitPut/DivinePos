@@ -63,7 +63,7 @@ function ProductOptionBox({
           {product.category ? (
             <span style={listStyles.categoryBadge}>{product.category}</span>
           ) : (
-            <span style={listStyles.noneText}>\u2014</span>
+            <span style={listStyles.categoryBadge}>No Category</span>
           )}
         </div>
         {/* Options count */}

@@ -2,10 +2,11 @@ import React from "react";
 import { tablesState, tableSectionsState, cartState } from "store/appState";
 import { posState, updatePosState } from "store/posState";
 import { shallowEqual } from "simpler-state";
-import { TransListStateItem, Table, CartItemProp } from "types";
+import { TransListStateItem, Table } from "types";
 import TableCard from "./TableCard";
-import { setCartState } from "store/appState";
+import { setCartState, storeDetailsState } from "store/appState";
 import { auth, db } from "services/firebase/config";
+import { calculateCartTotals } from "utils/cartCalculations";
 
 const TableFloorView = () => {
   const tables = tablesState.use();
@@ -24,23 +25,23 @@ const TableFloorView = () => {
   };
 
   const saveCurrentCart = () => {
-    if (!activeTableId) return;
+    if (!activeTableId || !auth.currentUser) return;
     const currentSession = ongoingListState.find(
       (o) => o.tableId === activeTableId && o.method === "tableOrder"
     );
     if (!currentSession) return;
     const cart = cartState.get();
     if (!cart || cart.length === 0) return;
+    const storeDetails = storeDetailsState.get();
+    const totals = calculateCartTotals(cart, storeDetails.taxRate, storeDetails.deliveryPrice, false);
 
     db.collection("users")
-      .doc(auth.currentUser?.uid)
+      .doc(auth.currentUser.uid)
       .collection("pendingOrders")
       .doc(currentSession.id)
       .update({
         cart,
-        total: cart.reduce((sum: number, item: CartItemProp) => {
-          return sum + parseFloat(item.price || "0") * parseFloat(item.quantity || "1");
-        }, 0).toFixed(2),
+        total: totals.itemsSubtotal.toFixed(2),
       })
       .catch(() => {});
   };

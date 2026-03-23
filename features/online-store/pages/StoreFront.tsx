@@ -1,5 +1,5 @@
-import React from "react";
-import { FiShoppingBag, FiTruck } from "react-icons/fi";
+import React, { useRef, useEffect } from "react";
+import { FiShoppingBag, FiTruck, FiPhone, FiMapPin } from "react-icons/fi";
 import {
   orderDetailsState,
   setOrderDetailsState,
@@ -8,6 +8,8 @@ import {
 } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
 import heroPizza from "assets/images/hero-pizza.png";
+import { getContrastStyles } from "utils/colorContrast";
+import { formatPhone } from "utils/phoneValidation";
 
 function StoreFront() {
   const storeDetails = storeDetailsState.use();
@@ -17,7 +19,34 @@ function StoreFront() {
   const { width: screenWidth } = useWindowSize();
   const isMobile = screenWidth < 700;
   const bgColor = onlineStore.brandColor || "#0d0d0d";
+  const c = getContrastStyles(bgColor);
   const storeTagline = onlineStore.tagline || "Fresh, hot, and made to order.\nChoose how you'd like to get your food.";
+  const pizzaRef = useRef<HTMLImageElement>(null);
+
+  // Interactive pizza — follows mouse with parallax
+  useEffect(() => {
+    if (isMobile) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!pizzaRef.current) return;
+      const x = (e.clientX / window.innerWidth - 0.5) * 20;
+      const y = (e.clientY / window.innerHeight - 0.5) * 20;
+      pizzaRef.current.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
+    };
+    const handleMouseLeave = () => {
+      if (pizzaRef.current) {
+        pizzaRef.current.style.transform = "translate(0, 0) scale(1)";
+      }
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [isMobile]);
+
+  const addressText = storeDetails.address?.value?.structured_formatting?.main_text;
+  const addressFull = storeDetails.address?.value?.description || storeDetails.address?.label;
 
   const handleLogoClick = () => {
     if (page === 5) {
@@ -41,8 +70,8 @@ function StoreFront() {
           {hasLogo ? (
             <img src={storeDetails.logoUrl!} style={styles.logoImg} alt="" />
           ) : (
-            <div style={styles.logoFallback}>
-              <span style={styles.logoLetter}>
+            <div style={{ ...styles.logoFallback, backgroundColor: c.overlay, borderColor: c.overlayBorder }}>
+              <span style={{ ...styles.logoLetter, color: c.text }}>
                 {(storeDetails.name || "S").charAt(0)}
               </span>
             </div>
@@ -53,22 +82,32 @@ function StoreFront() {
         <div style={styles.textContent}>
           <h1 style={{
             ...styles.storeName,
+            color: c.text,
             fontSize: isMobile ? 34 : 46,
           }}>
             {storeDetails.name}
           </h1>
 
-          <p style={styles.subtitle}>{storeTagline}</p>
+          <p style={{ ...styles.subtitle, color: c.textFaint }}>{storeTagline}</p>
 
           {/* Info chips */}
           <div style={styles.infoRow}>
             {storeDetails.phoneNumber && (
-              <span style={styles.infoChip}>{storeDetails.phoneNumber}</span>
+              <a href={`tel:${storeDetails.phoneNumber}`} style={{ ...styles.infoChip, color: c.textFaint, borderColor: c.divider, textDecoration: "none" }}>
+                <FiPhone size={12} color={c.textFaint} />
+                {formatPhone(storeDetails.phoneNumber)}
+              </a>
             )}
-            {storeDetails.address?.value?.structured_formatting?.main_text && (
-              <span style={styles.infoChip}>
-                {storeDetails.address.value.structured_formatting.main_text}
-              </span>
+            {addressText && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressFull || addressText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ ...styles.infoChip, color: c.textFaint, borderColor: c.divider, textDecoration: "none" }}
+              >
+                <FiMapPin size={12} color={c.textFaint} />
+                {addressText}
+              </a>
             )}
           </div>
         </div>
@@ -76,29 +115,31 @@ function StoreFront() {
         {/* CTA Buttons — stacked */}
         <div style={styles.ctaGroup}>
           <button
-            style={styles.pickupBtn}
+            className={c.isLight ? "online-store-cta-btn-light" : "online-store-cta-btn"}
+            style={{ ...styles.ctaBtn, backgroundColor: c.overlay, borderColor: c.overlayBorder }}
             onClick={() => setOrderDetailsState({ page: 2 })}
           >
-            <div style={styles.iconCircle}>
-              <FiShoppingBag size={20} color="#1D294E" />
+            <div style={{ ...styles.ctaIconCircle, backgroundColor: c.iconCircleBg }}>
+              <FiShoppingBag size={20} color={c.text} />
             </div>
             <div style={styles.btnTextGroup}>
-              <span style={styles.btnTitle}>Pickup</span>
-              <span style={styles.btnDesc}>Ready when you arrive</span>
+              <span style={{ ...styles.ctaBtnTitle, color: c.text }}>Pickup</span>
+              <span style={{ ...styles.ctaBtnDesc, color: c.textMuted }}>Ready when you arrive</span>
             </div>
           </button>
 
           {storeDetails.acceptDelivery && (
             <button
-              style={styles.deliveryBtn}
+              className={c.isLight ? "online-store-cta-btn-light" : "online-store-cta-btn"}
+              style={{ ...styles.ctaBtn, backgroundColor: c.overlay, borderColor: c.overlayBorder }}
               onClick={() => setOrderDetailsState({ ...orderDetails, delivery: true, page: 3 })}
             >
-              <div style={styles.deliveryIconCircle}>
-                <FiTruck size={20} color="#fff" />
+              <div style={{ ...styles.ctaIconCircle, backgroundColor: c.iconCircleBg }}>
+                <FiTruck size={20} color={c.text} />
               </div>
               <div style={styles.btnTextGroup}>
-                <span style={styles.deliveryBtnTitle}>Delivery</span>
-                <span style={styles.deliveryBtnDesc}>
+                <span style={{ ...styles.ctaBtnTitle, color: c.text }}>Delivery</span>
+                <span style={{ ...styles.ctaBtnDesc, color: c.textMuted }}>
                   Straight to your door
                   {storeDetails.deliveryPrice && parseFloat(storeDetails.deliveryPrice) > 0
                     ? ` · $${parseFloat(storeDetails.deliveryPrice).toFixed(2)}`
@@ -110,13 +151,13 @@ function StoreFront() {
         </div>
 
         {/* Footer */}
-        <span style={styles.poweredBy}>Powered by Divine POS</span>
+        <span style={{ ...styles.poweredBy, color: c.textFaint }}> Powered by Divine POS</span>
       </div>
 
       {/* Right side — hero pizza image (desktop only) */}
       {!isMobile && (
         <div style={styles.rightPanel}>
-          <img src={heroPizza} style={styles.heroImg} alt="" />
+          <img ref={pizzaRef} src={heroPizza} style={styles.heroImg} alt="" />
         </div>
       )}
     </div>
@@ -204,6 +245,12 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "5px 12px",
     borderRadius: 20,
     border: "1px solid rgba(255,255,255,0.06)",
+    display: "flex",
+    flexDirection: "row" as const,
+    alignItems: "center",
+    gap: 6,
+    cursor: "pointer",
+    transition: "opacity 0.2s",
   },
   ctaGroup: {
     display: "flex",
@@ -212,11 +259,11 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     maxWidth: 400,
   },
-  pickupBtn: {
+  ctaBtn: {
     width: "100%",
     height: 70,
-    backgroundColor: "#fff",
-    border: "none",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
     borderRadius: 16,
     display: "flex",
     flexDirection: "row" as const,
@@ -224,22 +271,13 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 14,
     padding: "0 20px",
     cursor: "pointer",
+    transition: "background-color 0.2s, border-color 0.2s",
   },
-  iconCircle: {
+  ctaIconCircle: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: "#f0f4ff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  deliveryIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.1)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -251,37 +289,14 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "flex-start",
     gap: 1,
   },
-  btnTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#1D294E",
-  },
-  btnDesc: {
-    fontSize: 12,
-    color: "#64748b",
-    fontWeight: "400",
-  },
-  deliveryBtn: {
-    width: "100%",
-    height: 70,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 16,
-    display: "flex",
-    flexDirection: "row" as const,
-    alignItems: "center",
-    gap: 14,
-    padding: "0 20px",
-    cursor: "pointer",
-  },
-  deliveryBtnTitle: {
+  ctaBtnTitle: {
     fontSize: 16,
     fontWeight: "800",
     color: "#fff",
   },
-  deliveryBtnDesc: {
+  ctaBtnDesc: {
     fontSize: 12,
-    color: "rgba(255,255,255,0.35)",
+    color: "rgba(255,255,255,0.5)",
     fontWeight: "400",
   },
   poweredBy: {
@@ -300,6 +315,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: "100%",
     objectFit: "cover" as const,
     objectPosition: "left center",
+    transition: "transform 0.3s ease-out",
   },
 };
 

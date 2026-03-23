@@ -10,7 +10,7 @@ const menuItems = [
   { key: "tables", label: "Tables", Icon: FiGrid },
   { key: "orders", label: "Orders", Icon: FiClipboard },
   { key: "clockin", label: "Clock In", Icon: FiClock },
-  { key: "delivery", label: "Delivery", Icon: FiPhone },
+  { key: "delivery", label: "Phone Order", Icon: FiPhone },
   { key: "discount", label: "Discount", Icon: FiPercent },
   { key: "cash", label: "Cash", Icon: FiDollarSign },
 ];

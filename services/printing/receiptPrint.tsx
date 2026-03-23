@@ -5,21 +5,28 @@ import {
 } from "types";
 import { parseDate } from "utils/dateFormatting";
 
+// ESC/POS control codes
+const LF = "\x0A";
+const INIT = "\x1B" + "\x40";
+const CENTER = "\x1B" + "\x61" + "\x31";
+const LEFT = "\x1B" + "\x61" + "\x30";
+const CUT = "\x1D" + "\x56" + "\x30";
+const CASH_DRAWER = "\x10" + "\x14" + "\x01" + "\x00" + "\x05";
+const DIVIDER = "------------------------------------------";
+
 function receiptPrint(
   element: TransListStateItem,
   storeDetails: StoreDetailsProps,
   reprint?: boolean
 ): { data: string[]; total: number } {
-  let data: string[] = [];
-  let total: number = 0;
+  const data: string[] = [];
+  let subtotal = 0;
 
-  const orderSourceLabel = element.online ? "Online Order" : "";
-
-  let date;
-
+  // Parse date
+  let dateStr = "";
   const parsedDate = parseDate(element.date);
   if (parsedDate) {
-    date = parsedDate.toLocaleString("en-US", {
+    dateStr = parsedDate.toLocaleString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -29,531 +36,150 @@ function receiptPrint(
     });
   }
 
-  if (element.method === "deliveryOrder") {
-    total += parseFloat(
-      storeDetails.deliveryPrice ? storeDetails.deliveryPrice : "0"
-    );
-    data = element.online
-      ? [
-          "\x1B" + "\x40", // init
-          "                                                                              ", // line break
-          "\x0A",
-          "\x1B" + "\x61" + "\x31", // center align
-          storeDetails.name,
-          "\x0A",
-          storeDetails.address?.label + "\x0A",
-          storeDetails.website + "\x0A",
-          storeDetails.phoneNumber + "\x0A",
-          date + "\x0A",
-          "\x0A",
-          orderSourceLabel && orderSourceLabel + "\x0A",
-          `Transaction ID ${element.transNum}` + "\x0A",
-          "\x0A",
-          `Delivery Order: $${
-            storeDetails.deliveryPrice ? storeDetails.deliveryPrice : "0"
-          } Fee` + "\x0A",
-          "\x0A",
-          "\x0A",
-          "\x0A",
-          "\x1B" + "\x61" + "\x30", // left align
-        ]
-      : [
-          "\x1B" + "\x40", // init
-          "                                                                              ",
-          "\x0A",
-          "\x1B" + "\x61" + "\x31", // center align
-          storeDetails.name,
-          "\x0A",
-          storeDetails.address?.label + "\x0A",
-          storeDetails.website + "\x0A",
-          storeDetails.phoneNumber + "\x0A",
-          date + "\x0A",
-          "\x0A",
-          `Transaction ID ${element.transNum}` + "\x0A",
-          "\x0A",
-          `Delivery Order: $${
-            storeDetails.deliveryPrice ? storeDetails.deliveryPrice : "0"
-          } Fee` + "\x0A",
-          "\x0A",
-          "\x0A",
-          "\x0A",
-          "\x1B" + "\x61" + "\x30", // left align
-        ];
+  const isDelivery = element.method === "deliveryOrder";
+  const isPickup = element.method === "pickupOrder";
+  const isTable = element.method === "tableOrder";
+  const isInStore = !isDelivery && !isPickup && !isTable;
+  const isOnline = !!element.online;
+  const taxRate =
+    parseFloat(storeDetails.taxRate) >= 0
+      ? parseFloat(storeDetails.taxRate)
+      : 13;
+  const deliveryFee = isDelivery
+    ? parseFloat(storeDetails.deliveryPrice || "0")
+    : 0;
 
-    element.cart?.map((cartItem: CartItemProp) => {
-      data.push(`Name: ${cartItem.name}`);
-      data.push("\x0A");
+  // ──────── HEADER (centered) ────────
+  data.push(
+    INIT,
+    "                                                                              ",
+    LF,
+    CENTER,
+    storeDetails.name,
+    LF
+  );
+  if (storeDetails.address?.label) data.push(storeDetails.address.label + LF);
+  if (storeDetails.website) data.push(storeDetails.website + LF);
+  if (storeDetails.phoneNumber) data.push(storeDetails.phoneNumber + LF);
+  if (dateStr) data.push(dateStr + LF);
+  data.push(LF);
 
-      if (cartItem.quantity) {
-        if (cartItem.price) {
-          total +=
-            parseFloat(cartItem.price ?? "0") *
-            (parseFloat(cartItem.quantity) ?? 1);
-        }
-        data.push(`Quantity: ${cartItem.quantity}`);
-        if (cartItem.price) {
-          data.push("\x0A");
-          data.push(
-            `Price: $${(
-              parseFloat(cartItem.price ?? "0") *
-              (parseFloat(cartItem.quantity) ?? 1)
-            ).toFixed(2)}`
-          );
-        }
-      } else {
-        if (cartItem.price) {
-          total += parseFloat(cartItem.price);
-          data.push(`Price: $${parseFloat(cartItem.price).toFixed(2)}`);
-        }
-      }
+  if (isOnline) data.push("Online Order" + LF);
+  data.push("Transaction ID " + element.transNum + LF, LF);
 
-      if (cartItem.description) {
-        data.push("\x0A");
-        data.push(cartItem.description);
-      }
-
-      if (cartItem.options) {
-        data.push("\x0A");
-        cartItem.options.map((option) => {
-          data.push(option);
-          data.push("\x0A");
-        });
-      }
-
-      if (cartItem.extraDetails) {
-        data.push("Note: " + cartItem.extraDetails);
-        data.push("\x0A");
-      }
-
-      data.push("\x0A" + "\x0A");
-    });
-
-    total =
-      parseFloat(storeDetails.taxRate) >= 0
-        ? total * (1 + parseFloat(storeDetails.taxRate) / 100)
-        : total * 1.13;
-
-    data.push(
-      "\x0A",
-      "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" + "\x0A",
-      element.cartNote
-        ? "\x0A" + "\x0A" + "Note: " + element.cartNote + "\x0A" + "\x0A"
-        : "\x0A" + "\x0A",
-      "Customer Name: " + element.customer?.name,
-      "\x0A" + "\x0A",
-      "Customer Phone #:  " + element.customer?.phone,
-      "\x0A" + "\x0A",
-      "Customer Address: " + element.customer?.address?.label,
-      "\x0A" + "\x0A",
-      `Unit #: ${
-        element.customer?.unitNumber ? element.customer?.unitNumber : "N/A"
-      }        Buzz Code: ${
-        element.customer?.buzzCode ? element.customer?.buzzCode : "N/A"
-      }\x0A\x0A`,
-      `Total Including (${
-        parseFloat(storeDetails.taxRate) >= 0 ? storeDetails.taxRate : "13"
-      }% Tax): ` +
-        "$" +
-        total.toFixed(2) +
-        "\x0A" +
-        "\x0A",
-      "------------------------------------------" + "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x1D" + "\x56" + "\x30"
-    );
-  } else if (element.method === "pickupOrder") {
-    data = element.online
-      ? [
-          "\x1B" + "\x40", // init
-          "                                                                              ",
-          "\x0A",
-          "\x1B" + "\x61" + "\x31", // center align
-          storeDetails.name,
-          "\x0A",
-          storeDetails.address?.label + "\x0A",
-          storeDetails.website + "\x0A",
-          storeDetails.phoneNumber + "\x0A",
-          date + "\x0A",
-          "\x0A",
-          orderSourceLabel && orderSourceLabel + "\x0A",
-          `Transaction ID ${element.transNum}` + "\x0A",
-          `                                `,
-          "\x0A",
-          "Pickup Order" + "\x0A",
-          "\x0A",
-          "\x0A",
-          "\x1B" + "\x61" + "\x30", // left align
-        ]
-      : [
-          "\x1B" + "\x40", // init
-          "                                                                              ",
-          "\x0A",
-          "\x1B" + "\x61" + "\x31", // center align
-          storeDetails.name,
-          "\x0A",
-          storeDetails.address?.label + "\x0A",
-          storeDetails.website + "\x0A",
-          storeDetails.phoneNumber + "\x0A",
-          date + "\x0A",
-          "\x0A",
-          `Transaction ID ${element.transNum}` + "\x0A",
-          `                                `,
-          "\x0A",
-          "Pickup Order" + "\x0A",
-          "\x0A",
-          "\x0A",
-          "\x1B" + "\x61" + "\x30", // left align
-        ];
-
-    element.cart?.map((cartItem) => {
-      data.push(`Name: ${cartItem.name}`);
-      data.push("\x0A");
-
-      if (cartItem.quantity) {
-        if (cartItem.price) {
-          total += parseFloat(cartItem.price) * parseFloat(cartItem.quantity);
-        }
-        data.push(`Quantity: ${cartItem.quantity}`);
-        if (cartItem.price) {
-          data.push("\x0A");
-          data.push(
-            `Price: $${(parseFloat(cartItem.price) * parseFloat(cartItem.quantity)).toFixed(2)}`
-          );
-        }
-      } else {
-        if (cartItem.price) {
-          total += parseFloat(cartItem.price);
-          data.push(`Price: $${parseFloat(cartItem.price).toFixed(2)}`);
-        }
-      }
-
-      if (cartItem.description) {
-        data.push("\x0A");
-        data.push(cartItem.description);
-      }
-
-      if (cartItem.options) {
-        data.push("\x0A");
-        cartItem.options.map((option) => {
-          data.push(option);
-          data.push("\x0A");
-        });
-      }
-
-      if (cartItem.extraDetails) {
-        data.push("Note: " + cartItem.extraDetails);
-        data.push("\x0A");
-      }
-
-      data.push("\x0A" + "\x0A");
-    });
-
-    total =
-      parseFloat(storeDetails.taxRate) >= 0
-        ? total * (1 + parseFloat(storeDetails.taxRate) / 100)
-        : total * 1.13;
-
-    data.push(
-      "\x0A",
-      "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" + "\x0A",
-      element.cartNote
-        ? "\x0A" + "\x0A" + "Note: " + element.cartNote + "\x0A" + "\x0A"
-        : "\x0A" + "\x0A",
-      "Customer Name: " + element.customer?.name,
-      "\x0A" + "\x0A",
-      "Customer Phone #:  " + element.customer?.phone,
-      "\x0A" + "\x0A",
-      "Customer Address: N/A                            ",
-      "\x0A",
-      `Total Including (${
-        parseFloat(storeDetails.taxRate) >= 0 ? storeDetails.taxRate : "13"
-      }% Tax): ` +
-        "$" +
-        total.toFixed(2) +
-        "\x0A" +
-        "\x0A",
-      "------------------------------------------" + "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x1D" + "\x56" + "\x30"
-    );
-  } else if (element.method === "tableOrder") {
-    const tableInfo = [];
-    if (element.tableName) tableInfo.push(element.tableName);
-    if (element.tableNumber) tableInfo.push(`Table #${element.tableNumber}`);
-    if (element.server) tableInfo.push(`Server: ${element.server}`);
-    if (element.guests) tableInfo.push(`Guests: ${element.guests}`);
-
-    data = [
-      "\x1B" + "\x40", // init
-      "                                                                              ",
-      "\x0A",
-      "\x1B" + "\x61" + "\x31", // center align
-      storeDetails.name,
-      "\x0A",
-      storeDetails.address?.label + "\x0A",
-      storeDetails.website + "\x0A",
-      storeDetails.phoneNumber + "\x0A",
-      date + "\x0A",
-      "\x0A",
-      `Transaction ID ${element.transNum}` + "\x0A",
-      "\x0A",
-      ...tableInfo.map((info) => info + "\x0A"),
-      "\x0A",
-      "\x0A",
-      "\x1B" + "\x61" + "\x30", // left align
-    ];
-
-    element.cart?.map((cartItem) => {
-      data.push(`Name: ${cartItem.name}`);
-      data.push("\x0A");
-
-      if (cartItem.quantity) {
-        if (cartItem.price) {
-          total += parseFloat(cartItem.price) * parseFloat(cartItem.quantity);
-        }
-        data.push(`Quantity: ${cartItem.quantity}`);
-        if (cartItem.price) {
-          data.push("\x0A");
-          data.push(
-            `Price: $${(parseFloat(cartItem.price) * parseFloat(cartItem.quantity)).toFixed(2)}`
-          );
-        }
-      } else {
-        if (cartItem.price) {
-          total += parseFloat(cartItem.price);
-          data.push(`Price: $${parseFloat(cartItem.price).toFixed(2)}`);
-        }
-      }
-
-      if (cartItem.description) {
-        data.push("\x0A");
-        data.push(cartItem.description);
-      }
-
-      if (cartItem.options) {
-        data.push("\x0A");
-        cartItem.options.map((option) => {
-          data.push(option);
-          data.push("\x0A");
-        });
-      }
-
-      if (cartItem.extraDetails) {
-        data.push("Note: " + cartItem.extraDetails);
-        data.push("\x0A");
-      }
-
-      data.push("\x0A" + "\x0A");
-    });
-
-    total =
-      parseFloat(storeDetails.taxRate) >= 0
-        ? total * (1 + parseFloat(storeDetails.taxRate) / 100)
-        : total * 1.13;
-
-    if (element.paymentMethod === "Cash") {
-      data.push(
-        "\x0A",
-        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" + "\x0A",
-        element.cartNote
-          ? "\x0A" + "\x0A" + "Note: " + element.cartNote + "\x0A" + "\x0A"
-          : "\x0A" + "\x0A",
-        "Payment Method: Cash" + "\x0A" + "\x0A",
-        `Total Including (${
-          parseFloat(storeDetails.taxRate) >= 0
-            ? parseFloat(storeDetails.taxRate)
-            : "13"
-        }% Tax): ` +
-          "$" +
-          total.toFixed(2) +
-          "\x0A" +
-          "\x0A",
-        "Change Due: " + "$" + (element.changeDue || "0.00") + "\x0A" + "\x0A",
-        "------------------------------------------" + "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x1D" + "\x56" + "\x30"
-      );
-    } else {
-      data.push(
-        "\x0A",
-        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" + "\x0A",
-        element.cartNote
-          ? "\x0A" + "\x0A" + "Note: " + element.cartNote + "\x0A" + "\x0A"
-          : "\x0A" + "\x0A",
-        "Payment Method: Card" + "\x0A" + "\x0A",
-        `Total Including (${
-          parseFloat(storeDetails.taxRate) >= 0
-            ? parseFloat(storeDetails.taxRate)
-            : "13"
-        }% Tax): ` +
-          "$" +
-          total.toFixed(2) +
-          "\x0A" +
-          "\x0A",
-        "------------------------------------------" + "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x1D" + "\x56" + "\x30"
-      );
-    }
-  } else {
-    data = [
-      "\x1B" + "\x40", // init
-      "                                                                              ",
-      "\x0A",
-      "\x1B" + "\x61" + "\x31", // center align
-      storeDetails.name,
-      "\x0A",
-      storeDetails.address?.label + "\x0A",
-      storeDetails.website + "\x0A",
-      storeDetails.phoneNumber + "\x0A",
-      date + "\x0A",
-      "\x0A",
-      `Transaction ID ${element.transNum}` + "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x0A",
-      "\x1B" + "\x61" + "\x30", // left align
-    ];
-
-    element.cart?.map((cartItem) => {
-      data.push(`Name: ${cartItem.name}`);
-      data.push("\x0A");
-
-      if (cartItem.quantity) {
-        if (cartItem.price) {
-          total += parseFloat(cartItem.price) * parseFloat(cartItem.quantity);
-        }
-        data.push(`Quantity: ${cartItem.quantity}`);
-        if (cartItem.price) {
-          data.push("\x0A");
-          data.push(
-            `Price: $${(parseFloat(cartItem.price) * parseFloat(cartItem.quantity)).toFixed(2)}`
-          );
-        }
-      } else {
-        if (cartItem.price) {
-          total += parseFloat(cartItem.price);
-          data.push(`Price: $${parseFloat(cartItem.price).toFixed(2)}`);
-        }
-      }
-
-      if (cartItem.description) {
-        data.push("\x0A");
-        data.push(cartItem.description);
-      }
-
-      if (cartItem.options) {
-        data.push("\x0A");
-        cartItem.options.map((option) => {
-          data.push(option);
-          data.push("\x0A");
-        });
-      }
-
-      if (cartItem.extraDetails) {
-        data.push("Note: " + cartItem.extraDetails);
-        data.push("\x0A");
-      }
-
-      data.push("\x0A" + "\x0A");
-    });
-
-    total =
-      parseFloat(storeDetails.taxRate) >= 0
-        ? total * (1 + parseFloat(storeDetails.taxRate) / 100)
-        : total * 1.13;
-
-    if (element.paymentMethod === "Cash") {
-      data.push(
-        "\x0A",
-        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" + "\x0A",
-        element.cartNote
-          ? "\x0A" + "\x0A" + "Note: " + element.cartNote + "\x0A" + "\x0A"
-          : "\x0A" + "\x0A",
-        "Payment Method: " + element.paymentMethod + "\x0A" + "\x0A",
-        `Total Including (${
-          parseFloat(storeDetails.taxRate) >= 0
-            ? parseFloat(storeDetails.taxRate)
-            : "13"
-        }% Tax): ` +
-          "$" +
-          total.toFixed(2) +
-          "\x0A" +
-          "\x0A",
-        "Change Due: " + "$" + element.changeDue + "\x0A" + "\x0A",
-        "------------------------------------------" + "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        reprint === true
-          ? "\x1D" + "\x56" + "\x30"
-          : "\x1D" +
-              "\x56" +
-              "\x30" +
-              "\x10" +
-              "\x14" +
-              "\x01" +
-              "\x00" +
-              "\x05"
-      );
-    } else {
-      data.push(
-        "\x0A",
-        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" + "\x0A",
-        element.cartNote
-          ? "\x0A" + "\x0A" + "Note: " + element.cartNote + "\x0A" + "\x0A"
-          : "\x0A" + "\x0A",
-        "Payment Method: " + element.paymentMethod + "\x0A" + "\x0A",
-        `Total Including (${
-          parseFloat(storeDetails.taxRate) >= 0
-            ? parseFloat(storeDetails.taxRate)
-            : "13"
-        }% Tax): ` +
-          "$" +
-          total.toFixed(2) +
-          "\x0A" +
-          "\x0A",
-        "------------------------------------------" + "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x0A",
-        "\x1D" + "\x56" + "\x30"
-      );
-    }
+  // Order type label
+  if (isDelivery) {
+    data.push("DELIVERY ORDER" + LF);
+  } else if (isPickup) {
+    data.push("PICKUP ORDER" + LF);
+  } else if (isTable) {
+    if (element.tableName) data.push(element.tableName + LF);
+    if (element.tableNumber) data.push("Table #" + element.tableNumber + LF);
+    if (element.server) data.push("Server: " + element.server + LF);
+    if (element.guests) data.push("Guests: " + element.guests + LF);
   }
-  return { data: data, total: total };
+
+  data.push(LF, DIVIDER + LF, LF, LEFT);
+
+  // ──────── CART ITEMS ────────
+  element.cart?.forEach((cartItem: CartItemProp) => {
+    const qty = parseFloat(cartItem.quantity ?? "1");
+    const price = parseFloat(cartItem.price ?? "0");
+    const lineTotal = price * qty;
+
+    if (cartItem.price) subtotal += lineTotal;
+
+    // Item name with quantity prefix if > 1
+    const qtyPrefix = qty !== 1 ? qty + "x " : "";
+    data.push(qtyPrefix + cartItem.name + LF);
+
+    if (cartItem.price) {
+      data.push("   $" + lineTotal.toFixed(2) + LF);
+    }
+
+    if (cartItem.description) {
+      data.push("  " + cartItem.description + LF);
+    }
+
+    if (cartItem.options) {
+      cartItem.options.forEach((option) => {
+        data.push("  - " + option + LF);
+      });
+    }
+
+    if (cartItem.extraDetails) {
+      data.push("  * Note: " + cartItem.extraDetails + LF);
+    }
+
+    data.push(LF);
+  });
+
+  // ──────── FOOTER ────────
+  data.push(DIVIDER + LF, LF);
+
+  // Order note
+  if (element.cartNote) {
+    data.push("Note: " + element.cartNote + LF, LF);
+  }
+
+  // Customer info (delivery/pickup)
+  if (isDelivery || isPickup) {
+    if (element.customer?.name)
+      data.push("Customer: " + element.customer.name + LF);
+    if (element.customer?.phone)
+      data.push("Phone: " + element.customer.phone + LF);
+    if (isDelivery) {
+      if (element.customer?.address?.label)
+        data.push("Address: " + element.customer.address.label + LF);
+      data.push(
+        "Unit: " +
+          (element.customer?.unitNumber || "N/A") +
+          "   Buzz: " +
+          (element.customer?.buzzCode || "N/A") +
+          LF
+      );
+    }
+    data.push(LF);
+  }
+
+  // Payment method (table/in-store only)
+  if ((isTable || isInStore) && element.paymentMethod) {
+    data.push("Payment: " + element.paymentMethod + LF, LF);
+  }
+
+  // Totals breakdown
+  data.push("Subtotal: $" + subtotal.toFixed(2) + LF);
+  if (isDelivery && deliveryFee > 0) {
+    data.push("Delivery: $" + deliveryFee.toFixed(2) + LF);
+  }
+  const totalBeforeTax = subtotal + deliveryFee;
+  const taxAmount = totalBeforeTax * (taxRate / 100);
+  const total = totalBeforeTax + taxAmount;
+  data.push("Tax (" + taxRate + "%): $" + taxAmount.toFixed(2) + LF);
+  data.push(LF);
+  data.push("Total: $" + total.toFixed(2) + LF);
+
+  // Change due (cash payments for table/in-store)
+  if ((isTable || isInStore) && element.paymentMethod === "Cash") {
+    data.push("Change Due: $" + (element.changeDue || "0.00") + LF);
+  }
+
+  data.push(LF, DIVIDER + LF, LF);
+
+  // Thank you (centered)
+  data.push(CENTER, "Thank you!" + LF, LF);
+
+  // Paper feed
+  data.push(LF, LF, LF, LF, LF);
+
+  // Cut + cash drawer kick (only in-store cash, non-reprint)
+  if (isInStore && element.paymentMethod === "Cash" && reprint !== true) {
+    data.push(CUT + CASH_DRAWER);
+  } else {
+    data.push(CUT);
+  }
+
+  return { data, total };
 }
 
 export { receiptPrint };

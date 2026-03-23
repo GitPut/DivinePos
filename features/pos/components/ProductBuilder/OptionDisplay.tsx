@@ -6,6 +6,7 @@ import SingleSelectOptionGroup from "./SingleSelectOptionGroup";
 import IncludedSelectionsGroup from "./IncludedSelectionsGroup";
 import { Option, OptionsList, ProductProp } from "types";
 import { filterVisibleChoices } from "utils/filterVisibleChoices";
+import { resolveOptionPrice } from "utils/resolveOptionPrice";
 
 interface OptionDisplayProps {
   e: Option;
@@ -255,12 +256,33 @@ const OptionDisplay = ({
         const displayStyle = filteredOption.includedDisplayStyle ?? "Quantity Dropdown";
 
         const includedCount = parseFloat(filteredOption.includedSelections ?? "0");
-        const extraPrice = parseFloat(filteredOption.extraSelectionPrice ?? "0");
+        const flatExtraPrice = parseFloat(filteredOption.extraSelectionPrice ?? "0");
         let totalSelected = 0;
         filteredOption.optionsList.forEach((item) => {
           totalSelected += parseFloat(item.selectedTimes ?? "0");
         });
         const extraSelections = Math.max(0, totalSelected - includedCount);
+
+        // Calculate extra cost: try size-linked price per item, fall back to flat extra price
+        let extraCost = 0;
+        if (extraSelections > 0) {
+          let freeRemaining = includedCount;
+          filteredOption.optionsList
+            .filter((item) => parseFloat(item.selectedTimes ?? "0") > 0)
+            .forEach((item) => {
+              const qty = parseFloat(item.selectedTimes ?? "0");
+              const freeFromThis = Math.min(qty, freeRemaining);
+              const extraFromThis = qty - freeFromThis;
+              freeRemaining -= freeFromThis;
+              if (extraFromThis > 0) {
+                const resolved = filteredOption.sizeLinkedOptionLabel
+                  ? parseFloat(resolveOptionPrice(item, filteredOption, myObjProfile.options))
+                  : 0;
+                const perItemPrice = resolved > 0 ? resolved : flatExtraPrice;
+                extraCost += extraFromThis * perItemPrice;
+              }
+            });
+        }
 
         return (
           <div style={{ alignSelf: "stretch" }}>
@@ -283,7 +305,7 @@ const OptionDisplay = ({
                   color: "#ef4444",
                   fontWeight: "600",
                 }}>
-                  +{extraSelections} extra = +${(extraSelections * extraPrice).toFixed(2)}
+                  +{extraSelections} extra = +${extraCost.toFixed(2)}
                 </span>
               )}
             </div>

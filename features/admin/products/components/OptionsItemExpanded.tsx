@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { FiPlus, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import OptionSelectionItem from "./OptionSelectionItem";
 import OptionConditionItem from "./OptionConditionItem";
@@ -48,6 +48,7 @@ function OptionsItemExpanded({
   const [testMap, settestMap] = useState(structuredClone(item.optionsList));
   const [highlightedOptionID, sethighlightedOptionID] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const advancedRef = useRef<HTMLDivElement>(null);
   const caseList = e.selectedCaseList ?? [];
   const DropdownOptions: { label: string; value?: string; id?: string }[] = [];
 
@@ -173,6 +174,13 @@ function OptionsItemExpanded({
                     style={styles.bulkPriceInput}
                     placeholder="$"
                     id={`bulk-${index}-${sizeLabel}`}
+                    inputMode="decimal"
+                    onKeyDown={(ev) => {
+                      if (["e", "E", "+"].includes(ev.key)) ev.preventDefault();
+                    }}
+                    onChange={(ev) => {
+                      ev.target.value = ev.target.value.replace(/[^0-9.\-]/g, "").replace(/(\..*)\./g, "$1");
+                    }}
                   />
                 </div>
               ))
@@ -183,6 +191,13 @@ function OptionsItemExpanded({
                   style={styles.bulkPriceInput}
                   placeholder="$"
                   id={`bulk-${index}-all`}
+                  inputMode="decimal"
+                  onKeyDown={(ev) => {
+                    if (["e", "E", "+"].includes(ev.key)) ev.preventDefault();
+                  }}
+                  onChange={(ev) => {
+                    ev.target.value = ev.target.value.replace(/[^0-9.\-]/g, "").replace(/(\..*)\./g, "$1");
+                  }}
                 />
               </div>
             )}
@@ -269,13 +284,19 @@ function OptionsItemExpanded({
       {/* Advanced Settings — collapsed by default */}
       {hasAdvancedSettings && (
         <>
-          <button style={styles.advancedToggle} onClick={() => setShowAdvanced(!showAdvanced)}>
+          <button style={styles.advancedToggle} onClick={() => {
+            const opening = !showAdvanced;
+            setShowAdvanced(opening);
+            if (opening) {
+              setTimeout(() => advancedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+            }
+          }}>
             {showAdvanced ? <FiChevronUp size={14} color="#64748b" /> : <FiChevronDown size={14} color="#64748b" />}
             <span style={styles.advancedToggleTxt}>Advanced Settings</span>
           </button>
 
           {showAdvanced && (
-            <div style={styles.advancedSection}>
+            <div ref={advancedRef} style={styles.advancedSection}>
               {/* Selection Limit */}
               <div style={styles.fieldRow}>
                 <div style={styles.fieldGroup}>
@@ -688,7 +709,7 @@ const styles: Record<string, React.CSSProperties> = {
   advancedSection: {
     display: "flex",
     flexDirection: "column",
-    gap: 14,
+    gap: 10,
     padding: "12px 16px",
     backgroundColor: "#fafbfc",
     borderRadius: 8,

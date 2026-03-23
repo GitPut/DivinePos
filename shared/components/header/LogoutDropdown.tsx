@@ -116,7 +116,7 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     width: "100%",
     height: "100%",
-    zIndex: 9998,
+    zIndex: 99998,
   },
   dropdown: {
     position: "absolute",
@@ -127,7 +127,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #e2e8f0",
     borderRadius: 10,
     boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-    zIndex: 9999,
+    zIndex: 99999,
     overflow: "hidden",
     padding: 4,
   },

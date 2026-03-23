@@ -3,6 +3,7 @@ import { FiShoppingBag, FiPhone, FiMapPin, FiGlobe } from "react-icons/fi";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
 import { GooglePlacesStyles } from "utils/googlePlacesStyles";
 import { AddressType } from "types";
+import { sanitizePhone } from "utils/phoneValidation";
 
 const GOOGLE_API_KEY = "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 
@@ -58,7 +59,8 @@ function DetailsStage({
               style={styles.input}
               placeholder="(555) 123-4567"
               value={phoneNumber}
-              onChange={(e) => setphoneNumber(e.target.value)}
+              onChange={(e) => setphoneNumber(sanitizePhone(e.target.value))}
+              maxLength={10}
             />
           </div>
         </div>

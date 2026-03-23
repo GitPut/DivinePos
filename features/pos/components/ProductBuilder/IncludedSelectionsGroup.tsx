@@ -2,6 +2,7 @@ import React from "react";
 import { FiMinus, FiPlus } from "react-icons/fi";
 import { MdClear } from "react-icons/md";
 import { Option, OptionsList, ProductProp } from "types";
+import { resolveOptionPrice } from "utils/resolveOptionPrice";
 
 interface IncludedSelectionsGroupProps {
   setopenDropdown: (val: string | null) => void;
@@ -103,12 +104,8 @@ function IncludedSelectionsGroup({
               key={option.id ?? listIndex}
               style={{
                 ...styles.gridItem,
-                ...(isSelected
-                  ? {
-                      backgroundColor: "#eef2ff",
-                      borderColor: "#1e293b",
-                    }
-                  : {}),
+                backgroundColor: isSelected ? "#eef2ff" : "#ffffff",
+                borderColor: isSelected ? "#1e293b" : "#e2e8f0",
               }}
             >
               <div style={styles.gridItemLeft}>
@@ -120,6 +117,15 @@ function IncludedSelectionsGroup({
                 >
                   {option.label}
                 </span>
+                {(() => {
+                  const resolved = e.sizeLinkedOptionLabel
+                    ? parseFloat(resolveOptionPrice(option, e, myObjProfile.options))
+                    : 0;
+                  const displayPrice = resolved > 0 ? resolved : parseFloat(e.extraSelectionPrice ?? "0");
+                  return displayPrice > 0 ? (
+                    <span style={styles.priceTag}>+${displayPrice.toFixed(2)}</span>
+                  ) : null;
+                })()}
               </div>
               <div style={styles.qtyControls}>
                 <button
@@ -211,6 +217,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     color: "#1a1a1a",
     fontWeight: "400",
+  },
+  priceTag: {
+    fontSize: 11,
+    color: "#6366f1",
+    fontWeight: "500",
+    backgroundColor: "#eef2ff",
+    padding: "2px 6px",
+    borderRadius: 10,
+    whiteSpace: "nowrap",
   },
   qtyControls: {
     display: "flex",

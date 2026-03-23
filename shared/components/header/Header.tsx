@@ -59,7 +59,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
     borderBottom: "1px solid #e2e8f0",
     position: "relative",
-    zIndex: 1000,
+    zIndex: 100,
     flexShrink: 0,
     paddingLeft: 8,
     paddingRight: 24,

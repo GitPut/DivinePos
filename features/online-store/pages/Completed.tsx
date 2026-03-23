@@ -60,7 +60,7 @@ function OnlineOrderHomeCompleted() {
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>Total</span>
                 <span style={{ ...styles.infoValue, fontWeight: "700" }}>
-                  ${(Number(orderDetails.total) / 100).toFixed(2)}
+                  ${Number(orderDetails.total).toFixed(2)}
                 </span>
               </div>
             )}
