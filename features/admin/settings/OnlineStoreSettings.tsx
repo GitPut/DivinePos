@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import {
   activePlanState,
+  franchiseState,
   onlineStoreState,
   setOnlineStoreState,
   storeDetailsState,
@@ -16,6 +17,7 @@ import { useHistory } from "react-router-dom";
 
 function OnlineStoreSettings() {
   const activePlan = activePlanState.use();
+  const { franchiseRole } = franchiseState.use();
   const onlineStoreDetails = onlineStoreState.use();
   const storeDetails = storeDetailsState.use();
   const catalog = storeProductsState.use();
@@ -283,8 +285,77 @@ function OnlineStoreSettings() {
     setloading(false);
   };
 
-  // Not on Professional plan — show upgrade prompt
-  if (activePlan !== "professional") {
+  // Franchise locations — simplified Stripe-only view
+  if (franchiseRole === "location") {
+    return (
+      <div style={styles.container}>
+        <div style={styles.headerRow}>
+          <div>
+            <span style={styles.title}>Payment Settings</span>
+            <span style={styles.subtitle}>
+              Enter your Stripe keys so online orders are charged to your account
+            </span>
+          </div>
+          <button
+            style={styles.saveBtn}
+            onClick={() => {
+              const uid = auth.currentUser?.uid;
+              if (!uid) return;
+              const stripePublicKeyVal = (stripePublicKey ?? "").length > 0 ? stripePublicKey : null;
+              const stripeSecretKeyVal = (stripeSecretKey ?? "").length > 0 ? stripeSecretKey : null;
+              db.collection("users").doc(uid).update({
+                stripePublicKey: stripePublicKeyVal,
+                stripeSecretKey: stripeSecretKeyVal,
+              }).then(() => {
+                setOnlineStoreState({
+                  ...onlineStoreDetails,
+                  stripePublicKey: stripePublicKeyVal,
+                  stripeSecretKey: stripeSecretKeyVal,
+                });
+                alertP.success("Stripe keys saved");
+              }).catch(() => alertP.error("Failed to save"));
+            }}
+          >
+            Save Keys
+          </button>
+        </div>
+        <div style={styles.scrollArea}>
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <FiLock size={18} color="#1D294E" />
+              <span style={styles.cardTitle}>Stripe Payment Keys</span>
+            </div>
+            <span style={{ fontSize: 13, color: "#94a3b8", marginBottom: 16, display: "block" }}>
+              These keys connect online payments to your Stripe account. Orders placed at your location will be charged here.
+            </span>
+            <div style={styles.fieldGrid}>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Stripe Public Key</span>
+                <input
+                  style={styles.input}
+                  placeholder="pk_live_..."
+                  value={stripePublicKey ?? ""}
+                  onChange={(e) => setstripePublicKey(e.target.value)}
+                />
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Stripe Secret Key</span>
+                <input
+                  style={styles.input}
+                  placeholder="sk_live_..."
+                  value={stripeSecretKey ?? ""}
+                  onChange={(e) => setstripeSecretKey(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not on Professional plan — show upgrade prompt (franchise accounts always have access)
+  if (activePlan !== "professional" && franchiseRole !== "hub" && franchiseRole !== "location") {
     return (
       <div style={styles.container}>
         <div style={styles.headerRow}>
@@ -321,8 +392,8 @@ function OnlineStoreSettings() {
     );
   }
 
-  // Professional plan but hasn't paid for online store add-on
-  if (onlineStoreDetails.paidStatus !== "active") {
+  // Professional plan but hasn't paid for online store add-on (franchise accounts skip this)
+  if (onlineStoreDetails.paidStatus !== "active" && franchiseRole !== "hub" && franchiseRole !== "location") {
     return (
       <div style={styles.container}>
         <div style={styles.headerRow}>

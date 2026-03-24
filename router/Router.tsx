@@ -16,6 +16,7 @@ import {
   setStoreProductsState,
   setWooCommerceState,
   setActivePlanState,
+  setFranchiseState,
   storeDetailsState,
   trialDetailsState,
   wooCommerceState,
@@ -314,6 +315,72 @@ const AppRouter = () => {
           setTableSectionsState(docData.tableSections);
         }
 
+        // ── Load franchise data ─────────────────────────────────────────
+        let franchiseRole = docData?.franchiseRole || null;
+        let franchiseId = docData?.franchiseId || null;
+
+        // Fallback: detect franchise location from subscription metadata or doc ID
+        if (!franchiseRole && subDocs && !subDocs.empty) {
+          for (const subDoc of subDocs.docs) {
+            const sub = subDoc.data();
+            const isFranchiseManaged = subDoc.id === "franchise-managed"
+              || sub.metadata?.managedByFranchise
+              || sub.metadata?.source === "franchise";
+            if (isFranchiseManaged) {
+              const hubId = sub.metadata?.managedByFranchise || null;
+              franchiseRole = "location";
+              franchiseId = hubId;
+              // Fix the user doc so this fallback isn't needed next time
+              if (hubId) {
+                db.collection("users").doc(user.uid).update({
+                  franchiseRole: "location",
+                  franchiseId: hubId,
+                }).catch(() => {});
+              }
+              break;
+            }
+          }
+        }
+        if (franchiseRole && franchiseId) {
+          try {
+            if (franchiseRole === "hub") {
+              const franchiseDoc = await db.collection("franchises").doc(user.uid).get();
+              if (franchiseDoc.exists) {
+                const fData = franchiseDoc.data();
+                const locSnap = await db.collection("franchises").doc(user.uid).collection("locations").get();
+                const locations: any[] = [];
+                locSnap.forEach((loc) => locations.push({ ...loc.data(), uid: loc.id }));
+                setFranchiseState({
+                  franchiseId,
+                  franchiseRole,
+                  config: {
+                    hubUid: user.uid,
+                    name: fData?.name || "",
+                    locationUids: fData?.locationUids || [],
+                    locations,
+                    brandColor: fData?.brandColor,
+                    tagline: fData?.tagline,
+                    logoUrl: fData?.logoUrl,
+                    urlEnding: fData?.urlEnding,
+                    onlineStoreActive: fData?.onlineStoreActive,
+                  },
+                });
+              }
+            } else if (franchiseRole === "location") {
+              const franchiseDoc = await db.collection("franchises").doc(franchiseId).get();
+              setFranchiseState({
+                franchiseId,
+                franchiseRole,
+                config: franchiseDoc.exists
+                  ? { hubUid: franchiseId, name: franchiseDoc.data()?.name || "", locationUids: [], locations: [] }
+                  : null,
+              });
+            }
+          } catch {
+            // Franchise data not critical — POS works without it
+          }
+        }
+
         // ── Process WooCommerce orders ────────────────────────────────────
         if (wooDocs && !wooDocs.empty) {
           const wooData: any[] = [];
@@ -400,12 +467,21 @@ const AppRouter = () => {
             }
           }
 
+          // Franchise hubs always get Professional features + online store
+          const isFranchiseHub = docData?.franchiseRole === "hub";
+          if (isFranchiseHub) {
+            onlineStoreGrantedByPlan = true;
+            setActivePlanState("professional");
+            setisSubscribed(true);
+            setisNewUser(false);
+          }
+
           // After processing ALL subscriptions, set online store state
           if (onlineStoreGrantedByPlan) {
             setOnlineStoreState({
               urlEnding: doc.data()?.urlEnding,
-              onlineStoreActive: doc.data()?.onlineStoreActive,
-              onlineStoreSetUp: doc.data()?.onlineStoreSetUp,
+              onlineStoreActive: isFranchiseHub ? true : (doc.data()?.onlineStoreActive ?? false),
+              onlineStoreSetUp: isFranchiseHub ? true : (doc.data()?.onlineStoreSetUp ?? false),
               stripePublicKey: doc.data()?.stripePublicKey,
               stripeSecretKey: doc.data()?.stripeSecretKey,
               paidStatus: "active",

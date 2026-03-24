@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { FiShoppingBag, FiTruck, FiPhone, FiMapPin } from "react-icons/fi";
+import { FiShoppingBag, FiTruck, FiPhone, FiMapPin, FiArrowLeft } from "react-icons/fi";
 import {
   orderDetailsState,
   setOrderDetailsState,
@@ -48,9 +48,13 @@ function StoreFront() {
   const addressText = storeDetails.address?.value?.structured_formatting?.main_text;
   const addressFull = storeDetails.address?.value?.description || storeDetails.address?.label;
 
+  const isFranchiseStore = !!orderDetails.selectedLocationUid;
+
   const handleLogoClick = () => {
     if (page === 5) {
       setOrderDetailsState({ page: 4 });
+    } else if (isFranchiseStore) {
+      setOrderDetailsState({ ...orderDetails, delivery: false, address: null, page: 0, selectedLocationUid: null });
     } else {
       setOrderDetailsState({ ...orderDetails, delivery: false, address: null, page: 1 });
     }
@@ -108,6 +112,15 @@ function StoreFront() {
                 <FiMapPin size={12} color={c.textFaint} />
                 {addressText}
               </a>
+            )}
+            {isFranchiseStore && (
+              <button
+                onClick={handleLogoClick}
+                style={{ ...styles.infoChip, color: c.textMuted, borderColor: c.divider, background: "none", cursor: "pointer", fontWeight: "500" }}
+              >
+                <FiArrowLeft size={12} color={c.textMuted} />
+                Change Location
+              </button>
             )}
           </div>
         </div>

@@ -23,6 +23,7 @@ import { ProductProp, RecipeItem } from "types";
 import DropdownStringOptions from "shared/components/ui/DropdownStringOptions";
 import useWindowSize from "shared/hooks/useWindowSize";
 import RecipeEditor from "features/admin/inventory/RecipeEditor";
+import { franchiseState } from "store/appState";
 
 interface AddProductModalProps {
   addProductModal: boolean;
@@ -74,6 +75,9 @@ function AddProductModal({
     existingProduct ? existingProduct.imageUrl : null
   );
   const onlineStoreDetails = onlineStoreState.use();
+  const franchise = franchiseState.use();
+  const isLocationAccount = franchise.franchiseRole === "location";
+  const isHubAccount = franchise.franchiseRole === "hub";
   const [indexOn, setindexOn] = useState<number | null>(null);
   const [selectValues, setselectValues] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<null | File>();
@@ -364,6 +368,24 @@ function AddProductModal({
             ref={scrollViewRef}
           >
             <input type="file" ref={hiddenFileInput} onChange={changeHandler} style={{ display: "none" }} accept="image/*" />
+
+            {/* Franchise banner */}
+            {isHubAccount && !isProductTemplate && (
+              <div style={{ padding: "10px 16px", backgroundColor: "#eef2ff", borderRadius: 10, border: "1px solid #c7d2fe", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <FiLayers size={16} color="#6366f1" />
+                <span style={{ fontSize: 13, color: "#4338ca", fontWeight: "500" }}>
+                  Changes sync to {franchise.config?.locations.length ?? 0} location{(franchise.config?.locations.length ?? 0) !== 1 ? "s" : ""} automatically
+                </span>
+              </div>
+            )}
+            {isLocationAccount && !isProductTemplate && (
+              <div style={{ padding: "10px 16px", backgroundColor: "#fff7ed", borderRadius: 10, border: "1px solid #fed7aa", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <FiLayers size={16} color="#ea580c" />
+                <span style={{ fontSize: 13, color: "#c2410c", fontWeight: "500" }}>
+                  Menu is managed by franchise headquarters — only stock settings can be edited
+                </span>
+              </div>
+            )}
 
             {/* Product Name + Price — most important, always on top */}
             <div style={styles.topFields}>

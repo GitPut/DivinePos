@@ -13,8 +13,10 @@ import {
   FiSettings,
   FiHelpCircle,
   FiPlayCircle,
+  FiGlobe,
 } from "react-icons/fi";
 import { triggerWalkthrough } from "router/AuthRoute";
+import { franchiseState } from "store/appState";
 
 function AdminContainer(props: { match: { url: string } }) {
   const { match } = props;
@@ -23,6 +25,7 @@ function AdminContainer(props: { match: { url: string } }) {
   const location = useLocation();
   const pathname = location.pathname;
   const { height } = useWindowSize();
+  const franchise = franchiseState.use();
 
   return (
     <div style={styles.container}>
@@ -138,7 +141,7 @@ function AdminContainer(props: { match: { url: string } }) {
                   active: pathname.includes("devicesettings"),
                 },
                 {
-                  label: "Online Store Settings",
+                  label: franchise.franchiseRole === "location" ? "Payment Settings" : "Online Store Settings",
                   link: "/authed/settings/onlinestoresettings",
                   active: pathname.includes("onlinestoresettings"),
                 },
@@ -159,6 +162,29 @@ function AdminContainer(props: { match: { url: string } }) {
                 },
               ]}
             />
+            {franchise.franchiseRole === "hub" && (
+              <DropdownMenuButton
+                active={pathname.includes("/authed/franchise")}
+                dropDownOpen={isSideMenu === "franchise"}
+                toggleDropdown={() =>
+                  setSideMenu((prev) => (prev === "franchise" ? "" : "franchise"))
+                }
+                labelIcon={<FiGlobe size={18} />}
+                labelText="Franchise"
+                options={[
+                  {
+                    label: "Overview",
+                    link: "/authed/franchise/overview",
+                    active: pathname.includes("franchise/overview"),
+                  },
+                  {
+                    label: "Locations",
+                    link: "/authed/franchise/locations",
+                    active: pathname.includes("franchise/locations"),
+                  },
+                ]}
+              />
+            )}
             <DropdownMenuButton
               labelIcon={<FiHelpCircle size={18} />}
               labelText="Help"

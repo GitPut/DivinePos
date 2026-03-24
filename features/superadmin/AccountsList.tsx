@@ -35,6 +35,7 @@ const AccountsList: React.FC = () => {
 
   const filtered = accounts.filter(
     (a) =>
+      a.uid.toLowerCase().includes(search.toLowerCase()) ||
       a.email.toLowerCase().includes(search.toLowerCase()) ||
       a.storeName.toLowerCase().includes(search.toLowerCase()) ||
       a.ownerName.toLowerCase().includes(search.toLowerCase())
@@ -67,7 +68,7 @@ const AccountsList: React.FC = () => {
           <span style={{ ...styles.headerCell, flex: 2 }}>Owner</span>
           <span style={{ ...styles.headerCell, flex: 2 }}>Email</span>
           <span style={{ ...styles.headerCell, flex: 2 }}>Store Name</span>
-          <span style={{ ...styles.headerCell, flex: 1 }}>Phone</span>
+          <span style={{ ...styles.headerCell, flex: 1.5 }}>UID</span>
           <span style={{ ...styles.headerCell, width: 30 }} />
         </div>
         {filtered.map((account) => (
@@ -88,8 +89,8 @@ const AccountsList: React.FC = () => {
             <span style={{ ...styles.cell, flex: 2 }}>
               {account.storeName}
             </span>
-            <span style={{ ...styles.cell, flex: 1, color: "#888" }}>
-              {account.phoneNumber}
+            <span style={{ ...styles.cell, flex: 1.5, color: "#888", fontSize: 11, fontFamily: "monospace" }}>
+              {account.uid.slice(0, 12)}...
             </span>
             <span style={{ width: 30, alignItems: "center" }}>
               <FiChevronRight size={16} color="#ccc" />

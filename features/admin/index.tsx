@@ -4,6 +4,7 @@ import InventoryPage from "./inventory/InventoryPage";
 import ProductsPage from "./products/ProductsPage";
 import ReportsPage from "./reports/ReportsPage";
 import SettingsPage from "./settings/SettingsPage";
+import FranchisePage from "./franchise/FranchisePage";
 
 const index = [
   {
@@ -25,6 +26,10 @@ const index = [
   {
     path: "settings",
     component: SettingsPage,
+  },
+  {
+    path: "franchise",
+    component: FranchisePage,
   },
   {
     path: "help",

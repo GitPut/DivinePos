@@ -2,10 +2,13 @@ import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory } from "react-router-dom";
 import { db } from "services/firebase/config";
 import { deleteUserAccount, setUserAccountPlan } from "services/firebase/functions";
-import { FiArrowLeft, FiTrash2 } from "react-icons/fi";
+import { FiArrowLeft, FiTrash2, FiGlobe } from "react-icons/fi";
 import { TransListStateItem } from "types";
 import { parseDate } from "utils/dateFormatting";
 import Modal from "shared/components/ui/Modal";
+import firebase from "firebase/compat/app";
+import { useAlert } from "react-alert";
+import Swal from "sweetalert2";
 
 interface AccountData {
   ownerName: string;
@@ -36,6 +39,9 @@ const AccountDetail: React.FC<RouteComponentProps<{ uid: string }>> = ({
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [switchingPlan, setSwitchingPlan] = useState<string | null>(null);
+  const [franchiseRole, setFranchiseRole] = useState<string | null>(null);
+  const [creatingFranchise, setCreatingFranchise] = useState(false);
+  const alertP = useAlert();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,6 +76,7 @@ const AccountDetail: React.FC<RouteComponentProps<{ uid: string }>> = ({
       const userData = userDoc.data()!;
       const storeDetails = userData.storeDetails || {};
       const ownerDetails = userData.ownerDetails || {};
+      setFranchiseRole(userData.franchiseRole || null);
 
       // Find active subscription
       let subscriptionStatus = "None";
@@ -169,6 +176,7 @@ const AccountDetail: React.FC<RouteComponentProps<{ uid: string }>> = ({
         {/* Owner Info */}
         <div style={styles.card}>
           <span style={styles.cardTitle}>Owner Details</span>
+          <InfoRow label="UID" value={uid} />
           <InfoRow label="Name" value={data.ownerName} />
           <InfoRow label="Email" value={data.email} />
           <InfoRow label="Phone" value={data.phoneNumber} />
@@ -236,6 +244,65 @@ const AccountDetail: React.FC<RouteComponentProps<{ uid: string }>> = ({
           />
           <InfoRow label="Total Orders" value={String(data.totalOrders)} />
         </div>
+      </div>
+
+      {/* Franchise */}
+      <div style={{ ...styles.card, marginTop: 20 }}>
+        <span style={styles.cardTitle}>Franchise</span>
+        {franchiseRole === "hub" ? (
+          <div>
+            <span style={{ fontSize: 13, color: "#16a34a", fontWeight: "600" }}>This account is a franchise hub</span>
+            <button
+              style={{ ...styles.planBtn, marginTop: 10, backgroundColor: "#6366f1", color: "#fff", borderColor: "#6366f1" }}
+              onClick={() => history.push("/superadmin/franchises")}
+            >
+              View in Franchises
+            </button>
+          </div>
+        ) : franchiseRole === "location" ? (
+          <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: "600" }}>This account is a franchise location</span>
+        ) : (
+          <div>
+            <span style={{ fontSize: 13, color: "#94a3b8", marginBottom: 12, display: "block" }}>
+              This account is not part of a franchise. You can convert it to a franchise hub.
+            </span>
+            <button
+              style={{ ...styles.planBtn, backgroundColor: "#6366f1", color: "#fff", borderColor: "#6366f1", opacity: creatingFranchise ? 0.5 : 1 }}
+              disabled={creatingFranchise}
+              onClick={async () => {
+                const { value: franchiseName } = await Swal.fire({
+                  title: "Create Franchise",
+                  text: `This will convert "${data.storeName}" into a franchise hub account.`,
+                  input: "text",
+                  inputLabel: "Franchise Name",
+                  inputPlaceholder: "e.g. Pizza Palace",
+                  inputValue: data.storeName,
+                  showCancelButton: true,
+                  confirmButtonText: "Create Franchise",
+                  confirmButtonColor: "#1D294E",
+                  inputValidator: (value) => {
+                    if (!value) return "Please enter a franchise name";
+                  },
+                });
+                if (!franchiseName) return;
+                setCreatingFranchise(true);
+                try {
+                  const createFn = firebase.functions().httpsCallable("createFranchise");
+                  await createFn({ uid, name: franchiseName, urlEnding: "" });
+                  setFranchiseRole("hub");
+                  alertP.success(`"${franchiseName}" is now a franchise hub`);
+                } catch (err: any) {
+                  alertP.error(err.message || "Failed to create franchise");
+                } finally {
+                  setCreatingFranchise(false);
+                }
+              }}
+            >
+              <FiGlobe size={14} color="#fff" style={{ marginRight: 6 }} />
+              {creatingFranchise ? "Creating..." : "Make Franchise Hub"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Recent Transactions */}

@@ -3652,3 +3652,486 @@ export const deliveryWebhook = onRequest(async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FRANCHISE FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Create a new franchise location (callable, hub owner or superadmin) ───
+export const createFranchiseLocation = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+  }
+
+  const callerUid = context.auth.uid;
+  const isSuperAdmin = callerUid === SUPERADMIN_UID;
+
+  // Verify caller is hub owner or superadmin
+  if (!isSuperAdmin) {
+    const callerDoc = await db.collection("users").doc(callerUid).get();
+    if (!callerDoc.exists || callerDoc.data()?.franchiseRole !== "hub") {
+      throw new functions.https.HttpsError("permission-denied", "Only franchise hub owner or superadmin can create locations");
+    }
+  }
+
+  const { hubUid, email, password, locationName, address, phoneNumber, acceptDelivery, deliveryPrice, deliveryRange, taxRate } = data;
+
+  if (!hubUid || !email || !password || !locationName) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing required fields: hubUid, email, password, locationName");
+  }
+
+  // If not superadmin, caller must be the hub owner
+  if (!isSuperAdmin && callerUid !== hubUid) {
+    throw new functions.https.HttpsError("permission-denied", "You can only add locations to your own franchise");
+  }
+
+  try {
+    // 1. Verify the franchise exists
+    const franchiseDoc = await db.collection("franchises").doc(hubUid).get();
+    if (!franchiseDoc.exists) {
+      throw new functions.https.HttpsError("not-found", "Franchise not found");
+    }
+
+    // 2. Read hub's data to copy products, categories, option templates
+    const hubDoc = await db.collection("users").doc(hubUid).get();
+    const hubData = hubDoc.data() || {};
+    const hubProducts = await db.collection("users").doc(hubUid).collection("products").get();
+    const hubTemplates = await db.collection("users").doc(hubUid).collection("optionTemplates").get();
+
+    // 3. Create Firebase Auth user for the new location
+    const newUser = await admin.auth().createUser({
+      email,
+      password,
+      displayName: locationName,
+    });
+    const newUid = newUser.uid;
+
+    // 4. Initialize the location's user doc (copy structure from hub)
+    const locationStoreDetails = {
+      ...(hubData.storeDetails || {}),
+      name: locationName,
+      address: address || null,
+      phoneNumber: phoneNumber || "",
+      deliveryPrice: deliveryPrice || hubData.storeDetails?.deliveryPrice || "",
+      deliveryRange: deliveryRange || hubData.storeDetails?.deliveryRange || "",
+      acceptDelivery: acceptDelivery ?? hubData.storeDetails?.acceptDelivery ?? false,
+      taxRate: taxRate || hubData.storeDetails?.taxRate || "13",
+    };
+
+    await db.collection("users").doc(newUid).set({
+      categories: hubData.categories || [],
+      storeDetails: locationStoreDetails,
+      wooCredentials: { apiUrl: "", ck: "", cs: "", useWoocommerce: false },
+      franchiseId: hubUid,
+      franchiseRole: "location",
+      ownerDetails: { email },
+    });
+
+    // 5. Copy products from hub (strip stock fields — each location manages its own)
+    const productBatch = db.batch();
+    let batchCount = 0;
+    const batches = [productBatch];
+
+    hubProducts.forEach((productDoc) => {
+      const product = productDoc.data();
+      const syncedProduct = { ...product };
+      delete syncedProduct.stockQuantity;
+      delete syncedProduct.lowStockThreshold;
+      delete syncedProduct.trackStock;
+
+      let currentBatch = batches[batches.length - 1];
+      if (batchCount >= 490) {
+        currentBatch = db.batch();
+        batches.push(currentBatch);
+        batchCount = 0;
+      }
+
+      currentBatch.set(
+        db.collection("users").doc(newUid).collection("products").doc(productDoc.id),
+        syncedProduct
+      );
+      batchCount++;
+    });
+
+    for (const b of batches) {
+      await b.commit();
+    }
+
+    // 6. Copy option templates from hub
+    const templateBatch = db.batch();
+    hubTemplates.forEach((tmplDoc) => {
+      templateBatch.set(
+        db.collection("users").doc(newUid).collection("optionTemplates").doc(tmplDoc.id),
+        tmplDoc.data()
+      );
+    });
+    await templateBatch.commit();
+
+    // 7. Create synthetic subscription so location is treated as Professional
+    await db.collection("users").doc(newUid).collection("subscriptions").doc("franchise-managed").set({
+      role: "Professional Plan",
+      status: "active",
+      created: admin.firestore.FieldValue.serverTimestamp(),
+      metadata: { source: "franchise", managedByFranchise: hubUid },
+    });
+
+    // 8. Add location to franchise doc
+    const locationInfo = {
+      uid: newUid,
+      name: locationName,
+      address: address || null,
+      phoneNumber: phoneNumber || "",
+      isActive: true,
+      acceptDelivery: acceptDelivery ?? false,
+      deliveryPrice: deliveryPrice || "",
+      deliveryRange: deliveryRange || "",
+    };
+
+    await db.collection("franchises").doc(hubUid).collection("locations").doc(newUid).set(locationInfo);
+    await db.collection("franchises").doc(hubUid).update({
+      locationUids: admin.firestore.FieldValue.arrayUnion(newUid),
+    });
+
+    // 9. Update the franchise public doc with new location
+    const franchiseData = franchiseDoc.data();
+    const publicDoc = await db.collection("public").doc(hubUid).get();
+    const currentLocations = publicDoc.exists ? (publicDoc.data()?.locations || []) : [];
+    currentLocations.push(locationInfo);
+    if (publicDoc.exists) {
+      await db.collection("public").doc(hubUid).update({
+        locations: currentLocations,
+      });
+    } else {
+      await db.collection("public").doc(hubUid).set({
+        isFranchise: true,
+        urlEnding: franchiseData?.urlEnding || "",
+        storeDetails: hubData.storeDetails || {},
+        categories: hubData.categories || [],
+        brandColor: franchiseData?.brandColor || "",
+        tagline: franchiseData?.tagline || "",
+        logoUrl: franchiseData?.logoUrl || "",
+        onlineStoreActive: true,
+        locations: currentLocations,
+      });
+    }
+
+    return { success: true, locationUid: newUid, email };
+  } catch (err) {
+    console.error("createFranchiseLocation failed:", err);
+    if (err instanceof functions.https.HttpsError) throw err;
+    throw new functions.https.HttpsError("internal", err.message || "Failed to create location");
+  }
+});
+
+// ─── Rebuild franchise public doc locations array from live location data ───
+export const rebuildFranchiseLocations = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+  }
+  // Allow superadmin OR the hub owner to call this
+  const { hubUid } = data;
+  if (!hubUid) throw new functions.https.HttpsError("invalid-argument", "Missing hubUid");
+  if (context.auth.uid !== SUPERADMIN_UID && context.auth.uid !== hubUid) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const locSnap = await db.collection("franchises").doc(hubUid).collection("locations").get();
+  const locations = [];
+
+  for (const loc of locSnap.docs) {
+    const locData = loc.data();
+    // Read LIVE data from the location's actual user doc
+    const userDoc = await db.collection("users").doc(loc.id).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+    const storeDetails = userData?.storeDetails || {};
+
+    const locationInfo = {
+      uid: loc.id,
+      name: locData.name || storeDetails.name || "",
+      address: storeDetails.address || locData.address || null,
+      phoneNumber: storeDetails.phoneNumber || locData.phoneNumber || "",
+      isActive: locData.isActive !== false,
+      acceptDelivery: storeDetails.acceptDelivery ?? locData.acceptDelivery ?? false,
+      deliveryPrice: storeDetails.deliveryPrice || locData.deliveryPrice || "",
+      deliveryRange: storeDetails.deliveryRange || locData.deliveryRange || "",
+      stripePublicKey: userData?.stripePublicKey || storeDetails.stripePublicKey || "",
+    };
+
+    locations.push(locationInfo);
+
+    // Also update the franchise subcollection with latest data
+    await db.collection("franchises").doc(hubUid).collection("locations").doc(loc.id).update(locationInfo);
+
+    // Ensure location user doc has franchise fields set
+    const locUserData = userDoc.exists ? userDoc.data() : {};
+    if (locUserData?.franchiseRole !== "location" || locUserData?.franchiseId !== hubUid) {
+      await db.collection("users").doc(loc.id).update({
+        franchiseRole: "location",
+        franchiseId: hubUid,
+      });
+    }
+
+    // Ensure location has franchise-managed subscription
+    const subDoc = await db.collection("users").doc(loc.id).collection("subscriptions").doc("franchise-managed").get();
+    if (!subDoc.exists) {
+      await db.collection("users").doc(loc.id).collection("subscriptions").doc("franchise-managed").set({
+        role: "Professional Plan",
+        status: "active",
+        created: admin.firestore.FieldValue.serverTimestamp(),
+        metadata: { source: "franchise", managedByFranchise: hubUid },
+      });
+    }
+  }
+
+  await db.collection("public").doc(hubUid).update({ locations });
+  return { success: true, count: locations.length };
+});
+
+// ─── Firestore trigger: Auto-sync location settings to franchise public doc ───
+export const onLocationSettingsChange = functions.firestore
+  .document("users/{uid}")
+  .onUpdate(async (change, context) => {
+    const uid = context.params.uid;
+    const before = change.before.data();
+    const after = change.after.data();
+
+    // Only trigger for franchise locations
+    if (after?.franchiseRole !== "location" || !after?.franchiseId) return;
+
+    // Only trigger if storeDetails or Stripe keys changed
+    const beforeDetails = JSON.stringify(before?.storeDetails || {});
+    const afterDetails = JSON.stringify(after?.storeDetails || {});
+    const stripeChanged = (before?.stripePublicKey || "") !== (after?.stripePublicKey || "");
+    if (beforeDetails === afterDetails && !stripeChanged) return;
+
+    const hubUid = after.franchiseId;
+    const storeDetails = after.storeDetails || {};
+
+    // Update the location entry in the franchise public doc
+    try {
+      const publicDoc = await db.collection("public").doc(hubUid).get();
+      if (!publicDoc.exists) return;
+
+      const locations = publicDoc.data()?.locations || [];
+      const locIndex = locations.findIndex((l) => l.uid === uid);
+      if (locIndex === -1) return;
+
+      locations[locIndex] = {
+        ...locations[locIndex],
+        address: storeDetails.address || locations[locIndex].address,
+        phoneNumber: storeDetails.phoneNumber || locations[locIndex].phoneNumber,
+        acceptDelivery: storeDetails.acceptDelivery ?? locations[locIndex].acceptDelivery,
+        deliveryPrice: storeDetails.deliveryPrice || locations[locIndex].deliveryPrice,
+        deliveryRange: storeDetails.deliveryRange || locations[locIndex].deliveryRange,
+        stripePublicKey: after.stripePublicKey || storeDetails.stripePublicKey || locations[locIndex].stripePublicKey || "",
+      };
+
+      await db.collection("public").doc(hubUid).update({ locations });
+
+      // Also update franchise subcollection
+      await db.collection("franchises").doc(hubUid).collection("locations").doc(uid).update({
+        address: storeDetails.address || null,
+        phoneNumber: storeDetails.phoneNumber || "",
+        acceptDelivery: storeDetails.acceptDelivery ?? false,
+        deliveryPrice: storeDetails.deliveryPrice || "",
+        deliveryRange: storeDetails.deliveryRange || "",
+        stripePublicKey: after.stripePublicKey || storeDetails.stripePublicKey || "",
+      });
+    } catch (err) {
+      console.error("onLocationSettingsChange failed:", err);
+    }
+  });
+
+// ─── Firestore trigger: Sync product changes from hub to all locations ───
+export const onHubProductWrite = functions.firestore
+  .document("users/{uid}/products/{productId}")
+  .onWrite(async (change, context) => {
+    const uid = context.params.uid;
+    const productId = context.params.productId;
+
+    // Check if this user is a franchise hub
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists || userDoc.data()?.franchiseRole !== "hub") return;
+
+    const franchiseDoc = await db.collection("franchises").doc(uid).get();
+    if (!franchiseDoc.exists) return;
+
+    const locationUids = franchiseDoc.data()?.locationUids || [];
+    if (locationUids.length === 0) return;
+
+    // Chunk writes into batches of 490 (leave room for batch overhead)
+    const BATCH_LIMIT = 490;
+    let currentBatch = db.batch();
+    let opCount = 0;
+    const batches = [currentBatch];
+
+    const getNextBatch = () => {
+      if (opCount >= BATCH_LIMIT) {
+        currentBatch = db.batch();
+        batches.push(currentBatch);
+        opCount = 0;
+      }
+      return currentBatch;
+    };
+
+    if (!change.after.exists) {
+      // Product was deleted — delete from all locations
+      for (const locUid of locationUids) {
+        getNextBatch().delete(db.collection("users").doc(locUid).collection("products").doc(productId));
+        opCount++;
+        getNextBatch().delete(db.collection("public").doc(locUid).collection("products").doc(productId));
+        opCount++;
+      }
+      // Also delete from hub's public collection
+      getNextBatch().delete(db.collection("public").doc(uid).collection("products").doc(productId));
+      opCount++;
+    } else {
+      // Product was created or updated — sync to all locations
+      const product = change.after.data();
+      // Strip stock fields — each location manages its own inventory
+      const syncProduct = { ...product };
+      delete syncProduct.stockQuantity;
+      delete syncProduct.lowStockThreshold;
+      delete syncProduct.trackStock;
+
+      for (const locUid of locationUids) {
+        getNextBatch().set(
+          db.collection("users").doc(locUid).collection("products").doc(productId),
+          syncProduct,
+          { merge: true }
+        );
+        opCount++;
+        getNextBatch().set(
+          db.collection("public").doc(locUid).collection("products").doc(productId),
+          syncProduct,
+          { merge: true }
+        );
+        opCount++;
+      }
+      // Also sync to hub's public collection
+      getNextBatch().set(
+        db.collection("public").doc(uid).collection("products").doc(productId),
+        product,
+        { merge: true }
+      );
+      opCount++;
+    }
+
+    // Commit all batches
+    for (const b of batches) {
+      await b.commit();
+    }
+  });
+
+// ─── Firestore trigger: Sync category changes from hub to all locations ───
+export const onHubCategoryChange = functions.firestore
+  .document("users/{uid}")
+  .onUpdate(async (change, context) => {
+    const uid = context.params.uid;
+    const before = change.before.data();
+    const after = change.after.data();
+
+    // Only trigger if categories actually changed
+    if (JSON.stringify(before?.categories) === JSON.stringify(after?.categories)) return;
+
+    // Check if this user is a franchise hub
+    if (after?.franchiseRole !== "hub") return;
+
+    const franchiseDoc = await db.collection("franchises").doc(uid).get();
+    if (!franchiseDoc.exists) return;
+
+    const locationUids = franchiseDoc.data()?.locationUids || [];
+    if (locationUids.length === 0) return;
+
+    const newCategories = after?.categories || [];
+    const batch = db.batch();
+
+    for (const locUid of locationUids) {
+      batch.update(db.collection("users").doc(locUid), { categories: newCategories });
+      // Also update public docs if they exist
+      batch.set(db.collection("public").doc(locUid), { categories: newCategories }, { merge: true });
+    }
+
+    // Update hub's public doc
+    batch.set(db.collection("public").doc(uid), { categories: newCategories }, { merge: true });
+
+    await batch.commit();
+  });
+
+// ─── Create franchise from existing account (superadmin only) ───
+export const createFranchise = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.uid !== SUPERADMIN_UID) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const { uid, name, urlEnding } = data;
+  if (!uid || !name) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing uid or name");
+  }
+
+  try {
+    // Verify user exists and is not already in a franchise
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError("not-found", "User not found");
+    }
+    if (userDoc.data()?.franchiseRole) {
+      throw new functions.https.HttpsError("already-exists", "User is already part of a franchise");
+    }
+
+    const userData = userDoc.data() || {};
+
+    // Create franchise doc
+    await db.collection("franchises").doc(uid).set({
+      hubUid: uid,
+      name,
+      locationUids: [],
+      urlEnding: urlEnding || userData.urlEnding || "",
+      brandColor: userData.brandColor || "",
+      tagline: userData.tagline || "",
+      logoUrl: userData.storeDetails?.logoUrl || "",
+      onlineStoreActive: userData.onlineStoreActive ?? false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Generate URL slug from franchise name if not provided
+    const slug = (urlEnding || userData.urlEnding || name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")).toLowerCase();
+
+    // Update user doc with franchise role + auto-setup online store
+    await db.collection("users").doc(uid).update({
+      franchiseId: uid,
+      franchiseRole: "hub",
+      onlineStoreSetUp: true,
+      onlineStoreActive: true,
+      urlEnding: slug,
+    });
+
+    // Give hub account Professional subscription (franchise includes all features)
+    await db.collection("users").doc(uid).collection("subscriptions").doc("franchise-hub").set({
+      role: "Professional Plan",
+      status: "active",
+      created: admin.firestore.FieldValue.serverTimestamp(),
+      metadata: { source: "franchise-hub" },
+    });
+
+    // Create/update public doc for franchise online store
+    await db.collection("public").doc(uid).set({
+      isFranchise: true,
+      urlEnding: slug,
+      storeDetails: userData.storeDetails || {},
+      categories: userData.categories || [],
+      brandColor: userData.brandColor || "",
+      tagline: userData.tagline || "",
+      logoUrl: userData.storeDetails?.logoUrl || "",
+      onlineStoreActive: true,
+      onlineStoreSetUp: true,
+      locations: [],
+    }, { merge: true });
+
+    return { success: true };
+  } catch (err) {
+    console.error("createFranchise failed:", err);
+    if (err instanceof functions.https.HttpsError) throw err;
+    throw new functions.https.HttpsError("internal", err.message || "Failed to create franchise");
+  }
+});

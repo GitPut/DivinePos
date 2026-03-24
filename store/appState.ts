@@ -5,6 +5,8 @@ import {
   CustomerProp,
   Device,
   Employee,
+  FranchiseConfig,
+  FranchiseRole,
   Ingredient,
   MyDeviceDetailsProps,
   OptionTemplate,
@@ -290,6 +292,7 @@ interface OrderDetailsStateProps {
   };
   cart: CartItemProp[];
   page: number;
+  selectedLocationUid?: string | null;
 }
 
 export const orderDetailsState = entity<OrderDetailsStateProps>({
@@ -376,4 +379,26 @@ export const updateIngredientsBatch = (
       return update ? { ...ing, stockQuantity: update.newStock } : ing;
     })
   );
+};
+
+// ─── Franchise ──────────────────────────────────────────────────────────────
+
+interface FranchiseStateProps {
+  franchiseId: string | null;
+  franchiseRole: FranchiseRole;
+  config: FranchiseConfig | null;
+}
+
+export const franchiseState = entity<FranchiseStateProps>({
+  franchiseId: null,
+  franchiseRole: null,
+  config: null,
+});
+
+export const setFranchiseState = (val: FranchiseStateProps): void => {
+  franchiseState.set(val);
+};
+
+export const updateFranchiseState = (val: Partial<FranchiseStateProps>): void => {
+  franchiseState.set({ ...franchiseState.get(), ...val });
 };

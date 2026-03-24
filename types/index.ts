@@ -401,3 +401,33 @@ export type Table = {
   shape: TableShape;
   isActive: boolean;
 };
+
+// ─── Franchise ────────────────────────────────────────────────────────────────
+
+export type FranchiseRole = "hub" | "location" | null;
+
+export type FranchiseLocationInfo = {
+  uid: string;
+  name: string;
+  address: AddressType | null;
+  phoneNumber: string;
+  isActive: boolean;
+  coordinates?: { lat: number; lng: number };
+  acceptDelivery: boolean;
+  deliveryPrice: string;
+  deliveryRange: string;
+  stripePublicKey?: string;
+};
+
+export type FranchiseConfig = {
+  hubUid: string;
+  name: string;
+  locationUids: string[];
+  locations: FranchiseLocationInfo[];
+  brandColor?: string;
+  tagline?: string;
+  logoUrl?: string;
+  urlEnding?: string;
+  onlineStoreActive?: boolean;
+  createdAt?: any;
+};

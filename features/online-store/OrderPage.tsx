@@ -8,6 +8,7 @@ import OnlineOrderHomeCompleted from "./pages/Completed";
 import OnlineOrderHomePickup from "./pages/Pickup";
 import OnlineOrderHomeDelivery from "./pages/Delivery";
 import OnlineOrderHomeCheckout from "./pages/Checkout";
+import FranchiseLocationSelector from "./pages/FranchiseLocationSelector";
 import {
   cartState,
   setCartState,
@@ -15,6 +16,7 @@ import {
   setOrderDetailsState,
   setProductBuilderState,
   setStoreDetailsState,
+  storeDetailsState,
   setOnlineStoreState,
 } from "store/appState";
 import { ProductProp, UserStoreStateProps } from "types";
@@ -36,6 +38,9 @@ const OrderPage = () => {
   const [loaderHidden, setLoaderHidden] = useState(false);
   const [data, setdata] = useState<ProductProp[]>([]);
   const { width: screenWidth } = useWindowSize();
+  const [isFranchise, setIsFranchise] = useState(false);
+  const [franchiseLocations, setFranchiseLocations] = useState<any[]>([]);
+  const [franchiseHubUid, setFranchiseHubUid] = useState<string | null>(null);
 
   const customSort = (a: ProductProp, b: ProductProp) => {
     const rawA = parseFloat(a.rank ?? "");
@@ -62,6 +67,101 @@ const OrderPage = () => {
         const publicDoc = querySnapshot.docs[0];
         const docData = publicDoc.data();
 
+        // Detect franchise stores
+        if (docData.isFranchise && docData.locations?.length > 0) {
+          setIsFranchise(true);
+          setFranchiseLocations(docData.locations.filter((l: any) => l.isActive !== false));
+          setFranchiseHubUid(publicDoc.id);
+
+          // Set franchise-level branding
+          setOnlineStoreState({
+            onlineStoreActive: true,
+            onlineStoreSetUp: true,
+            urlEnding: docData.urlEnding ?? "",
+            stripePublicKey: docData.stripePublicKey ?? null,
+            stripeSecretKey: null,
+            paidStatus: null,
+            brandColor: docData.brandColor ?? "#0d0d0d",
+            tagline: docData.tagline ?? "",
+          });
+
+          setStoreDetailsState({
+            name: docData.storeDetails?.name ?? "",
+            phoneNumber: "",
+            website: "",
+            address: null,
+            deliveryPrice: "",
+            taxRate: docData.storeDetails?.taxRate ?? "13",
+            hasLogo: docData.storeDetails?.hasLogo ?? false,
+            logoUrl: docData.storeDetails?.logoUrl ?? docData.logoUrl ?? null,
+            settingsPassword: "",
+            acceptDelivery: false,
+            deliveryRange: "",
+            stripePublicKey: docData.stripePublicKey ?? "",
+            docID: publicDoc.id,
+          });
+
+          setProductBuilderState({
+            isOnlineOrder: true,
+            isOpen: false,
+            product: null,
+            itemIndex: null,
+            imageUrl: null,
+          });
+
+          // Load products from hub's public collection
+          db.collection("public")
+            .doc(publicDoc.id)
+            .collection("products")
+            .get()
+            .then((productSnapshot) => {
+              const products: ProductProp[] = [];
+              productSnapshot.forEach((element) => {
+                const productData = element.data();
+                products.push({
+                  ...productData,
+                  options: productData.options ?? [],
+                  name: productData.name,
+                  price: productData.price,
+                  description: productData.description,
+                  id: element.id,
+                  category: productData.category,
+                  rank: productData.rank,
+                  imageUrl: productData.imageUrl,
+                  hasImage: productData.hasImage,
+                  dontDisplayOnOnlineStore: productData.dontDisplayOnOnlineStore,
+                });
+              });
+
+              products.sort(customSort);
+              const grouped: ProductProp[] = [];
+              products.forEach((product, index) => {
+                if (product.dontDisplayOnOnlineStore) return;
+                let lastIndex = -1;
+                for (let i = grouped.length - 1; i >= 0; i--) {
+                  if (grouped[i].category === product.category) { lastIndex = i; break; }
+                }
+                if (lastIndex >= 0) {
+                  grouped.splice(lastIndex + 1, 0, { ...product, index: index + 1 });
+                } else {
+                  grouped.push({ ...product, index: index + 1 });
+                }
+              });
+              setdata(grouped);
+              setcatalog({
+                categories: publicDoc.data().categories ?? [],
+                products: products,
+                docID: publicDoc.id,
+              });
+
+              // Start on location selector page (page 0)
+              setOrderDetailsState({ page: 0 });
+              fadeOut();
+            });
+          return;
+        }
+
+        // Single-store flow (unchanged)
         setStoreDetailsState({
           name: docData.storeDetails?.name ?? "",
           phoneNumber: docData.storeDetails?.phoneNumber ?? "",
@@ -221,6 +321,28 @@ const OrderPage = () => {
   return (
     <div style={styles.container}>
       {/* Page content */}
+      {page === 0 && isFranchise && (
+        <div key="p0" className="online-store-page">
+          <FranchiseLocationSelector
+            locations={franchiseLocations}
+            onSelect={(location: any) => {
+              // Override store details with selected location's data
+              setStoreDetailsState({
+                ...storeDetailsState.get(),
+                name: storeDetailsState.get().name,
+                phoneNumber: location.phoneNumber || "",
+                address: location.address || null,
+                deliveryPrice: location.deliveryPrice || "",
+                acceptDelivery: location.acceptDelivery ?? false,
+                deliveryRange: location.deliveryRange || "",
+                stripePublicKey: location.stripePublicKey || storeDetailsState.get().stripePublicKey || "",
+                docID: location.uid,
+              });
+              setOrderDetailsState({ selectedLocationUid: location.uid, page: 1 });
+            }}
+          />
+        </div>
+      )}
       {page === 1 && <div key="p1" className="online-store-page"><OnlineOrderHome /></div>}
       {page === 2 && <div key="p2" className="online-store-page"><OnlineOrderHomePickup /></div>}
       {page === 3 && <div key="p3" className="online-store-page"><OnlineOrderHomeDelivery /></div>}
