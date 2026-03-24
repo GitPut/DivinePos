@@ -3942,6 +3942,68 @@ export const onLocationSettingsChange = functions.firestore
     }
   });
 
+// ─── Delete a franchise (superadmin only) ───
+export const deleteFranchise = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.uid !== SUPERADMIN_UID) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const { hubUid, deleteLocationAccounts } = data;
+  if (!hubUid) throw new functions.https.HttpsError("invalid-argument", "Missing hubUid");
+
+  try {
+    // Get all location UIDs
+    const franchiseDoc = await db.collection("franchises").doc(hubUid).get();
+    if (!franchiseDoc.exists) throw new functions.https.HttpsError("not-found", "Franchise not found");
+
+    const locationUids = franchiseDoc.data()?.locationUids || [];
+
+    // Remove franchise role from all location user docs
+    for (const locUid of locationUids) {
+      if (deleteLocationAccounts) {
+        // Delete the location account entirely
+        await admin.firestore().recursiveDelete(db.collection("users").doc(locUid));
+        await admin.firestore().recursiveDelete(db.collection("public").doc(locUid));
+        await admin.auth().deleteUser(locUid).catch(() => {});
+      } else {
+        // Just remove franchise fields
+        await db.collection("users").doc(locUid).update({
+          franchiseId: admin.firestore.FieldValue.delete(),
+          franchiseRole: admin.firestore.FieldValue.delete(),
+        }).catch(() => {});
+        // Remove franchise-managed subscription
+        await db.collection("users").doc(locUid).collection("subscriptions").doc("franchise-managed").delete().catch(() => {});
+      }
+    }
+
+    // Remove franchise role from hub user doc
+    await db.collection("users").doc(hubUid).update({
+      franchiseId: admin.firestore.FieldValue.delete(),
+      franchiseRole: admin.firestore.FieldValue.delete(),
+      onlineStoreSetUp: admin.firestore.FieldValue.delete(),
+      onlineStoreActive: admin.firestore.FieldValue.delete(),
+    }).catch(() => {});
+
+    // Remove franchise-hub subscription
+    await db.collection("users").doc(hubUid).collection("subscriptions").doc("franchise-hub").delete().catch(() => {});
+
+    // Delete franchise doc and subcollections
+    await admin.firestore().recursiveDelete(db.collection("franchises").doc(hubUid));
+
+    // Clean up public doc (remove isFranchise, locations)
+    await db.collection("public").doc(hubUid).update({
+      isFranchise: admin.firestore.FieldValue.delete(),
+      locations: admin.firestore.FieldValue.delete(),
+    }).catch(() => {});
+
+    return { success: true, deletedLocations: deleteLocationAccounts ? locationUids.length : 0 };
+  } catch (err) {
+    console.error("deleteFranchise failed:", err);
+    if (err instanceof functions.https.HttpsError) throw err;
+    throw new functions.https.HttpsError("internal", err.message || "Failed to delete franchise");
+  }
+});
+
 // ─── Firestore trigger: Sync product changes from hub to all locations ───
 export const onHubProductWrite = functions.firestore
   .document("users/{uid}/products/{productId}")
@@ -4081,21 +4143,21 @@ export const createFranchise = functions.https.onCall(async (data, context) => {
 
     const userData = userDoc.data() || {};
 
+    // Generate URL slug from franchise name if not provided
+    const slug = (urlEnding || userData.urlEnding || name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")).toLowerCase();
+
     // Create franchise doc
     await db.collection("franchises").doc(uid).set({
       hubUid: uid,
       name,
       locationUids: [],
-      urlEnding: urlEnding || userData.urlEnding || "",
+      urlEnding: slug,
       brandColor: userData.brandColor || "",
       tagline: userData.tagline || "",
       logoUrl: userData.storeDetails?.logoUrl || "",
-      onlineStoreActive: userData.onlineStoreActive ?? false,
+      onlineStoreActive: true,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
-
-    // Generate URL slug from franchise name if not provided
-    const slug = (urlEnding || userData.urlEnding || name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")).toLowerCase();
 
     // Update user doc with franchise role + auto-setup online store
     await db.collection("users").doc(uid).update({

@@ -425,9 +425,16 @@ export type FranchiseConfig = {
   locationUids: string[];
   locations: FranchiseLocationInfo[];
   brandColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
   tagline?: string;
+  headline?: string;
+  subheadline?: string;
   logoUrl?: string;
+  heroImageUrl?: string;
   urlEnding?: string;
   onlineStoreActive?: boolean;
+  fontStyle?: "modern" | "classic" | "bold";
+  socialLinks?: { facebook?: string; instagram?: string; twitter?: string };
   createdAt?: any;
 };

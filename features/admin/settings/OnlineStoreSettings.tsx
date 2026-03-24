@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   activePlanState,
   franchiseState,
@@ -17,8 +17,22 @@ import { useHistory } from "react-router-dom";
 
 function OnlineStoreSettings() {
   const activePlan = activePlanState.use();
-  const { franchiseRole } = franchiseState.use();
+  const franchise = franchiseState.use();
+  const franchiseRole = franchise.franchiseRole;
   const onlineStoreDetails = onlineStoreState.use();
+  const [detectedRole, setDetectedRole] = useState<string | null>(null);
+
+  // Direct Firestore check as fallback if state wasn't loaded
+  useEffect(() => {
+    if (!franchiseRole && auth.currentUser) {
+      db.collection("users").doc(auth.currentUser.uid).get().then((doc) => {
+        const role = doc.data()?.franchiseRole || null;
+        if (role) setDetectedRole(role);
+      }).catch(() => {});
+    }
+  }, [franchiseRole]);
+
+  const effectiveRole = franchiseRole || detectedRole;
   const storeDetails = storeDetailsState.use();
   const catalog = storeProductsState.use();
   const [urlEnding, seturlEnding] = useState(onlineStoreDetails.urlEnding);
@@ -33,11 +47,24 @@ function OnlineStoreSettings() {
   );
   const [loading, setloading] = useState(false);
   const [brandColor, setBrandColor] = useState(onlineStoreDetails.brandColor || "#0d0d0d");
+  const [secondaryColor, setSecondaryColor] = useState(onlineStoreDetails.secondaryColor || "#f59e0b");
+  const [accentColor, setAccentColor] = useState(onlineStoreDetails.accentColor || "#10b981");
   const [tagline, setTagline] = useState(onlineStoreDetails.tagline || "");
+  const [headline, setHeadline] = useState(onlineStoreDetails.headline || "");
+  const [subheadline, setSubheadline] = useState(onlineStoreDetails.subheadline || "");
+  const [fontStyle, setFontStyle] = useState<"modern" | "classic" | "bold">(onlineStoreDetails.fontStyle || "modern");
+  const [heroImageUrl, setHeroImageUrl] = useState(onlineStoreDetails.heroImageUrl || "");
+  const [heroFile, setHeroFile] = useState<File | null>(null);
+  const [heroPreview, setHeroPreview] = useState<string | null>(onlineStoreDetails.heroImageUrl || null);
+  const [socialFacebook, setSocialFacebook] = useState(onlineStoreDetails.socialLinks?.facebook || "");
+  const [socialInstagram, setSocialInstagram] = useState(onlineStoreDetails.socialLinks?.instagram || "");
+  const [socialTwitter, setSocialTwitter] = useState(onlineStoreDetails.socialLinks?.twitter || "");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(storeDetails.logoUrl || null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
   const alertP = useAlert();
   const history = useHistory();
 
@@ -286,7 +313,7 @@ function OnlineStoreSettings() {
   };
 
   // Franchise locations — simplified Stripe-only view
-  if (franchiseRole === "location") {
+  if (effectiveRole === "location") {
     return (
       <div style={styles.container}>
         <div style={styles.headerRow}>
@@ -354,8 +381,338 @@ function OnlineStoreSettings() {
     );
   }
 
+  // Franchise hub — full customization view
+  if (effectiveRole === "hub") {
+    const hubUrlEnding = onlineStoreDetails.urlEnding || urlEnding;
+
+    const handleHubSave = async () => {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return;
+      setloading(true);
+
+      try {
+        // Upload hero image if changed
+        let finalHeroUrl = heroImageUrl;
+        if (heroFile) {
+          setUploadingHero(true);
+          const heroRef = storage.ref().child(`${uid}/images/hero-${Date.now()}`);
+          await heroRef.put(heroFile);
+          finalHeroUrl = await heroRef.getDownloadURL();
+          setUploadingHero(false);
+        }
+
+        // Upload logo if changed
+        let finalLogoUrl = storeDetails.logoUrl;
+        let hasLogo = storeDetails.hasLogo;
+        if (logoFile) {
+          setUploadingLogo(true);
+          const logoRef = storage.ref().child(`${uid}/images/logo-${Date.now()}`);
+          await logoRef.put(logoFile);
+          finalLogoUrl = await logoRef.getDownloadURL();
+          hasLogo = true;
+          setUploadingLogo(false);
+        }
+
+        const socialLinks = {
+          ...(socialFacebook ? { facebook: socialFacebook } : {}),
+          ...(socialInstagram ? { instagram: socialInstagram } : {}),
+          ...(socialTwitter ? { twitter: socialTwitter } : {}),
+        };
+
+        // Update franchise doc
+        await db.collection("franchises").doc(uid).update({
+          brandColor,
+          secondaryColor,
+          accentColor,
+          tagline,
+          headline,
+          subheadline,
+          fontStyle,
+          heroImageUrl: finalHeroUrl || "",
+          logoUrl: finalLogoUrl || "",
+          socialLinks,
+        });
+
+        // Update public doc
+        await db.collection("public").doc(uid).update({
+          brandColor,
+          secondaryColor,
+          accentColor,
+          tagline,
+          headline,
+          subheadline,
+          fontStyle,
+          heroImageUrl: finalHeroUrl || "",
+          logoUrl: finalLogoUrl || "",
+          socialLinks,
+          onlineStoreActive,
+        });
+
+        // Update user doc
+        await db.collection("users").doc(uid).update({
+          brandColor,
+          tagline,
+          onlineStoreActive,
+          "storeDetails.hasLogo": hasLogo,
+          "storeDetails.logoUrl": finalLogoUrl,
+        });
+
+        setOnlineStoreState({
+          ...onlineStoreDetails,
+          brandColor,
+          secondaryColor,
+          accentColor,
+          tagline,
+          headline,
+          subheadline,
+          fontStyle,
+          heroImageUrl: finalHeroUrl || "",
+          socialLinks,
+          onlineStoreActive,
+        });
+
+        setHeroImageUrl(finalHeroUrl || "");
+        alertP.success("Online store settings saved");
+      } catch (err) {
+        alertP.error("Failed to save settings");
+        console.error(err);
+      }
+      setloading(false);
+    };
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.headerRow}>
+          <div>
+            <span style={styles.title}>Franchise Online Store</span>
+            <span style={styles.subtitle}>Customize your online ordering experience</span>
+          </div>
+          <button style={{ ...styles.saveBtn, opacity: loading ? 0.5 : 1 }} onClick={handleHubSave} disabled={loading}>
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+        <div style={styles.scrollArea}>
+          {/* Store URL Card */}
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <FiGlobe size={18} color="#1D294E" />
+              <span style={styles.cardTitle}>Store URL</span>
+            </div>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>URL Ending</span>
+              <div style={styles.lockedUrlRow}>
+                <FiLock size={14} color="#94a3b8" />
+                <span style={styles.lockedUrlText}>{hubUrlEnding || "Not set"}</span>
+              </div>
+              <span style={styles.fieldHint}>Customers order at divinepos.com/order/{hubUrlEnding || "..."}</span>
+            </div>
+          </div>
+
+          {/* Store Status */}
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>Store Status</span>
+            <div style={styles.switchRow}>
+              <div>
+                <span style={styles.switchLabel}>Online Store Active</span>
+                <span style={styles.switchDescription}>When enabled, customers can place orders through your franchise online store</span>
+              </div>
+              <Switch isActive={onlineStoreActive} toggleSwitch={() => setonlineStoreActive(!onlineStoreActive)} />
+            </div>
+          </div>
+
+          {/* Hero & Branding */}
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <FiDroplet size={18} color="#1D294E" />
+              <span style={styles.cardTitle}>Hero & Branding</span>
+            </div>
+
+            {/* Hero Image Upload */}
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Hero Banner Image</span>
+              <span style={styles.fieldHint}>Recommended: 1920x600px or wider. This is the main background image on your landing page.</span>
+              <input type="file" ref={heroInputRef} style={{ display: "none" }} accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setHeroFile(file);
+                  setHeroPreview(URL.createObjectURL(file));
+                }
+              }} />
+              {heroPreview ? (
+                <div style={{ position: "relative", marginTop: 8 }}>
+                  <img src={heroPreview} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 10, border: "1px solid #e2e8f0" }} alt="" />
+                  <button style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: "#fff", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} onClick={() => { setHeroFile(null); setHeroPreview(null); setHeroImageUrl(""); }}>
+                    <FiX size={14} color="#64748b" />
+                  </button>
+                </div>
+              ) : (
+                <button style={{ width: "100%", height: 100, border: "2px dashed #cbd5e1", borderRadius: 10, backgroundColor: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", marginTop: 8 }} onClick={() => heroInputRef.current?.click()}>
+                  <FiUpload size={18} color="#94a3b8" />
+                  <span style={{ fontSize: 13, color: "#94a3b8" }}>Click to upload hero image</span>
+                </button>
+              )}
+            </div>
+
+            {/* Logo Upload */}
+            <div style={{ ...styles.fieldGroup, marginTop: 16 }}>
+              <span style={styles.fieldLabel}>Store Logo</span>
+              <input type="file" ref={logoInputRef} style={{ display: "none" }} accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setLogoFile(file);
+                  setLogoPreview(URL.createObjectURL(file));
+                }
+              }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+                {logoPreview ? (
+                  <img src={logoPreview} style={{ height: 48, maxWidth: 160, objectFit: "contain", borderRadius: 8, border: "1px solid #e2e8f0" }} alt="" />
+                ) : (
+                  <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: "#f1f5f9", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 20, fontWeight: "700", color: "#94a3b8" }}>?</span>
+                  </div>
+                )}
+                <button style={{ height: 36, paddingLeft: 14, paddingRight: 14, border: "1px solid #e2e8f0", borderRadius: 8, backgroundColor: "#fff", fontSize: 13, fontWeight: "500", color: "#344054", cursor: "pointer" }} onClick={() => logoInputRef.current?.click()}>
+                  {logoPreview ? "Change Logo" : "Upload Logo"}
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Text */}
+            <div style={{ ...styles.fieldGrid, marginTop: 16 }}>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Headline <span style={{ fontWeight: "400", color: "#94a3b8" }}>optional</span></span>
+                <input style={styles.input} placeholder="Order online now!" value={headline} onChange={(e) => setHeadline(e.target.value)} />
+                <span style={styles.fieldHint}>Big text on the landing page. Leave blank to use store name.</span>
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Subheadline <span style={{ fontWeight: "400", color: "#94a3b8" }}>optional</span></span>
+                <input style={styles.input} placeholder="Fresh ingredients, fast delivery" value={subheadline} onChange={(e) => setSubheadline(e.target.value)} />
+              </div>
+            </div>
+            <div style={{ ...styles.fieldGroup, marginTop: 12 }}>
+              <span style={styles.fieldLabel}>Tagline</span>
+              <input style={styles.input} placeholder="Fresh, hot, and made to order" value={tagline} onChange={(e) => setTagline(e.target.value)} />
+            </div>
+          </div>
+
+          {/* Colors */}
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <FiDroplet size={18} color="#1D294E" />
+              <span style={styles.cardTitle}>Color Scheme</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Primary Color</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="color" value={brandColor} onChange={(e) => setBrandColor(e.target.value)} style={{ width: 40, height: 40, borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", padding: 2 }} />
+                  <input style={{ ...styles.input, width: 120 }} value={brandColor} onChange={(e) => setBrandColor(e.target.value)} placeholder="#0d0d0d" />
+                </div>
+                <span style={styles.fieldHint}>Main background color</span>
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Secondary Color</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} style={{ width: 40, height: 40, borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", padding: 2 }} />
+                  <input style={{ ...styles.input, width: 120 }} value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} placeholder="#f59e0b" />
+                </div>
+                <span style={styles.fieldHint}>Accents & highlights</span>
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Button Color</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} style={{ width: 40, height: 40, borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", padding: 2 }} />
+                  <input style={{ ...styles.input, width: 120 }} value={accentColor} onChange={(e) => setAccentColor(e.target.value)} placeholder="#10b981" />
+                </div>
+                <span style={styles.fieldHint}>CTA buttons</span>
+              </div>
+            </div>
+            {/* Color preview */}
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, backgroundColor: brandColor, display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 10, backgroundColor: secondaryColor, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 20, fontWeight: "800", color: "#fff" }}>P</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ color: "#fff", fontSize: 16, fontWeight: "700", display: "block" }}>Preview</span>
+                <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>Your store landing page colors</span>
+              </div>
+              <div style={{ padding: "8px 20px", borderRadius: 8, backgroundColor: accentColor }}>
+                <span style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>Order Now</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Font */}
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <FiType size={18} color="#1D294E" />
+              <span style={styles.cardTitle}>Typography</span>
+            </div>
+            <div style={styles.fieldGroup}>
+              <span style={styles.fieldLabel}>Font Style</span>
+              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                {([
+                  { value: "modern" as const, label: "Modern", font: "'Inter', sans-serif", sample: "Aa" },
+                  { value: "classic" as const, label: "Classic", font: "'Playfair Display', serif", sample: "Aa" },
+                  { value: "bold" as const, label: "Bold", font: "'Oswald', sans-serif", sample: "Aa" },
+                ]).map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setFontStyle(f.value)}
+                    style={{
+                      flex: 1, height: 72, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
+                      borderRadius: 10, cursor: "pointer",
+                      border: fontStyle === f.value ? "2px solid #1D294E" : "1px solid #e2e8f0",
+                      backgroundColor: fontStyle === f.value ? "#eef2ff" : "#fff",
+                    }}
+                  >
+                    <span style={{ fontFamily: f.font, fontSize: 24, fontWeight: "700", color: "#0f172a" }}>{f.sample}</span>
+                    <span style={{ fontSize: 11, fontWeight: "500", color: fontStyle === f.value ? "#1D294E" : "#94a3b8" }}>{f.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Social Links */}
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <FiGlobe size={18} color="#1D294E" />
+              <span style={styles.cardTitle}>Social Media Links</span>
+            </div>
+            <span style={{ fontSize: 13, color: "#94a3b8", marginBottom: 12, display: "block" }}>Add your social media links — they'll appear on your online store footer.</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Facebook</span>
+                <input style={styles.input} placeholder="https://facebook.com/yourpage" value={socialFacebook} onChange={(e) => setSocialFacebook(e.target.value)} />
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Instagram</span>
+                <input style={styles.input} placeholder="https://instagram.com/yourpage" value={socialInstagram} onChange={(e) => setSocialInstagram(e.target.value)} />
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>X (Twitter)</span>
+                <input style={styles.input} placeholder="https://x.com/yourpage" value={socialTwitter} onChange={(e) => setSocialTwitter(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Info */}
+          <div style={styles.card}>
+            <span style={styles.cardTitle}>Payment Routing</span>
+            <div style={{ padding: "12px 16px", backgroundColor: "#eef2ff", borderRadius: 10, border: "1px solid #c7d2fe" }}>
+              <span style={{ fontSize: 13, color: "#4338ca", lineHeight: "1.5" }}>
+                Each franchise location manages their own Stripe keys. When a customer orders from a location, the payment goes directly to that location's Stripe account.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Not on Professional plan — show upgrade prompt (franchise accounts always have access)
-  if (activePlan !== "professional" && franchiseRole !== "hub" && franchiseRole !== "location") {
+  if (activePlan !== "professional" && effectiveRole !== "hub" && effectiveRole !== "location") {
     return (
       <div style={styles.container}>
         <div style={styles.headerRow}>
@@ -393,7 +750,7 @@ function OnlineStoreSettings() {
   }
 
   // Professional plan but hasn't paid for online store add-on (franchise accounts skip this)
-  if (onlineStoreDetails.paidStatus !== "active" && franchiseRole !== "hub" && franchiseRole !== "location") {
+  if (onlineStoreDetails.paidStatus !== "active" && effectiveRole !== "hub" && effectiveRole !== "location") {
     return (
       <div style={styles.container}>
         <div style={styles.headerRow}>

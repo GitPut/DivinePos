@@ -73,7 +73,7 @@ const OrderPage = () => {
           setFranchiseLocations(docData.locations.filter((l: any) => l.isActive !== false));
           setFranchiseHubUid(publicDoc.id);
 
-          // Set franchise-level branding
+          // Set franchise-level branding (including new customization fields)
           setOnlineStoreState({
             onlineStoreActive: true,
             onlineStoreSetUp: true,
@@ -82,7 +82,14 @@ const OrderPage = () => {
             stripeSecretKey: null,
             paidStatus: null,
             brandColor: docData.brandColor ?? "#0d0d0d",
+            secondaryColor: docData.secondaryColor ?? "#f59e0b",
+            accentColor: docData.accentColor ?? "#10b981",
             tagline: docData.tagline ?? "",
+            headline: docData.headline ?? "",
+            subheadline: docData.subheadline ?? "",
+            heroImageUrl: docData.heroImageUrl ?? "",
+            fontStyle: docData.fontStyle ?? "modern",
+            socialLinks: docData.socialLinks ?? {},
           });
 
           setStoreDetailsState({
@@ -92,8 +99,8 @@ const OrderPage = () => {
             address: null,
             deliveryPrice: "",
             taxRate: docData.storeDetails?.taxRate ?? "13",
-            hasLogo: docData.storeDetails?.hasLogo ?? false,
-            logoUrl: docData.storeDetails?.logoUrl ?? docData.logoUrl ?? null,
+            hasLogo: !!(docData.logoUrl || docData.storeDetails?.hasLogo),
+            logoUrl: docData.logoUrl || docData.storeDetails?.logoUrl || null,
             settingsPassword: "",
             acceptDelivery: false,
             deliveryRange: "",

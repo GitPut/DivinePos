@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FiMapPin, FiPhone, FiNavigation } from "react-icons/fi";
+import { FiMapPin, FiPhone, FiNavigation, FiTruck, FiStar } from "react-icons/fi";
 import { storeDetailsState, onlineStoreState } from "store/appState";
 import useWindowSize from "shared/hooks/useWindowSize";
 import { getContrastStyles } from "utils/colorContrast";
@@ -17,15 +17,16 @@ function FranchiseLocationSelector({ locations, onSelect }: FranchiseLocationSel
   const { width: screenWidth } = useWindowSize();
   const isMobile = screenWidth < 700;
   const bgColor = onlineStore.brandColor || "#0d0d0d";
+  const accentColor = onlineStore.accentColor || "#10b981";
   const c = getContrastStyles(bgColor);
+  const fontClass = `font-${onlineStore.fontStyle || "modern"}`;
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Try to get user location for distance sorting
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => {} // Permission denied — just show alphabetical
+        () => {}
       );
     }
   }, []);
@@ -52,71 +53,96 @@ function FranchiseLocationSelector({ locations, onSelect }: FranchiseLocationSel
     return a.name.localeCompare(b.name);
   });
 
+  const nearestUid = sortedLocations.length > 0 && getDistance(sortedLocations[0]) !== null ? sortedLocations[0].uid : null;
   const hasLogo = storeDetails.hasLogo && storeDetails.logoUrl;
+  const heroImage = onlineStore.heroImageUrl;
 
   return (
-    <div style={{ ...styles.page, backgroundColor: bgColor }}>
-      <div style={{
-        ...styles.content,
-        ...(isMobile ? { padding: "40px 20px" } : {}),
-      }}>
+    <div className={fontClass} style={{ width: "100%", height: "100%", position: "relative", overflow: "auto" }}>
+      {/* Background */}
+      {heroImage ? (
+        <>
+          <img src={heroImage} style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }} alt="" />
+          <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.7)", zIndex: 1 }} />
+        </>
+      ) : (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: bgColor, zIndex: 0 }} />
+      )}
+
+      <div style={{ position: "relative", zIndex: 2, width: "100%", minHeight: "100%", display: "flex", flexDirection: "column", alignItems: "center", padding: isMobile ? "40px 20px" : "48px 32px", boxSizing: "border-box" }}>
         {/* Logo */}
         {hasLogo ? (
-          <img src={storeDetails.logoUrl!} style={styles.logo} alt="" />
+          <img src={storeDetails.logoUrl!} style={{ height: 56, maxWidth: 200, objectFit: "contain", marginBottom: 20 }} alt="" />
         ) : (
-          <div style={{ ...styles.logoFallback, backgroundColor: c.overlay, borderColor: c.overlayBorder }}>
-            <span style={{ ...styles.logoLetter, color: c.text }}>
-              {(storeDetails.name || "S").charAt(0)}
-            </span>
+          <div style={{ width: 60, height: 60, borderRadius: 16, backgroundColor: heroImage ? "rgba(255,255,255,0.15)" : c.overlay, backdropFilter: heroImage ? "blur(8px)" : undefined, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, border: `1px solid ${heroImage ? "rgba(255,255,255,0.2)" : c.overlayBorder}` }}>
+            <span style={{ fontSize: 28, fontWeight: "800", color: "#fff" }}>{(storeDetails.name || "S").charAt(0)}</span>
           </div>
         )}
 
-        <span style={{ ...styles.title, color: c.text }}>
-          {storeDetails.name}
+        <span style={{ fontSize: isMobile ? 28 : 34, fontWeight: "900", color: "#fff", textAlign: "center", letterSpacing: -0.5 }}>
+          {onlineStore.headline || storeDetails.name}
         </span>
-        <span style={{ ...styles.subtitle, color: c.textFaint }}>
+        <span style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", textAlign: "center", marginBottom: 32, marginTop: 6 }}>
           Choose a location to order from
         </span>
 
         {/* Location cards */}
-        <div style={styles.locationList}>
+        <div style={{ width: "100%", maxWidth: 560, display: "flex", flexDirection: "column", gap: 12 }}>
           {sortedLocations.map((location) => {
             const dist = getDistance(location);
-            const addressLabel = location.address?.value?.structured_formatting?.main_text
-              || location.address?.label
-              || "";
+            const isNearest = location.uid === nearestUid;
+            const addressLabel = location.address?.value?.structured_formatting?.main_text || location.address?.label || "";
 
             return (
               <button
                 key={location.uid}
-                className={c.isLight ? "online-store-cta-btn-light" : "online-store-cta-btn"}
-                style={{ ...styles.locationCard, backgroundColor: c.overlay, borderColor: c.overlayBorder }}
+                className="online-store-product-card"
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: "18px 22px",
+                  borderRadius: 16,
+                  border: isNearest ? `2px solid ${accentColor}` : "1px solid rgba(255,255,255,0.12)",
+                  backgroundColor: isNearest ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.06)",
+                  cursor: "pointer",
+                  textAlign: "left" as const,
+                  backdropFilter: "blur(8px)",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
                 onClick={() => onSelect(location)}
               >
-                <div style={{ ...styles.iconCircle, backgroundColor: c.iconCircleBg }}>
-                  <FiMapPin size={20} color={c.text} />
+                {/* Nearest badge */}
+                {isNearest && (
+                  <div style={{ position: "absolute", top: 0, right: 0, backgroundColor: accentColor, padding: "4px 12px 4px 14px", borderBottomLeftRadius: 10, display: "flex", alignItems: "center", gap: 4 }}>
+                    <FiStar size={10} color="#fff" />
+                    <span style={{ fontSize: 10, fontWeight: "700", color: "#fff", textTransform: "uppercase", letterSpacing: 0.5 }}>Nearest</span>
+                  </div>
+                )}
+
+                <div style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <FiMapPin size={22} color="#fff" />
                 </div>
-                <div style={styles.locationInfo}>
-                  <span style={{ ...styles.locationName, color: c.text }}>{location.name}</span>
-                  {addressLabel && (
-                    <span style={{ ...styles.locationAddress, color: c.textMuted }}>{addressLabel}</span>
-                  )}
-                  <div style={styles.locationMeta}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 17, fontWeight: "700", color: "#fff" }}>{location.name}</span>
+                  {addressLabel && <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{addressLabel}</span>}
+                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 10, marginTop: 2, flexWrap: "wrap" }}>
                     {location.phoneNumber && (
-                      <span style={{ ...styles.metaChip, color: c.textFaint }}>
-                        <FiPhone size={10} />
-                        {formatPhone(location.phoneNumber)}
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", gap: 4 }}>
+                        <FiPhone size={10} /> {formatPhone(location.phoneNumber)}
                       </span>
                     )}
                     {dist !== null && (
-                      <span style={{ ...styles.metaChip, color: c.textFaint }}>
-                        <FiNavigation size={10} />
-                        {dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`}
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", gap: 4 }}>
+                        <FiNavigation size={10} /> {dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`}
                       </span>
                     )}
                     {location.acceptDelivery && (
-                      <span style={{ ...styles.deliveryBadge, color: c.text, backgroundColor: c.iconCircleBg }}>
-                        Delivery
+                      <span style={{ fontSize: 10, fontWeight: "600", color: "#fff", backgroundColor: accentColor, padding: "2px 8px", borderRadius: 10 }}>
+                        <FiTruck size={10} style={{ marginRight: 3 }} />Delivery
                       </span>
                     )}
                   </div>
@@ -126,131 +152,10 @@ function FranchiseLocationSelector({ locations, onSelect }: FranchiseLocationSel
           })}
         </div>
 
-        <span style={{ ...styles.poweredBy, color: c.textFaint }}>Powered by Divine POS</span>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", marginTop: "auto", paddingTop: 32 }}>Powered by Divine POS</span>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    overflow: "auto",
-  },
-  content: {
-    width: "100%",
-    maxWidth: 540,
-    padding: "48px 32px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 8,
-    boxSizing: "border-box",
-  },
-  logo: {
-    height: 56,
-    maxWidth: 200,
-    objectFit: "contain" as const,
-    marginBottom: 16,
-  },
-  logoFallback: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-    border: "1px solid transparent",
-  },
-  logoLetter: {
-    fontSize: 26,
-    fontWeight: "800",
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-    textAlign: "center" as const,
-  },
-  subtitle: {
-    fontSize: 15,
-    textAlign: "center" as const,
-    marginBottom: 24,
-  },
-  locationList: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-  locationCard: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "row" as const,
-    alignItems: "center",
-    gap: 16,
-    padding: "16px 20px",
-    borderRadius: 16,
-    border: "1px solid transparent",
-    cursor: "pointer",
-    transition: "background-color 0.2s, border-color 0.2s",
-    textAlign: "left" as const,
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  locationInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 3,
-    flex: 1,
-    minWidth: 0,
-  },
-  locationName: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  locationAddress: {
-    fontSize: 13,
-    fontWeight: "400",
-  },
-  locationMeta: {
-    display: "flex",
-    flexDirection: "row" as const,
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-    flexWrap: "wrap" as const,
-  },
-  metaChip: {
-    fontSize: 11,
-    display: "flex",
-    flexDirection: "row" as const,
-    alignItems: "center",
-    gap: 4,
-  },
-  deliveryBadge: {
-    fontSize: 10,
-    fontWeight: "600",
-    padding: "2px 8px",
-    borderRadius: 10,
-  },
-  poweredBy: {
-    fontSize: 11,
-    marginTop: "auto",
-    paddingTop: 32,
-  },
-};
 
 export default FranchiseLocationSelector;

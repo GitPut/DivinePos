@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FiPlus, FiMapPin, FiGlobe, FiChevronDown, FiChevronUp, FiUser } from "react-icons/fi";
+import { FiPlus, FiMapPin, FiGlobe, FiChevronDown, FiChevronUp, FiUser, FiTrash2 } from "react-icons/fi";
 import { db } from "services/firebase/config";
 import { useAlert } from "react-alert";
 import Swal from "sweetalert2";
@@ -260,10 +260,50 @@ function FranchisesList() {
                                 <span style={styles.locationName}>{loc.name}</span>
                                 <span style={styles.locationUid}>{loc.uid}</span>
                               </div>
-                              <span style={{
-                                ...styles.statusDot,
-                                backgroundColor: loc.isActive !== false ? "#16a34a" : "#94a3b8",
-                              }} />
+                              <button
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}
+                                title="Delete location account"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const { isConfirmed } = await Swal.fire({
+                                    title: `Delete "${loc.name}"?`,
+                                    text: "This will permanently delete this location account and all its data.",
+                                    showCancelButton: true,
+                                    confirmButtonText: "Delete",
+                                    confirmButtonColor: "#ef4444",
+                                  });
+                                  if (!isConfirmed) return;
+                                  try {
+                                    const deleteFn = firebase.functions().httpsCallable("deleteAccount");
+                                    await deleteFn({ uid: loc.uid });
+                                    // Remove from franchise doc
+                                    await db.collection("franchises").doc(f.hubUid).collection("locations").doc(loc.uid).delete();
+                                    await db.collection("franchises").doc(f.hubUid).update({
+                                      locationUids: firebase.firestore.FieldValue.arrayRemove(loc.uid),
+                                    });
+                                    // Remove from public doc
+                                    const pubDoc = await db.collection("public").doc(f.hubUid).get();
+                                    if (pubDoc.exists) {
+                                      const locs = (pubDoc.data()?.locations || []).filter((l: any) => l.uid !== loc.uid);
+                                      await db.collection("public").doc(f.hubUid).update({ locations: locs });
+                                    }
+                                    // Update local state
+                                    setFranchises((prev) => prev.map((fr) => {
+                                      if (fr.hubUid !== f.hubUid) return fr;
+                                      return {
+                                        ...fr,
+                                        locationUids: (fr.locationUids || []).filter((u) => u !== loc.uid),
+                                        locations: (fr.locations || []).filter((l) => l.uid !== loc.uid),
+                                      };
+                                    }));
+                                    alertP.success(`"${loc.name}" deleted`);
+                                  } catch (err: any) {
+                                    alertP.error(err.message || "Delete failed");
+                                  }
+                                }}
+                              >
+                                <FiTrash2 size={14} color="#ef4444" />
+                              </button>
                             </div>
                           ))
                         )}
@@ -295,6 +335,41 @@ function FranchisesList() {
                             }}
                           >
                             <span style={{ ...styles.addLocationTxt, color: "#b45309" }}>Sync to Online Store</span>
+                          </button>
+                          <button
+                            style={{ ...styles.addLocationBtn, borderColor: "#fca5a5", backgroundColor: "#fef2f2" }}
+                            onClick={async () => {
+                              const { value: confirmed } = await Swal.fire({
+                                title: `Delete "${f.name}"?`,
+                                html: `<div style="text-align:left;">
+                                  <p>This will remove the franchise and disconnect all locations.</p>
+                                  <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;">
+                                    <input type="checkbox" id="swal-delete-accounts" />
+                                    <span style="font-size:13px;">Also delete all location accounts</span>
+                                  </label>
+                                </div>`,
+                                showCancelButton: true,
+                                confirmButtonText: "Delete Franchise",
+                                confirmButtonColor: "#ef4444",
+                                preConfirm: () => {
+                                  const deleteAccounts = (document.getElementById("swal-delete-accounts") as HTMLInputElement)?.checked;
+                                  return { deleteAccounts };
+                                },
+                              });
+                              if (!confirmed) return;
+                              try {
+                                const deleteFn = firebase.functions().httpsCallable("deleteFranchise");
+                                await deleteFn({ hubUid: f.hubUid, deleteLocationAccounts: confirmed.deleteAccounts });
+                                alertP.success(`Franchise "${f.name}" deleted`);
+                                setFranchises((prev) => prev.filter((fr) => fr.hubUid !== f.hubUid));
+                                setExpandedUid(null);
+                              } catch (err: any) {
+                                alertP.error(err.message || "Delete failed");
+                              }
+                            }}
+                          >
+                            <FiTrash2 size={14} color="#ef4444" />
+                            <span style={{ ...styles.addLocationTxt, color: "#ef4444" }}>Delete Franchise</span>
                           </button>
                         </div>
                       </>

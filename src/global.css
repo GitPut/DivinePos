@@ -1,5 +1,13 @@
 /* Global styles for Divine POS */
 
+/* Google Fonts for online store */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&display=swap');
+
+/* Online store font classes */
+.font-modern { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+.font-classic { font-family: 'Playfair Display', Georgia, serif; }
+.font-bold { font-family: 'Oswald', 'Impact', sans-serif; }
+
 /* Custom password masking font */
 @font-face {
   font-family: "Password";
@@ -300,6 +308,47 @@ input, textarea {
 }
 .pizza-float {
   animation: pizza-float 4s ease-in-out infinite;
+}
+
+/* Online store hero overlay */
+.online-store-hero-overlay {
+  background: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 100%);
+}
+.online-store-hero-overlay-mobile {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 50%);
+}
+
+/* Frosted glass effect */
+.frosted-glass {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.frosted-glass-light {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Online store product card hover */
+.online-store-product-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.online-store-product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+/* Online store social icon hover */
+.online-store-social-icon {
+  transition: opacity 0.2s, transform 0.2s;
+  opacity: 0.5;
+}
+.online-store-social-icon:hover {
+  opacity: 1;
+  transform: scale(1.15);
 }
 
 /* Online store CTA buttons */

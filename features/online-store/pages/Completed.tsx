@@ -14,9 +14,12 @@ function OnlineOrderHomeCompleted() {
   const onlineStore = onlineStoreState.use();
   const page = orderDetails.page;
   const { width: screenWidth } = useWindowSize();
+  const accentColor = onlineStore.accentColor || "#10b981";
+  const fontClass = `font-${onlineStore.fontStyle || "modern"}`;
+  const hasLogo = storeDetails.hasLogo && storeDetails.logoUrl;
 
   return (
-    <div style={{ ...styles.container, backgroundColor: onlineStore.brandColor || "#0d0d0d" }}>
+    <div className={fontClass} style={{ ...styles.container, backgroundColor: onlineStore.brandColor || "#0d0d0d" }}>
       <div style={styles.scrollContainer}>
         <div
           style={{
@@ -24,9 +27,14 @@ function OnlineOrderHomeCompleted() {
             ...(screenWidth < 600 ? { padding: "40px 20px" } : {}),
           }}
         >
+          {/* Logo */}
+          {hasLogo && (
+            <img src={storeDetails.logoUrl!} style={{ height: 48, maxWidth: 180, objectFit: "contain" as const, marginBottom: 8 }} alt="" />
+          )}
+
           {/* Success icon */}
-          <div style={styles.iconWrapper}>
-            <FiCheckCircle size={56} color="#22c55e" strokeWidth={1.5} />
+          <div style={{ ...styles.iconWrapper, backgroundColor: `${accentColor}1a` }}>
+            <FiCheckCircle size={56} color={accentColor} strokeWidth={1.5} />
           </div>
 
           {/* Title */}
@@ -68,7 +76,7 @@ function OnlineOrderHomeCompleted() {
 
           {/* Place another order button */}
           <button
-            style={styles.primaryBtn}
+            style={{ ...styles.primaryBtn, backgroundColor: accentColor }}
             onClick={() => {
               setOrderDetailsState({
                 ...orderDetails,

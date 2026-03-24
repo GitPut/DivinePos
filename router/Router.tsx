@@ -318,6 +318,9 @@ const AppRouter = () => {
         // ── Load franchise data ─────────────────────────────────────────
         let franchiseRole = docData?.franchiseRole || null;
         let franchiseId = docData?.franchiseId || null;
+        let franchiseUrlEnding: string | null = null;
+        let franchiseBrandColor: string | null = null;
+        let franchiseTagline: string | null = null;
 
         // Fallback: detect franchise location from subscription metadata or doc ID
         if (!franchiseRole && subDocs && !subDocs.empty) {
@@ -344,9 +347,17 @@ const AppRouter = () => {
         if (franchiseRole && franchiseId) {
           try {
             if (franchiseRole === "hub") {
-              const franchiseDoc = await db.collection("franchises").doc(user.uid).get();
+              const [franchiseDoc, publicDoc] = await Promise.all([
+                db.collection("franchises").doc(user.uid).get(),
+                db.collection("public").doc(user.uid).get(),
+              ]);
               if (franchiseDoc.exists) {
                 const fData = franchiseDoc.data();
+                const pData = publicDoc.exists ? publicDoc.data() : null;
+                // Try franchise doc first, then public doc, then user doc
+                franchiseUrlEnding = fData?.urlEnding || pData?.urlEnding || docData?.urlEnding || null;
+                franchiseBrandColor = fData?.brandColor || pData?.brandColor || docData?.brandColor || null;
+                franchiseTagline = fData?.tagline || pData?.tagline || docData?.tagline || null;
                 const locSnap = await db.collection("franchises").doc(user.uid).collection("locations").get();
                 const locations: any[] = [];
                 locSnap.forEach((loc) => locations.push({ ...loc.data(), uid: loc.id }));
@@ -361,7 +372,7 @@ const AppRouter = () => {
                     brandColor: fData?.brandColor,
                     tagline: fData?.tagline,
                     logoUrl: fData?.logoUrl,
-                    urlEnding: fData?.urlEnding,
+                    urlEnding: franchiseUrlEnding || "",
                     onlineStoreActive: fData?.onlineStoreActive,
                   },
                 });
@@ -479,14 +490,14 @@ const AppRouter = () => {
           // After processing ALL subscriptions, set online store state
           if (onlineStoreGrantedByPlan) {
             setOnlineStoreState({
-              urlEnding: doc.data()?.urlEnding,
+              urlEnding: (isFranchiseHub ? franchiseUrlEnding : null) || doc.data()?.urlEnding || "",
               onlineStoreActive: isFranchiseHub ? true : (doc.data()?.onlineStoreActive ?? false),
               onlineStoreSetUp: isFranchiseHub ? true : (doc.data()?.onlineStoreSetUp ?? false),
               stripePublicKey: doc.data()?.stripePublicKey,
               stripeSecretKey: doc.data()?.stripeSecretKey,
               paidStatus: "active",
-              brandColor: doc.data()?.brandColor,
-              tagline: doc.data()?.tagline,
+              brandColor: (isFranchiseHub ? franchiseBrandColor : null) || doc.data()?.brandColor || "",
+              tagline: (isFranchiseHub ? franchiseTagline : null) || doc.data()?.tagline || "",
             });
           } else {
             // No plan grants online store access — deactivate

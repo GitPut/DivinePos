@@ -7,6 +7,7 @@ import {
   cartState,
   setOrderDetailsState,
   storeDetailsState,
+  onlineStoreState,
 } from "store/appState";
 import Modal from "shared/components/ui/Modal";
 import ProductBuilderModal from "features/pos/components/ProductBuilder/ProductBuilderModal";
@@ -22,7 +23,11 @@ import useWindowSize from "shared/hooks/useWindowSize";
 function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
   const orderDetails = orderDetailsState.use();
   const storeDetails = storeDetailsState.use();
+  const onlineStore = onlineStoreState.use();
   const page = orderDetails.page;
+  const brandColor = onlineStore.brandColor || "#1D294E";
+  const hasLogo = storeDetails.hasLogo && storeDetails.logoUrl;
+  const fontClass = `font-${onlineStore.fontStyle || "modern"}`;
   const [cartSub, setCartSub] = useState(0);
   const cart = cartState.use();
   const [cartOpen, setCartOpen] = useState(false);
@@ -52,19 +57,22 @@ function OrderCartMain({ catalog }: { catalog: UserStoreStateProps }) {
   }, [cart]);
 
   return (
-    <div style={styles.container}>
+    <div className={fontClass} style={styles.container}>
       {/* Header bar */}
-      <div style={styles.headerBar}>
+      <div style={{ ...styles.headerBar, backgroundColor: brandColor }}>
         <button
           onClick={() => setOrderDetailsState({ page: 1 })}
-          style={styles.backBtn}
+          style={{ ...styles.backBtn, backgroundColor: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}
         >
-          <FiArrowLeft size={18} color="#1D294E" />
+          <FiArrowLeft size={18} color="#fff" />
         </button>
-        <span style={styles.storeName}>{storeDetails.name || "Menu"}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {hasLogo && <img src={storeDetails.logoUrl!} style={{ height: 30, maxWidth: 100, objectFit: "contain" as const }} alt="" />}
+          <span style={{ ...styles.storeName, color: "#fff" }}>{storeDetails.name || "Menu"}</span>
+        </div>
         {width < 1000 && (
-          <button onClick={() => setCartOpen(true)} style={styles.cartBtn}>
-            <FiShoppingCart size={18} color="#1D294E" />
+          <button onClick={() => setCartOpen(true)} style={{ ...styles.cartBtn, backgroundColor: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.2)" }}>
+            <FiShoppingCart size={18} color="#fff" />
             {cart.length > 0 && (
               <span style={styles.cartBadge}>{cart.length}</span>
             )}

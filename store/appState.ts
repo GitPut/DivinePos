@@ -172,7 +172,7 @@ export const setEmployeesState = (val: Employee[]): void => {
 
 // ─── Online Store ─────────────────────────────────────────────────────────────
 
-interface OnlineStoreStateProps {
+export interface OnlineStoreStateProps {
   onlineStoreActive: boolean;
   onlineStoreSetUp: boolean;
   urlEnding: string;
@@ -180,7 +180,14 @@ interface OnlineStoreStateProps {
   stripeSecretKey: string | null;
   paidStatus: string | null;
   brandColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
   tagline?: string;
+  headline?: string;
+  subheadline?: string;
+  heroImageUrl?: string;
+  fontStyle?: "modern" | "classic" | "bold";
+  socialLinks?: { facebook?: string; instagram?: string; twitter?: string };
 }
 
 export const onlineStoreState = entity<OnlineStoreStateProps>({
