@@ -338,6 +338,15 @@ export type StatsDataProps = {
       totalWaitTime: number;
       waitCount: number;
       averageWaitTime?: number;
+      // Enhanced analytics fields
+      revenueByHour?: { [hour: string]: number };
+      ordersByHour?: { [hour: string]: number };
+      revenueByPaymentMethod?: { cash: number; card: number };
+      onlineOrders?: number;
+      onlineRevenue?: number;
+      tableOrders?: number;
+      tableRevenue?: number;
+      customerIds?: string[];
     };
   };
 };

@@ -20,6 +20,8 @@ import firebase from "firebase/compat/app";
 import { calculateCartTotals } from "utils/cartCalculations";
 import { broadcastCartUpdate } from "utils/customerDisplayBroadcast";
 import useWindowSize from "shared/hooks/useWindowSize";
+import LoyaltyInfoBar from "./LoyaltyInfoBar";
+import LoyaltyRedeemModal from "shared/components/modals/LoyaltyRedeemModal";
 
 const Cart = () => {
   const { discountAmount, deliveryChecked, cartSub, cartNote, activeTableId } =
@@ -108,6 +110,8 @@ const Cart = () => {
   return (
     <div style={styles.cartContainer}>
       {activeTableId && <TableCartHeader />}
+      <LoyaltyInfoBar />
+      <LoyaltyRedeemModal />
       <div style={styles.headerRow}>
         <div style={styles.headerLeft}>
           <FiShoppingBag size={18} color="#1e293b" />

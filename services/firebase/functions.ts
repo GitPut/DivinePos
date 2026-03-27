@@ -16,7 +16,10 @@ import { loadStripe } from "@stripe/stripe-js";
 import firebase from "firebase/compat/app";
 const Timestamp = firebase.firestore.Timestamp;
 import {
+  customersState,
+  setCustomersState,
   ingredientsState,
+  loyaltyConfigState,
   onlineStoreState,
   optionTemplatesState,
   setIngredientsState,
@@ -212,6 +215,42 @@ export const updateStats = async (
       }
     }
 
+    // ── Enhanced analytics tracking ──────────────────────────────────
+    // Revenue by hour
+    const hour = String(d.getHours());
+    if (!day.revenueByHour) day.revenueByHour = {};
+    if (!day.ordersByHour) day.ordersByHour = {};
+    day.revenueByHour[hour] = (day.revenueByHour[hour] || 0) + total;
+    day.ordersByHour[hour] = (day.ordersByHour[hour] || 0) + 1;
+
+    // Revenue by payment method
+    if (!day.revenueByPaymentMethod) day.revenueByPaymentMethod = { cash: 0, card: 0 };
+    if (receipt.paymentMethod === "Cash") {
+      day.revenueByPaymentMethod.cash += total;
+    } else {
+      day.revenueByPaymentMethod.card += total;
+    }
+
+    // Online order tracking
+    if (receipt.online) {
+      day.onlineOrders = (day.onlineOrders || 0) + 1;
+      day.onlineRevenue = (day.onlineRevenue || 0) + total;
+    }
+
+    // Table order tracking
+    if (receipt.method === "tableOrder") {
+      day.tableOrders = (day.tableOrders || 0) + 1;
+      day.tableRevenue = (day.tableRevenue || 0) + total;
+    }
+
+    // Customer tracking for new vs returning
+    if (receipt.customer?.phone) {
+      if (!day.customerIds) day.customerIds = [];
+      if (!day.customerIds.includes(receipt.customer.phone)) {
+        day.customerIds.push(receipt.customer.phone);
+      }
+    }
+
     transaction.set(statsRef, statsData);
   });
 };
@@ -246,6 +285,86 @@ export const updateTransList = async (receipt: Partial<TransListStateItem>) => {
       console.warn("Stock deduction failed for transaction", docRef.id);
     });
   }
+
+  // Award loyalty points if enabled
+  awardLoyaltyPoints(userId, newReceipt, docRef.id).catch(() => {
+    console.warn("Loyalty points award failed for", docRef.id);
+  });
+};
+
+// -------------------
+// 🎁 LOYALTY
+// -------------------
+const awardLoyaltyPoints = async (
+  userId: string,
+  receipt: Record<string, any>,
+  transactionId: string
+): Promise<void> => {
+  const config = loyaltyConfigState.get();
+  if (!config.enabled || !receipt.customer?.phone) return;
+
+  // Find customer by phone
+  const customers = customersState.get();
+  const customer = customers.find((c) => c.phone === receipt.customer.phone);
+  if (!customer || !customer.id) return;
+
+  const total = parseFloat(receipt.total?.replace?.(/[^0-9.-]/g, "") || receipt.total || "0");
+  if (total <= 0) return;
+
+  // Calculate points with tier multiplier
+  const lifetimePoints = customer.lifetimePoints || 0;
+  const { getTierForPoints, calculatePointsEarned } = await import("utils/loyaltyHelpers");
+  const tier = getTierForPoints(lifetimePoints, config.tiers);
+  const pointsEarned = Math.floor(total * config.pointsPerDollar * tier.multiplier);
+  if (pointsEarned <= 0) return;
+
+  const newBalance = (customer.loyaltyPoints || 0) + pointsEarned;
+  const newLifetime = lifetimePoints + pointsEarned;
+  const newTier = getTierForPoints(newLifetime, config.tiers);
+
+  const customerRef = db.collection("users").doc(userId).collection("customers").doc(customer.id);
+
+  // Update customer doc
+  await customerRef.update({
+    loyaltyPoints: newBalance,
+    lifetimePoints: newLifetime,
+    tier: newTier.name,
+    totalSpent: firebase.firestore.FieldValue.increment(total),
+    orderCount: firebase.firestore.FieldValue.increment(1),
+    lastOrderDate: firebase.firestore.Timestamp.now(),
+  });
+
+  // Add points history entry
+  await customerRef.collection("pointsHistory").add({
+    type: "earn",
+    points: pointsEarned,
+    balance: newBalance,
+    description: `Earned from order #${receipt.transNum || transactionId.slice(0, 8)}`,
+    orderId: receipt.transNum || transactionId,
+    multiplier: tier.multiplier,
+    createdAt: firebase.firestore.Timestamp.now(),
+  });
+
+  // Add to denormalized loyalty events
+  await db.collection("users").doc(userId).collection("loyaltyEvents").add({
+    customerId: customer.id,
+    customerName: customer.name,
+    customerPhone: customer.phone,
+    type: "earn",
+    points: pointsEarned,
+    balance: newBalance,
+    description: `Earned from order #${receipt.transNum || transactionId.slice(0, 8)}`,
+    orderId: receipt.transNum || transactionId,
+    createdAt: firebase.firestore.Timestamp.now(),
+  });
+
+  // Update local state
+  const updatedCustomers = customers.map((c) =>
+    c.id === customer.id
+      ? { ...c, loyaltyPoints: newBalance, lifetimePoints: newLifetime, tier: newTier.name, totalSpent: (c.totalSpent || 0) + total, orderCount: (c.orderCount || 0) + 1 }
+      : c
+  );
+  setCustomersState(updatedCustomers);
 };
 
 // -------------------
