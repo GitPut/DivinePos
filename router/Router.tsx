@@ -17,6 +17,7 @@ import {
   setWooCommerceState,
   setActivePlanState,
   setFranchiseState,
+  setLoyaltyConfigState,
   storeDetailsState,
   trialDetailsState,
   wooCommerceState,
@@ -253,7 +254,7 @@ const AppRouter = () => {
         import("features/pos/PosScreen");
 
         // Fetch user doc AND all subcollections in parallel (1 round-trip)
-        const [doc, productDocs, employeeDocs, subDocs, customerDocs, deviceDocs, wooDocs, ingredientDocs, optionTemplateDocs] = await Promise.all([
+        const [doc, productDocs, employeeDocs, subDocs, customerDocs, deviceDocs, wooDocs, ingredientDocs, optionTemplateDocs, loyaltyConfigDoc] = await Promise.all([
           userRef.get(),
           userRef.collection("products").get().catch(() => null),
           userRef.collection("employees").get().catch(() => null),
@@ -263,6 +264,7 @@ const AppRouter = () => {
           userRef.collection("wooOrders").get().catch(() => null),
           userRef.collection("ingredients").get().catch(() => null),
           userRef.collection("optionTemplates").get().catch(() => null),
+          userRef.collection("loyaltyConfig").doc("settings").get().catch(() => null),
         ]);
 
         // ── Process products ──────────────────────────────────────────────
@@ -402,6 +404,12 @@ const AppRouter = () => {
           } catch {
             // Franchise data not critical — POS works without it
           }
+        }
+
+        // ── Load loyalty config ──────────────────────────────────────────
+        if (loyaltyConfigDoc && loyaltyConfigDoc.exists) {
+          const lData = loyaltyConfigDoc.data();
+          if (lData) setLoyaltyConfigState(lData as any);
         }
 
         // ── Process WooCommerce orders ────────────────────────────────────

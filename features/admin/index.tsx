@@ -5,6 +5,7 @@ import ProductsPage from "./products/ProductsPage";
 import ReportsPage from "./reports/ReportsPage";
 import SettingsPage from "./settings/SettingsPage";
 import FranchisePage from "./franchise/FranchisePage";
+import AnalyticsPage from "./analytics/AnalyticsPage";
 
 const index = [
   {
@@ -22,6 +23,10 @@ const index = [
   {
     path: "report",
     component: ReportsPage,
+  },
+  {
+    path: "analytics",
+    component: AnalyticsPage,
   },
   {
     path: "settings",

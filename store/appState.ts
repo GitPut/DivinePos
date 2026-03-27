@@ -8,6 +8,7 @@ import {
   FranchiseConfig,
   FranchiseRole,
   Ingredient,
+  LoyaltyConfig,
   MyDeviceDetailsProps,
   OptionTemplate,
   ProductProp,
@@ -387,6 +388,23 @@ export const updateIngredientsBatch = (
       return update ? { ...ing, stockQuantity: update.newStock } : ing;
     })
   );
+};
+
+// ─── Loyalty ────────────────────────────────────────────────────────────────
+
+export const loyaltyConfigState = entity<LoyaltyConfig>({
+  enabled: false,
+  pointsPerDollar: 1,
+  tiers: [
+    { name: "Bronze", minPoints: 0, maxPoints: 499, multiplier: 1, color: "#CD7F32" },
+    { name: "Silver", minPoints: 500, maxPoints: 1499, multiplier: 1.5, color: "#C0C0C0" },
+    { name: "Gold", minPoints: 1500, maxPoints: null, multiplier: 2, color: "#FFD700" },
+  ],
+  rewards: [],
+});
+
+export const setLoyaltyConfigState = (val: LoyaltyConfig): void => {
+  loyaltyConfigState.set(val);
 };
 
 // ─── Franchise ──────────────────────────────────────────────────────────────

@@ -14,9 +14,11 @@ import {
   FiHelpCircle,
   FiPlayCircle,
   FiGlobe,
+  FiPieChart,
+  FiGift,
 } from "react-icons/fi";
 import { triggerWalkthrough } from "router/AuthRoute";
-import { franchiseState } from "store/appState";
+import { franchiseState, activePlanState } from "store/appState";
 
 function AdminContainer(props: { match: { url: string } }) {
   const { match } = props;
@@ -26,6 +28,7 @@ function AdminContainer(props: { match: { url: string } }) {
   const pathname = location.pathname;
   const { height } = useWindowSize();
   const franchise = franchiseState.use();
+  const activePlan = activePlanState.use();
 
   return (
     <div style={styles.container}>
@@ -48,6 +51,17 @@ function AdminContainer(props: { match: { url: string } }) {
                 setSideMenu("");
               }}
             />
+            {(activePlan === "professional" || franchise.franchiseRole) && (
+              <MenuButton
+                labelIcon={<FiPieChart size={18} />}
+                labelText="Analytics"
+                active={pathname.includes("analytics")}
+                onPress={() => {
+                  history.push("/authed/analytics");
+                  setSideMenu("");
+                }}
+              />
+            )}
             <DropdownMenuButton
               active={pathname.includes("/authed/product")}
               dropDownOpen={isSideMenu === "product"}
@@ -160,6 +174,11 @@ function AdminContainer(props: { match: { url: string } }) {
                   link: "/authed/settings/billingsettings",
                   active: pathname.includes("billingsettings"),
                 },
+                ...((activePlan === "professional" || franchise.franchiseRole) ? [{
+                  label: "Loyalty Program",
+                  link: "/authed/settings/loyalty",
+                  active: pathname.includes("loyalty"),
+                }] : []),
               ]}
             />
             {franchise.franchiseRole === "hub" && (

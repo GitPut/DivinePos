@@ -152,10 +152,21 @@ export type CustomerProp = {
   orders: CustomersOrdersProp[];
   id: string;
   createdAt?: { seconds: number };
+  // Loyalty fields
+  loyaltyPoints?: number;
+  lifetimePoints?: number;
+  tier?: string;
+  totalSpent?: number;
+  orderCount?: number;
+  lastOrderDate?: { seconds: number } | null;
 };
 
 export type CustomersOrdersProp = {
   cart: CartItemProp[];
+  total?: string;
+  date?: any;
+  method?: string;
+  pointsEarned?: number;
 };
 
 export type OngoingListStateProp = {
@@ -437,4 +448,55 @@ export type FranchiseConfig = {
   fontStyle?: "modern" | "classic" | "bold";
   socialLinks?: { facebook?: string; instagram?: string; twitter?: string };
   createdAt?: any;
+};
+
+// ─── Loyalty ──────────────────────────────────────────────────────────────────
+
+export type LoyaltyTier = {
+  name: string;
+  minPoints: number;
+  maxPoints: number | null;
+  multiplier: number;
+  color?: string;
+};
+
+export type LoyaltyReward = {
+  id: string;
+  name: string;
+  pointsCost: number;
+  type: "freeItem" | "discount";
+  discountAmount?: string;
+  discountType?: "flat" | "percent";
+  freeItemName?: string;
+  active: boolean;
+  createdAt?: any;
+};
+
+export type LoyaltyConfig = {
+  enabled: boolean;
+  pointsPerDollar: number;
+  tiers: LoyaltyTier[];
+  rewards: LoyaltyReward[];
+};
+
+export type PointsHistoryEntry = {
+  id: string;
+  type: "earn" | "redeem" | "adjustment";
+  points: number;
+  balance: number;
+  description: string;
+  orderId?: string;
+  rewardId?: string;
+  rewardName?: string;
+  multiplier?: number;
+  createdAt: any;
+};
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+export type AnalyticsInsight = {
+  type: "info" | "positive" | "warning" | "action";
+  title: string;
+  description: string;
+  icon: string;
 };
