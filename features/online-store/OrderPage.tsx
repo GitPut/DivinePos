@@ -18,6 +18,7 @@ import {
   setStoreDetailsState,
   storeDetailsState,
   setOnlineStoreState,
+  onlineStoreState,
 } from "store/appState";
 import { ProductProp, UserStoreStateProps } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
@@ -39,6 +40,7 @@ const OrderPage = () => {
   const [data, setdata] = useState<ProductProp[]>([]);
   const { width: screenWidth } = useWindowSize();
   const [isFranchise, setIsFranchise] = useState(false);
+  const [storeInactive, setStoreInactive] = useState(false);
   const [franchiseLocations, setFranchiseLocations] = useState<any[]>([]);
   const [franchiseHubUid, setFranchiseHubUid] = useState<string | null>(null);
 
@@ -67,6 +69,81 @@ const OrderPage = () => {
         const publicDoc = querySnapshot.docs[0];
         const docData = publicDoc.data();
 
+        // Check if online store is active
+        if (docData.onlineStoreActive === false) {
+          setStoreDetailsState({
+            name: docData.storeDetails?.name ?? "",
+            phoneNumber: docData.storeDetails?.phoneNumber ?? "",
+            website: "",
+            address: null,
+            deliveryPrice: "",
+            taxRate: "13",
+            settingsPassword: "",
+            acceptDelivery: false,
+            deliveryRange: "",
+          });
+          setOnlineStoreState({
+            onlineStoreActive: false,
+            onlineStoreSetUp: false,
+            urlEnding: "",
+            stripePublicKey: null,
+            stripeSecretKey: null,
+            paidStatus: null,
+            brandColor: docData.brandColor ?? "#0d0d0d",
+          });
+          setStoreInactive(true);
+          fadeOut();
+          return;
+        }
+
+        // Check business hours
+        if (docData.businessHours) {
+          const now = new Date();
+          const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+          const today = dayNames[now.getDay()];
+          const todayHours = docData.businessHours[today];
+          if (todayHours) {
+            if (todayHours.closed) {
+              setStoreDetailsState({
+                name: docData.storeDetails?.name ?? "",
+                phoneNumber: "", website: "", address: null, deliveryPrice: "", taxRate: "13",
+                settingsPassword: "", acceptDelivery: false, deliveryRange: "",
+              });
+              setOnlineStoreState({
+                onlineStoreActive: false, onlineStoreSetUp: false, urlEnding: "",
+                stripePublicKey: null, stripeSecretKey: null, paidStatus: null,
+                brandColor: docData.brandColor ?? "#0d0d0d",
+                businessHours: docData.businessHours,
+              });
+              setStoreInactive(true);
+              fadeOut();
+              return;
+            }
+            // Check if current time is within hours
+            const [openH, openM] = todayHours.open.split(":").map(Number);
+            const [closeH, closeM] = todayHours.close.split(":").map(Number);
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const openMinutes = openH * 60 + openM;
+            const closeMinutes = closeH * 60 + closeM;
+            if (currentMinutes < openMinutes || currentMinutes > closeMinutes) {
+              setStoreDetailsState({
+                name: docData.storeDetails?.name ?? "",
+                phoneNumber: "", website: "", address: null, deliveryPrice: "", taxRate: "13",
+                settingsPassword: "", acceptDelivery: false, deliveryRange: "",
+              });
+              setOnlineStoreState({
+                onlineStoreActive: false, onlineStoreSetUp: false, urlEnding: "",
+                stripePublicKey: null, stripeSecretKey: null, paidStatus: null,
+                brandColor: docData.brandColor ?? "#0d0d0d",
+                businessHours: docData.businessHours,
+              });
+              setStoreInactive(true);
+              fadeOut();
+              return;
+            }
+          }
+        }
+
         // Detect franchise stores
         if (docData.isFranchise && docData.locations?.length > 0) {
           setIsFranchise(true);
@@ -90,6 +167,7 @@ const OrderPage = () => {
             heroImageUrl: docData.heroImageUrl ?? "",
             fontStyle: docData.fontStyle ?? "modern",
             socialLinks: docData.socialLinks ?? {},
+            businessHours: docData.businessHours ?? undefined,
           });
 
           setStoreDetailsState({
@@ -327,8 +405,45 @@ const OrderPage = () => {
 
   return (
     <div style={styles.container}>
+      {/* Store closed message */}
+      {storeInactive && (() => {
+        const onlineStore = onlineStoreState.get();
+        const hours = onlineStore.businessHours;
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        const today = dayNames[new Date().getDay()];
+        const todayHours = hours?.[today];
+        const nextOpenDay = hours ? dayNames.find((_, i) => {
+          const idx = (dayNames.indexOf(today) + 1 + i) % 7;
+          const h = hours[dayNames[idx]];
+          return h && !h.closed;
+        }) : null;
+        const nextOpen = nextOpenDay ? hours?.[nextOpenDay] : null;
+
+        return (
+          <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: onlineStore.brandColor || "#0d0d0d", gap: 12, padding: 24 }}>
+            <span style={{ fontSize: 48, marginBottom: 8 }}>🔒</span>
+            <span style={{ fontSize: 24, fontWeight: "700", color: "#fff", textAlign: "center" }}>
+              {storeDetailsState.get().name || "This store"}
+            </span>
+            <span style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", textAlign: "center" }}>
+              Online ordering is currently closed.
+            </span>
+            {todayHours && !todayHours.closed && (
+              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
+                Today's hours: {todayHours.open} — {todayHours.close}
+              </span>
+            )}
+            {todayHours?.closed && nextOpen && nextOpenDay && (
+              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", textAlign: "center", textTransform: "capitalize" }}>
+                Opens {nextOpenDay} at {nextOpen.open}
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Page content */}
-      {page === 0 && isFranchise && (
+      {!storeInactive && page === 0 && isFranchise && (
         <div key="p0" className="online-store-page">
           <FranchiseLocationSelector
             locations={franchiseLocations}
@@ -350,18 +465,18 @@ const OrderPage = () => {
           />
         </div>
       )}
-      {page === 1 && <div key="p1" className="online-store-page"><OnlineOrderHome /></div>}
-      {page === 2 && <div key="p2" className="online-store-page"><OnlineOrderHomePickup /></div>}
-      {page === 3 && <div key="p3" className="online-store-page"><OnlineOrderHomeDelivery /></div>}
-      {page === 4 && (
+      {!storeInactive && page === 1 && <div key="p1" className="online-store-page"><OnlineOrderHome /></div>}
+      {!storeInactive && page === 2 && <div key="p2" className="online-store-page"><OnlineOrderHomePickup /></div>}
+      {!storeInactive && page === 3 && <div key="p3" className="online-store-page"><OnlineOrderHomeDelivery /></div>}
+      {!storeInactive && page === 4 && (
         <div key="p4" className="online-store-page">
           <OrderCartMain
             catalog={{ categories: catalog.categories, products: data }}
           />
         </div>
       )}
-      {page === 5 && <div key="p5" className="online-store-page"><OnlineOrderHomeCheckout /></div>}
-      {page === 6 && <div key="p6" className="online-store-page"><OnlineOrderHomeCompleted /></div>}
+      {!storeInactive && page === 5 && <div key="p5" className="online-store-page"><OnlineOrderHomeCheckout /></div>}
+      {!storeInactive && page === 6 && <div key="p6" className="online-store-page"><OnlineOrderHomeCompleted /></div>}
 
       {/* Loading overlay */}
       {!loaderHidden && (

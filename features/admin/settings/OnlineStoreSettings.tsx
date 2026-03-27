@@ -59,6 +59,10 @@ function OnlineStoreSettings() {
   const [socialFacebook, setSocialFacebook] = useState(onlineStoreDetails.socialLinks?.facebook || "");
   const [socialInstagram, setSocialInstagram] = useState(onlineStoreDetails.socialLinks?.instagram || "");
   const [socialTwitter, setSocialTwitter] = useState(onlineStoreDetails.socialLinks?.twitter || "");
+  const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  const defaultHours: { [day: string]: { open: string; close: string; closed?: boolean } } = {};
+  DAYS.forEach((d) => { defaultHours[d] = { open: "10:00", close: "22:00", closed: false }; });
+  const [businessHours, setBusinessHours] = useState(onlineStoreDetails.businessHours || defaultHours);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(storeDetails.logoUrl || null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -431,6 +435,7 @@ function OnlineStoreSettings() {
           heroImageUrl: finalHeroUrl || "",
           logoUrl: finalLogoUrl || "",
           socialLinks,
+          businessHours,
         });
 
         // Update public doc
@@ -445,6 +450,7 @@ function OnlineStoreSettings() {
           heroImageUrl: finalHeroUrl || "",
           logoUrl: finalLogoUrl || "",
           socialLinks,
+          businessHours,
           onlineStoreActive,
         });
 
@@ -468,6 +474,7 @@ function OnlineStoreSettings() {
           fontStyle,
           heroImageUrl: finalHeroUrl || "",
           socialLinks,
+          businessHours,
           onlineStoreActive,
         });
 
@@ -694,6 +701,59 @@ function OnlineStoreSettings() {
                 <span style={styles.fieldLabel}>X (Twitter)</span>
                 <input style={styles.input} placeholder="https://x.com/yourpage" value={socialTwitter} onChange={(e) => setSocialTwitter(e.target.value)} />
               </div>
+            </div>
+          </div>
+
+          {/* Business Hours */}
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <FiGlobe size={18} color="#1D294E" />
+              <span style={styles.cardTitle}>Business Hours</span>
+            </div>
+            <span style={{ fontSize: 13, color: "#94a3b8", marginBottom: 16, display: "block" }}>
+              Set your operating hours. The online store will show as closed outside these hours.
+            </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {DAYS.map((day) => {
+                const dayHours = businessHours[day] || { open: "10:00", close: "22:00", closed: false };
+                const isClosed = dayHours.closed === true;
+                return (
+                  <div key={day} style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 12, padding: "8px 12px", backgroundColor: isClosed ? "#fef2f2" : "#f8fafc", borderRadius: 8, border: `1px solid ${isClosed ? "#fee2e2" : "#f1f5f9"}` }}>
+                    <span style={{ width: 90, fontSize: 13, fontWeight: "600", color: "#344054", textTransform: "capitalize" }}>{day}</span>
+                    {isClosed ? (
+                      <span style={{ flex: 1, fontSize: 13, color: "#ef4444", fontWeight: "500" }}>Closed</span>
+                    ) : (
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+                        <input
+                          type="time"
+                          value={dayHours.open}
+                          onChange={(e) => setBusinessHours((prev) => ({ ...prev, [day]: { ...prev[day], open: e.target.value } }))}
+                          style={{ height: 34, border: "1px solid #e2e8f0", borderRadius: 6, padding: "0 8px", fontSize: 13, color: "#0f172a" }}
+                        />
+                        <span style={{ fontSize: 12, color: "#94a3b8" }}>to</span>
+                        <input
+                          type="time"
+                          value={dayHours.close}
+                          onChange={(e) => setBusinessHours((prev) => ({ ...prev, [day]: { ...prev[day], close: e.target.value } }))}
+                          style={{ height: 34, border: "1px solid #e2e8f0", borderRadius: 6, padding: "0 8px", fontSize: 13, color: "#0f172a" }}
+                        />
+                      </div>
+                    )}
+                    <button
+                      onClick={() => setBusinessHours((prev) => ({ ...prev, [day]: { ...prev[day], closed: !isClosed } }))}
+                      style={{
+                        height: 30, paddingLeft: 10, paddingRight: 10, borderRadius: 6,
+                        border: isClosed ? "1px solid #fee2e2" : "1px solid #e2e8f0",
+                        backgroundColor: isClosed ? "#fef2f2" : "#fff",
+                        fontSize: 11, fontWeight: "600", cursor: "pointer",
+                        color: isClosed ? "#ef4444" : "#64748b",
+                      }}
+                    >
+                      {isClosed ? "Open" : "Close"}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

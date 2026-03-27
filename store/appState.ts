@@ -188,6 +188,7 @@ export interface OnlineStoreStateProps {
   heroImageUrl?: string;
   fontStyle?: "modern" | "classic" | "bold";
   socialLinks?: { facebook?: string; instagram?: string; twitter?: string };
+  businessHours?: { [day: string]: { open: string; close: string; closed?: boolean } };
 }
 
 export const onlineStoreState = entity<OnlineStoreStateProps>({

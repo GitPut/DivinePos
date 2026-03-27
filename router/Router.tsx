@@ -321,6 +321,7 @@ const AppRouter = () => {
         let franchiseUrlEnding: string | null = null;
         let franchiseBrandColor: string | null = null;
         let franchiseTagline: string | null = null;
+        let franchiseExtraData: any = null;
 
         // Fallback: detect franchise location from subscription metadata or doc ID
         if (!franchiseRole && subDocs && !subDocs.empty) {
@@ -358,6 +359,17 @@ const AppRouter = () => {
                 franchiseUrlEnding = fData?.urlEnding || pData?.urlEnding || docData?.urlEnding || null;
                 franchiseBrandColor = fData?.brandColor || pData?.brandColor || docData?.brandColor || null;
                 franchiseTagline = fData?.tagline || pData?.tagline || docData?.tagline || null;
+                // Store all extra customization data from franchise/public docs
+                franchiseExtraData = {
+                  secondaryColor: fData?.secondaryColor || pData?.secondaryColor || "",
+                  accentColor: fData?.accentColor || pData?.accentColor || "",
+                  headline: fData?.headline || pData?.headline || "",
+                  subheadline: fData?.subheadline || pData?.subheadline || "",
+                  heroImageUrl: fData?.heroImageUrl || pData?.heroImageUrl || "",
+                  fontStyle: fData?.fontStyle || pData?.fontStyle || "modern",
+                  socialLinks: fData?.socialLinks || pData?.socialLinks || {},
+                  businessHours: fData?.businessHours || pData?.businessHours || undefined,
+                };
                 const locSnap = await db.collection("franchises").doc(user.uid).collection("locations").get();
                 const locations: any[] = [];
                 locSnap.forEach((loc) => locations.push({ ...loc.data(), uid: loc.id }));
@@ -498,6 +510,7 @@ const AppRouter = () => {
               paidStatus: "active",
               brandColor: (isFranchiseHub ? franchiseBrandColor : null) || doc.data()?.brandColor || "",
               tagline: (isFranchiseHub ? franchiseTagline : null) || doc.data()?.tagline || "",
+              ...(isFranchiseHub && franchiseExtraData ? franchiseExtraData : {}),
             });
           } else {
             // No plan grants online store access — deactivate
