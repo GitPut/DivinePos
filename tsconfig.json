@@ -1,32 +1,34 @@
 {
   "compilerOptions": {
-    "module": "esnext",
+    "module": "ESNext",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "isolatedModules": true,
-    "jsx": "react",
-    "lib": ["es6", "dom"],
-    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
     "noEmit": true,
     "strict": true,
-    "target": "esnext",
+    "target": "ESNext",
+    "skipLibCheck": true,
     "baseUrl": "./",
     "paths": {
-      "assets/*": ["assets/*"],
-      "components/*": ["components/*"],
-      "navigation/*": ["navigation/*"],
-      "pages/*": ["pages/*"],
-      "state/*": ["state/*"],
-      "types/*": ["types/*"]
+      "assets/*":   ["assets/*"],
+      "features/*": ["features/*"],
+      "shared/*":   ["shared/*"],
+      "services/*": ["services/*"],
+      "store/*":    ["store/*"],
+      "utils/*":    ["utils/*"],
+      "router/*":   ["router/*"],
+      "types/*":    ["types/*"]
     }
   },
-  "extends": "expo/tsconfig.base",
+  "include": ["src", "features", "shared", "services", "store", "utils", "router", "types", "App.tsx"],
   "exclude": [
     "node_modules",
-    "babel.config.js",
-    "metro.config.js",
-    "jest.config.js",
-    "web-build"
+    "dist",
+    "web-build",
+    "functions"
   ]
 }

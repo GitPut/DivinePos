@@ -1,0 +1,348 @@
+import React from "react";
+import { auth, db } from "services/firebase/config";
+import Print, { sendTableOrder } from "./print";
+import {
+  cartState,
+  customersState,
+  deviceState,
+  storeDetailsState,
+} from "store/appState";
+import {
+  posState,
+  resetPosState,
+  updatePosState,
+} from "store/posState";
+import { shallowEqual } from "simpler-state";
+
+const CheckoutButton = () => {
+  const {
+    deliveryChecked,
+    ongoingDelivery,
+    updatingOrder,
+    discountAmount,
+    changeDue,
+    savedCustomerDetails,
+    name,
+    phone,
+    address,
+    buzzCode,
+    unitNumber,
+    cartNote,
+    activeTableId,
+    activeTableSessionId,
+  } = posState.use(
+    (s) => ({
+      deliveryChecked: s.deliveryChecked,
+      ongoingDelivery: s.ongoingDelivery,
+      updatingOrder: s.updatingOrder,
+      discountAmount: s.discountAmount,
+      changeDue: s.changeDue,
+      savedCustomerDetails: s.savedCustomerDetails,
+      name: s.name,
+      phone: s.phone,
+      address: s.address,
+      buzzCode: s.buzzCode,
+      unitNumber: s.unitNumber,
+      cartNote: s.cartNote,
+      activeTableId: s.activeTableId,
+      activeTableSessionId: s.activeTableSessionId,
+    }),
+    shallowEqual
+  );
+  const cart = cartState.use();
+  const storeDetails = storeDetailsState.use();
+  const myDeviceDetails = deviceState.use();
+  const customers = customersState.use();
+
+  if (updatingOrder) {
+    return (
+      <div style={styles.btnRow}>
+        <button
+          className="pos-checkout-btn pos-checkout-filled"
+          style={{ ...styles.checkoutBtn, ...styles.filledBtn, ...(cart.length < 1 ? { opacity: 0.5 } : {}) }}
+          disabled={cart.length < 1}
+          onClick={() => {
+            db.collection("users")
+              .doc(auth.currentUser?.uid)
+              .collection("pendingOrders")
+              .doc(updatingOrder.id)
+              .delete();
+
+            Print({
+              method: deliveryChecked ? "deliveryOrder" : "pickupOrder",
+              dontAddToOngoing: false,
+              discountAmount: discountAmount as string,
+              deliveryChecked: deliveryChecked ? true : false,
+              changeDue,
+              savedCustomerDetails,
+              name,
+              phone,
+              address,
+              buzzCode,
+              unitNumber,
+              cartNote,
+              customers,
+              cart,
+              storeDetails,
+              myDeviceDetails,
+            });
+          }}
+        >
+          <span style={styles.filledLbl}>Update</span>
+        </button>
+        <button
+          className="pos-checkout-btn pos-checkout-danger"
+          style={{ ...styles.checkoutBtn, backgroundColor: "#ef4444" }}
+          onClick={() => {
+            resetPosState();
+          }}
+        >
+          <span style={styles.filledLbl}>Cancel</span>
+        </button>
+      </div>
+    );
+  }
+
+  // Table order — Send to Kitchen + Pay when ready
+  if (activeTableId && activeTableSessionId) {
+    if (cart.length < 1) {
+      return (
+        <div style={styles.btnRow}>
+          <button
+            className="pos-checkout-btn pos-checkout-outlined"
+            style={{ ...styles.checkoutBtn, ...styles.outlinedBtn, width: "100%" }}
+            onClick={() => updatePosState({ tableViewActive: true })}
+          >
+            <span style={styles.outlinedLbl}>Back to Tables</span>
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: "flex", flexDirection: "column", width: "88%", alignSelf: "center", gap: 6, marginBottom: 12 }}>
+        <button
+          className="pos-checkout-btn pos-checkout-filled"
+          style={{ ...styles.checkoutBtn, ...styles.filledBtn, width: "100%" }}
+          onClick={() => {
+            sendTableOrder({ cart, storeDetails, myDeviceDetails, cartNote });
+          }}
+        >
+          <span style={styles.filledLbl}>Send Order</span>
+        </button>
+        <div style={{ ...styles.btnRow, width: "100%", marginBottom: 0 }}>
+          <button
+            className="pos-checkout-btn pos-checkout-outlined"
+            style={{ ...styles.checkoutBtn, ...styles.outlinedBtn }}
+            onClick={() => {
+              updatePosState({ cashModal: true });
+            }}
+          >
+            <span style={styles.outlinedLbl}>Cash</span>
+          </button>
+          <button
+            className="pos-checkout-btn pos-checkout-filled"
+            style={{ ...styles.checkoutBtn, ...styles.filledBtn }}
+            onClick={() => {
+              Print({
+                method: "Card",
+                dontAddToOngoing: false,
+                discountAmount,
+                deliveryChecked: false,
+                changeDue,
+                savedCustomerDetails,
+                name,
+                phone,
+                address,
+                buzzCode,
+                unitNumber,
+                cartNote,
+                customers,
+                cart,
+                storeDetails,
+                myDeviceDetails,
+              });
+            }}
+          >
+            <span style={styles.filledLbl}>Card</span>
+          </button>
+        </div>
+        <button
+          className="pos-checkout-btn"
+          style={{
+            height: 36,
+            backgroundColor: "#f1f5f9",
+            border: "1px solid #e2e8f0",
+            borderRadius: 8,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => updatePosState({ tableViewActive: true })}
+        >
+          <span style={{ fontSize: 13, fontWeight: "600", color: "#475569" }}>Back to Tables</span>
+        </button>
+      </div>
+    );
+  }
+
+  if (!ongoingDelivery) {
+    if (cart.length < 1) {
+      return (
+        <div style={styles.btnRow}>
+          <button
+            className="pos-checkout-btn"
+            style={{ ...styles.checkoutBtn, ...styles.emptyBtn, width: "100%" }}
+            disabled
+          >
+            <span style={styles.emptyLbl}>Add items to order</span>
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div style={styles.btnRow}>
+        <button
+          className="pos-checkout-btn pos-checkout-outlined"
+          style={{
+            ...styles.checkoutBtn,
+            ...styles.outlinedBtn,
+          }}
+          onClick={() => {
+            updatePosState({ cashModal: true });
+          }}
+        >
+          <span style={styles.outlinedLbl}>Cash</span>
+        </button>
+        <button
+          className="pos-checkout-btn pos-checkout-filled"
+          style={{
+            ...styles.checkoutBtn,
+            ...styles.filledBtn,
+          }}
+          onClick={() => {
+            Print({
+              method: "Card",
+              dontAddToOngoing: false,
+              discountAmount,
+              deliveryChecked: deliveryChecked ? true : false,
+              changeDue,
+              savedCustomerDetails,
+              name,
+              phone,
+              address,
+              buzzCode,
+              unitNumber,
+              cartNote,
+              customers,
+              cart,
+              storeDetails,
+              myDeviceDetails,
+            });
+          }}
+        >
+          <span style={styles.filledLbl}>Card</span>
+        </button>
+      </div>
+    );
+  }
+  if (ongoingDelivery && cart.length > 0) {
+    return (
+      <div style={styles.btnRow}>
+      <button
+        className="pos-checkout-btn pos-checkout-filled"
+        style={{ ...styles.checkoutBtn, ...styles.filledBtn, width: "100%" }}
+        onClick={() => {
+          Print({
+            method: deliveryChecked ? "deliveryOrder" : "pickupOrder",
+            dontAddToOngoing: false,
+            discountAmount,
+            deliveryChecked: deliveryChecked ? true : false,
+            changeDue,
+            savedCustomerDetails,
+            name,
+            phone,
+            address,
+            buzzCode,
+            unitNumber,
+            cartNote,
+            customers,
+            cart,
+            storeDetails,
+            myDeviceDetails,
+          });
+        }}
+      >
+        <span style={styles.filledLbl}>Checkout</span>
+      </button>
+      </div>
+    );
+  } else {
+    return (
+      <div style={styles.btnRow}>
+      <button
+        className="pos-checkout-btn pos-checkout-outlined"
+        style={{ ...styles.checkoutBtn, ...styles.outlinedBtn, width: "100%" }}
+        onClick={() => {
+          resetPosState();
+        }}
+      >
+        <span style={styles.outlinedLbl}>Cancel</span>
+      </button>
+      </div>
+    );
+  }
+};
+
+export default CheckoutButton;
+
+const styles: Record<string, React.CSSProperties> = {
+  btnRow: {
+    flexDirection: "row",
+    width: "88%",
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+    display: "flex",
+    gap: 10,
+  },
+  checkoutBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    cursor: "pointer",
+    display: "flex",
+  },
+  filledBtn: {
+    backgroundColor: "#1e293b",
+    border: "none",
+  },
+  outlinedBtn: {
+    backgroundColor: "#fff",
+    border: "2px solid #1e293b",
+  },
+  filledLbl: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 15,
+  },
+  outlinedLbl: {
+    fontWeight: "600",
+    color: "#1e293b",
+    fontSize: 15,
+  },
+  emptyBtn: {
+    backgroundColor: "#e2e8f0",
+    border: "none",
+    cursor: "default",
+    opacity: 0.7,
+  },
+  emptyLbl: {
+    fontWeight: "600",
+    color: "#64748b",
+    fontSize: 15,
+  },
+};

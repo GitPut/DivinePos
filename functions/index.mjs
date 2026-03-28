@@ -1,35 +1,160 @@
 // Importing modules with ES6 syntax
-import functions from "firebase-functions";
 import admin from "firebase-admin";
 import nodemailer from "nodemailer";
 import stripe from "stripe";
 import cors from "cors";
 import axios from "axios";
+import { onRequest } from "firebase-functions/v2/https";
+import * as functions from "firebase-functions/v1";
 
 // Additional constants
-const GOOGLE_API_KEY = "AIzaSyDjx4LBIEDNRYKEt-0_TJ6jUcst4a2YON4";
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyCQQghMN4w-_9fww7rdi7OZYHRrWtU4OBk";
 
-// Handling the cors initialization separately as it needs specific handling
-const corsHandler = cors({ origin: true });
+// CORS whitelist for production domains
+const corsHandler = cors({
+  origin: [
+    "https://posmate-5fc0a.web.app",
+    "https://posmate-5fc0a.firebaseapp.com",
+    "https://divinepos.com",
+    "https://www.divinepos.com",
+    "http://localhost:3000",
+  ],
+});
 
 admin.initializeApp();
 
 const db = admin.firestore();
 
-//create and config transporter
-let transporter = nodemailer.createTransport({
-  // name: "outlook.office365.com",
-  host: "smtp.office365.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  requireTLS: true,
-  auth: {
-    user: "support@divinepos.com",
-    pass: "20Peter12",
-  },
-  tls: {
-    ciphers: "SSLv3",
-  },
+//create and config transporter (lazy init so env secrets are resolved at runtime)
+let _transporter = null;
+function getTransporter() {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host: "smtp.office365.com",
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      auth: {
+        user: process.env.SMTP_USER || "support@divinepos.com",
+        pass: process.env.SMTP_PASS || "",
+      },
+      tls: {
+        ciphers: "SSLv3",
+      },
+    });
+  }
+  return _transporter;
+}
+// Backward compat — existing code references `transporter` directly
+const transporter = { sendMail: (...args) => getTransporter().sendMail(...args) };
+
+// ─── Auth Trigger: Log new user signups ───
+export const onUserCreated = functions.auth.user().onCreate(async (user) => {
+  try {
+    await db.collection("systemLogs").add({
+      type: "signup",
+      uid: user.uid,
+      email: user.email || null,
+      displayName: user.displayName || null,
+      metadata: {
+        phoneNumber: user.phoneNumber || null,
+        provider: user.providerData?.[0]?.providerId || "email",
+      },
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      userAgent: "server-trigger",
+      url: "server-trigger",
+    });
+  } catch (err) {
+    console.error("onUserCreated: failed to log signup", err);
+  }
+});
+
+// ─── Superadmin: Delete a user account and all their data ───
+const SUPERADMIN_UID = "0IV6GKQazUcp8hqoTsDG9dXIqrA3";
+
+export const deleteAccount = functions.https.onCall(async (data, context) => {
+  // Verify caller is superadmin
+  if (!context.auth || context.auth.uid !== SUPERADMIN_UID) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const targetUid = data.uid;
+  if (!targetUid || typeof targetUid !== "string") {
+    throw new functions.https.HttpsError("invalid-argument", "Missing uid");
+  }
+
+  // Prevent self-deletion
+  if (targetUid === context.auth.uid) {
+    throw new functions.https.HttpsError("invalid-argument", "Cannot delete own account");
+  }
+
+  try {
+    // Delete all user data (doc + all subcollections recursively)
+    await admin.firestore().recursiveDelete(db.collection("users").doc(targetUid));
+
+    // Delete public store data
+    await admin.firestore().recursiveDelete(db.collection("public").doc(targetUid));
+
+    // Delete Firebase Auth account
+    await admin.auth().deleteUser(targetUid);
+
+    return { success: true };
+  } catch (err) {
+    console.error("deleteAccount failed:", err);
+    throw new functions.https.HttpsError("internal", err.message || "Deletion failed");
+  }
+});
+
+// ─── Superadmin: Switch a user's account plan ───
+export const setAccountPlan = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.uid !== SUPERADMIN_UID) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const { uid, plan } = data;
+  if (!uid || !["trial", "starter", "professional"].includes(plan)) {
+    throw new functions.https.HttpsError("invalid-argument", "Invalid uid or plan");
+  }
+
+  try {
+    const userRef = db.collection("users").doc(uid);
+
+    // Cancel all existing subscriptions
+    const subsSnap = await userRef.collection("subscriptions").get();
+    const batch = db.batch();
+    subsSnap.forEach((doc) => {
+      batch.update(doc.ref, { status: "canceled" });
+    });
+    await batch.commit();
+
+    if (plan === "trial") {
+      // Set free trial for 31 days
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 31);
+      await userRef.update({
+        freeTrial: admin.firestore.Timestamp.fromDate(trialEnd),
+      });
+    } else {
+      // Remove free trial if exists
+      await userRef.update({
+        freeTrial: admin.firestore.FieldValue.delete(),
+      });
+
+      // Create active subscription doc
+      const role = plan === "starter" ? "Starter Plan" : "Professional Plan";
+      await userRef.collection("subscriptions").add({
+        role,
+        status: "active",
+        created: admin.firestore.FieldValue.serverTimestamp(),
+        metadata: { source: "superadmin" },
+      });
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("setAccountPlan failed:", err);
+    throw new functions.https.HttpsError("internal", err.message || "Plan switch failed");
+  }
 });
 
 export const sendCustomEmail = functions.https.onRequest((req, res) => {
@@ -90,7 +215,7 @@ export const sendPasswordResetEmail = functions.https.onRequest((req, res) => {
       .then(async (link) => {
         const updatedLink = link.replace(
           "posmate-5fc0a.firebaseapp",
-          "auth.divinepos"
+          "auth.divinepos",
         );
 
         const mailOptions = {
@@ -148,36 +273,80 @@ export const processPayment = functions.https.onRequest(async (req, res) => {
       const { token, amount, currency, storeUID, orderDetails, storeDetails } =
         req.body;
 
-      // Fetch the secret key from Firestore or Realtime Database
+      // Validate required fields
+      if (!token || !storeUID || !orderDetails) {
+        return res.status(400).json({ success: false, message: "Missing required fields" });
+      }
+
+      // Validate amount is a positive number within reasonable bounds
+      const parsedAmount = parseFloat(amount);
+      if (!parsedAmount || parsedAmount <= 0 || parsedAmount > 100000) {
+        return res.status(400).json({ success: false, message: "Invalid payment amount" });
+      }
+
+      // Server-side cart total validation
+      if (orderDetails.cart && Array.isArray(orderDetails.cart)) {
+        let serverTotal = 0;
+        for (const item of orderDetails.cart) {
+          const price = parseFloat(item.price) || 0;
+          const qty = parseFloat(item.quantity ?? "1") || 1;
+          serverTotal += price * qty;
+        }
+        // Add delivery fee if applicable
+        if (orderDetails.delivery && storeDetails?.deliveryPrice) {
+          serverTotal += parseFloat(storeDetails.deliveryPrice) || 0;
+        }
+        // Apply tax
+        const taxRate = parseFloat(storeDetails?.taxRate) || 13;
+        serverTotal = serverTotal * (1 + taxRate / 100);
+        // Allow 5% tolerance for rounding differences
+        if (Math.abs(serverTotal - parsedAmount) > serverTotal * 0.05 + 1) {
+          console.warn(`Amount mismatch: client=${parsedAmount}, server=${serverTotal.toFixed(2)}`);
+          return res.status(400).json({ success: false, message: "Payment amount does not match order total" });
+        }
+      }
+
+      // Fetch the secret key from Firestore
       const configSnapshot = await db.collection("users").doc(storeUID).get();
+      if (!configSnapshot.exists) {
+        return res.status(404).json({ success: false, message: "Store not found" });
+      }
       const secretKey = configSnapshot.data().stripeSecretKey;
+      if (!secretKey) {
+        return res.status(400).json({ success: false, message: "Store payment not configured" });
+      }
 
       const charge = await stripe(secretKey).charges.create({
-        amount: amount * 100,
+        amount: Math.round(parsedAmount * 100),
         currency: currency || "cad",
         source: token,
       });
 
-      // console.log("Payment succeeded:", charge);
-
+      // Create the pending order
       await db
         .collection("users")
         .doc(storeUID)
         .collection("pendingOrders")
-        .add(orderDetails);
+        .add({
+          ...orderDetails,
+          date: admin.firestore.Timestamp.now(),
+        });
 
-      const mailOptions = {
-        from: "support@divinepos.com",
-        to: orderDetails.customer.email,
-        subject: "Order Confirmation",
-        html: OrderConfirmationEmailHtml(orderDetails, storeDetails),
-      };
-      return transporter.sendMail(mailOptions, (error, data) => {
-        if (error) {
-          return res.send(error.toString());
-        }
-        res.status(200).json({ success: true, message: "Payment succeeded" });
-      });
+      // Send success response immediately (don't wait for email)
+      res.status(200).json({ success: true, message: "Payment succeeded" });
+
+      // Send confirmation email asynchronously (fire-and-forget)
+      try {
+        const mailOptions = {
+          from: "support@divinepos.com",
+          to: orderDetails.customer.email,
+          subject: "Order Confirmation",
+          html: OrderConfirmationEmailHtml(orderDetails, storeDetails),
+        };
+        await transporter.sendMail(mailOptions);
+      } catch (emailErr) {
+        console.warn("Confirmation email failed (payment succeeded):", emailErr.message);
+      }
     } catch (error) {
       console.error("Error during payment:", error);
       res
@@ -187,13 +356,13 @@ export const processPayment = functions.https.onRequest(async (req, res) => {
   });
 });
 
-export const getLatLng = functions.https.onRequest(async (req, res) => {
+export const getLatLng = onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
     try {
       const { placeId } = req.body;
 
       const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=${GOOGLE_API_KEY}`
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=${GOOGLE_API_KEY}`,
       );
 
       const data = response.data;
@@ -204,9 +373,11 @@ export const getLatLng = functions.https.onRequest(async (req, res) => {
         data.result.geometry.location
       ) {
         const { lat, lng } = data.result.geometry.location;
-        res
-          .status(200)
-          .json({ success: true, message: "Success", data: { lat, lng } });
+        res.status(200).json({
+          success: true,
+          message: "Success",
+          data: { lat, lng },
+        });
       } else {
         res.status(500).json({
           success: false,
@@ -215,9 +386,10 @@ export const getLatLng = functions.https.onRequest(async (req, res) => {
       }
     } catch (error) {
       console.error("Error during request:", error);
-      res
-        .status(500)
-        .json({ success: false, message: `Error: ${error.message}` });
+      res.status(500).json({
+        success: false,
+        message: `Error: ${error.message}`,
+      });
     }
   });
 });
@@ -1608,7 +1780,7 @@ const OrderConfirmationEmailHtml = (element, storeDetails) => {
 															<td class="pad" style="padding-bottom:10px;padding-right:30px;padding-top:10px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:16px;line-height:120%;text-align:right;mso-line-height-alt:19.2px;">
 																	<p style="margin: 0; word-break: break-word;"><span>$ ${parseFloat(
-                                    cartItem.price
+                                    cartItem.price,
                                   ).toFixed(2)}</span></p>
 																</div>
 															</td>
@@ -1774,7 +1946,7 @@ const OrderConfirmationEmailHtml = (element, storeDetails) => {
 															<td class="pad" style="padding-bottom:10px;padding-right:30px;padding-top:10px;">
 																<div style="color:#555555;font-family:Montserrat, Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;font-size:16px;line-height:120%;text-align:right;mso-line-height-alt:19.2px;">
 																	<p style="margin: 0; word-break: break-word;"><strong><span>$ ${parseFloat(
-                                    element.total
+                                    element.total,
                                   ).toFixed(2)}</span></strong></p>
 																</div>
 															</td>
@@ -3238,3 +3410,793 @@ const WelcomeEmailHtmlPaid = (name) => {
     </html>
     `;
 };
+
+// ─── Delivery Platform Webhook ─────────────────────────────────────────────
+
+import crypto from "crypto";
+
+const PLATFORM_PREFIXES = {
+  doordash: "DD",
+  ubereats: "UE",
+  skipthedishes: "SK",
+  grubhub: "GH",
+};
+
+const VALID_PLATFORMS = ["doordash", "ubereats", "skipthedishes", "grubhub"];
+
+function verifyWebhookSignature(platform, rawBody, secret, headers) {
+  const signatureHeaders = {
+    doordash: "x-doordash-signature",
+    ubereats: "x-uber-signature",
+    skipthedishes: "x-skip-signature",
+    grubhub: "x-grubhub-signature",
+  };
+  const headerName = signatureHeaders[platform];
+  const providedSignature = headers[headerName];
+  if (!providedSignature || !secret) return false;
+  const computed = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(providedSignature, "hex"), Buffer.from(computed, "hex"));
+  } catch {
+    return false;
+  }
+}
+
+function normalizeDoorDashOrder(payload) {
+  const order = payload.order || payload;
+  const items = (order.items || order.order_items || []).map((item) => ({
+    name: item.name || item.title || "",
+    price: String(item.price || item.unit_price || "0"),
+    quantity: String(item.quantity || "1"),
+    options: (item.modifiers || item.options || []).map((m) => m.name || m.title || String(m)),
+    extraDetails: item.special_instructions || item.instructions || "",
+  }));
+  const customer = order.customer || order.consumer || {};
+  const address = order.delivery_address || order.address || {};
+  return {
+    cart: items,
+    cartNote: order.special_instructions || order.notes || "",
+    customer: {
+      name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || customer.name || "DoorDash Customer",
+      phone: customer.phone_number || customer.phone || "",
+      address: { label: [address.street, address.city, address.state, address.zip_code].filter(Boolean).join(", ") },
+      email: customer.email || "",
+    },
+    total: String(order.total || order.order_total || "0"),
+    platformOrderId: String(order.id || order.order_id || ""),
+  };
+}
+
+function normalizeUberEatsOrder(payload) {
+  const order = payload.order || payload;
+  const cart = order.cart || order.eater_order || {};
+  const items = (cart.items || order.items || []).map((item) => ({
+    name: item.title || item.name || "",
+    price: String(item.price?.amount ? (item.price.amount / 100).toFixed(2) : item.price || "0"),
+    quantity: String(item.quantity || "1"),
+    options: (item.selected_modifier_groups || []).flatMap((g) => (g.selected_items || []).map((m) => m.title || m.name || "")),
+    extraDetails: item.special_instructions || "",
+  }));
+  const eater = order.eater || order.customer || {};
+  const deliveryInfo = order.delivery_info || order.dropoff || {};
+  const location = deliveryInfo.location || deliveryInfo.address || {};
+  return {
+    cart: items,
+    cartNote: order.special_instructions || order.eater_note || "",
+    customer: {
+      name: [eater.first_name, eater.last_name].filter(Boolean).join(" ") || eater.name || "Uber Eats Customer",
+      phone: eater.phone?.number || eater.phone || "",
+      address: { label: location.address || location.formatted_address || [location.street_address, location.city, location.state, location.zip_code].filter(Boolean).join(", ") },
+      email: eater.email || "",
+    },
+    total: String(order.total?.amount ? (order.total.amount / 100).toFixed(2) : order.total || "0"),
+    platformOrderId: String(order.id || order.order_id || ""),
+  };
+}
+
+function normalizeSkipOrder(payload) {
+  const order = payload.order || payload;
+  const items = (order.items || order.order_items || []).map((item) => ({
+    name: item.name || item.product_name || "",
+    price: String(item.price || item.total_price || "0"),
+    quantity: String(item.quantity || "1"),
+    options: (item.modifiers || item.customizations || []).map((m) => m.name || String(m)),
+    extraDetails: item.special_instructions || "",
+  }));
+  const customer = order.customer || {};
+  const address = order.delivery_address || order.address || {};
+  return {
+    cart: items,
+    cartNote: order.notes || order.special_instructions || "",
+    customer: {
+      name: customer.name || [customer.first_name, customer.last_name].filter(Boolean).join(" ") || "Skip Customer",
+      phone: customer.phone || customer.phone_number || "",
+      address: { label: [address.street, address.city, address.province, address.postal_code].filter(Boolean).join(", ") },
+      email: customer.email || "",
+    },
+    total: String(order.total || order.order_total || "0"),
+    platformOrderId: String(order.id || order.order_id || ""),
+  };
+}
+
+function normalizeGrubhubOrder(payload) {
+  const order = payload.order || payload;
+  const items = (order.line_items || order.items || []).map((item) => ({
+    name: item.name || item.menu_item_name || "",
+    price: String(item.price || item.total || "0"),
+    quantity: String(item.quantity || "1"),
+    options: (item.modifiers || item.options || []).map((m) => m.name || m.modifier_name || String(m)),
+    extraDetails: item.special_instructions || "",
+  }));
+  const customer = order.customer || order.diner || {};
+  const address = order.delivery_address || order.address || {};
+  return {
+    cart: items,
+    cartNote: order.special_instructions || order.order_note || "",
+    customer: {
+      name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || customer.name || "Grubhub Customer",
+      phone: customer.phone || "",
+      address: { label: [address.street_address, address.city, address.state, address.zip].filter(Boolean).join(", ") },
+      email: customer.email || "",
+    },
+    total: String(order.total || order.order_total || "0"),
+    platformOrderId: String(order.id || order.order_id || ""),
+  };
+}
+
+const normalizers = {
+  doordash: normalizeDoorDashOrder,
+  ubereats: normalizeUberEatsOrder,
+  skipthedishes: normalizeSkipOrder,
+  grubhub: normalizeGrubhubOrder,
+};
+
+export const deliveryWebhook = onRequest(async (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const pathParts = req.path.split("/").filter(Boolean);
+  let uid, platform;
+  if (pathParts.length >= 3) {
+    uid = pathParts[pathParts.length - 2];
+    platform = pathParts[pathParts.length - 1];
+  } else if (pathParts.length === 2) {
+    uid = pathParts[0];
+    platform = pathParts[1];
+  } else {
+    return res.status(400).json({ error: "Invalid URL format" });
+  }
+
+  if (!VALID_PLATFORMS.includes(platform)) {
+    return res.status(400).json({ error: `Invalid platform: ${platform}` });
+  }
+
+  try {
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const subsSnapshot = await db.collection("users").doc(uid).collection("subscriptions").get();
+    let isProfessional = false;
+    subsSnapshot.forEach((doc) => {
+      const sub = doc.data();
+      if ((sub.role === "Professional Plan" || sub.role === "Premium Plan") && sub.status === "active") {
+        isProfessional = true;
+      }
+    });
+    if (!isProfessional) {
+      return res.status(403).json({ error: "Professional plan required" });
+    }
+
+    const userData = userDoc.data();
+    const platformConfig = userData?.deliveryPlatforms?.[platform];
+    if (!platformConfig?.enabled) {
+      return res.status(403).json({ error: `${platform} integration is not enabled` });
+    }
+
+    const rawBody = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+    if (platformConfig.webhookSecret) {
+      const isValid = verifyWebhookSignature(platform, rawBody, platformConfig.webhookSecret, req.headers);
+      if (!isValid) {
+        console.warn(`Invalid webhook signature for ${platform}, uid: ${uid}`);
+        return res.status(401).json({ error: "Invalid webhook signature" });
+      }
+    }
+
+    const payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const normalizer = normalizers[platform];
+    const normalized = normalizer(payload);
+
+    if (!normalized.platformOrderId) {
+      return res.status(400).json({ error: "Could not extract order ID from payload" });
+    }
+
+    const existingOrders = await db
+      .collection("users").doc(uid).collection("deliveryOrders")
+      .where("platformOrderId", "==", normalized.platformOrderId)
+      .where("platform", "==", platform)
+      .limit(1).get();
+
+    if (!existingOrders.empty) {
+      return res.status(200).json({ message: "Order already processed" });
+    }
+
+    const prefix = PLATFORM_PREFIXES[platform] || "DL";
+    const pendingOrder = {
+      cart: normalized.cart,
+      cartNote: normalized.cartNote,
+      customer: normalized.customer,
+      date: admin.firestore.Timestamp.now(),
+      method: "deliveryOrder",
+      online: true,
+      transNum: `${prefix}-${normalized.platformOrderId}`,
+      total: normalized.total,
+      printed: false,
+      paymentMethod: "Prepaid",
+      deliveryPlatform: platform,
+      platformOrderId: normalized.platformOrderId,
+    };
+
+    const pendingRef = await db.collection("users").doc(uid).collection("pendingOrders").add(pendingOrder);
+
+    await db.collection("users").doc(uid).collection("deliveryOrders").add({
+      platformOrderId: normalized.platformOrderId,
+      platform: platform,
+      pendingOrderId: pendingRef.id,
+      receivedAt: admin.firestore.Timestamp.now(),
+      status: "received",
+    });
+
+    return res.status(200).json({ success: true, message: "Order received", orderId: pendingRef.id });
+  } catch (error) {
+    console.error("Delivery webhook error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FRANCHISE FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Create a new franchise location (callable, hub owner or superadmin) ───
+export const createFranchiseLocation = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+  }
+
+  const callerUid = context.auth.uid;
+  const isSuperAdmin = callerUid === SUPERADMIN_UID;
+
+  // Verify caller is hub owner or superadmin
+  if (!isSuperAdmin) {
+    const callerDoc = await db.collection("users").doc(callerUid).get();
+    if (!callerDoc.exists || callerDoc.data()?.franchiseRole !== "hub") {
+      throw new functions.https.HttpsError("permission-denied", "Only franchise hub owner or superadmin can create locations");
+    }
+  }
+
+  const { hubUid, email, password, locationName, address, phoneNumber, acceptDelivery, deliveryPrice, deliveryRange, taxRate } = data;
+
+  if (!hubUid || !email || !password || !locationName) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing required fields: hubUid, email, password, locationName");
+  }
+
+  // If not superadmin, caller must be the hub owner
+  if (!isSuperAdmin && callerUid !== hubUid) {
+    throw new functions.https.HttpsError("permission-denied", "You can only add locations to your own franchise");
+  }
+
+  try {
+    // 1. Verify the franchise exists
+    const franchiseDoc = await db.collection("franchises").doc(hubUid).get();
+    if (!franchiseDoc.exists) {
+      throw new functions.https.HttpsError("not-found", "Franchise not found");
+    }
+
+    // 2. Read hub's data to copy products, categories, option templates
+    const hubDoc = await db.collection("users").doc(hubUid).get();
+    const hubData = hubDoc.data() || {};
+    const hubProducts = await db.collection("users").doc(hubUid).collection("products").get();
+    const hubTemplates = await db.collection("users").doc(hubUid).collection("optionTemplates").get();
+
+    // 3. Create Firebase Auth user for the new location
+    const newUser = await admin.auth().createUser({
+      email,
+      password,
+      displayName: locationName,
+    });
+    const newUid = newUser.uid;
+
+    // 4. Initialize the location's user doc (copy structure from hub)
+    const locationStoreDetails = {
+      ...(hubData.storeDetails || {}),
+      name: locationName,
+      address: address || null,
+      phoneNumber: phoneNumber || "",
+      deliveryPrice: deliveryPrice || hubData.storeDetails?.deliveryPrice || "",
+      deliveryRange: deliveryRange || hubData.storeDetails?.deliveryRange || "",
+      acceptDelivery: acceptDelivery ?? hubData.storeDetails?.acceptDelivery ?? false,
+      taxRate: taxRate || hubData.storeDetails?.taxRate || "13",
+    };
+
+    await db.collection("users").doc(newUid).set({
+      categories: hubData.categories || [],
+      storeDetails: locationStoreDetails,
+      wooCredentials: { apiUrl: "", ck: "", cs: "", useWoocommerce: false },
+      franchiseId: hubUid,
+      franchiseRole: "location",
+      ownerDetails: { email },
+    });
+
+    // 5. Copy products from hub (strip stock fields — each location manages its own)
+    const productBatch = db.batch();
+    let batchCount = 0;
+    const batches = [productBatch];
+
+    hubProducts.forEach((productDoc) => {
+      const product = productDoc.data();
+      const syncedProduct = { ...product };
+      delete syncedProduct.stockQuantity;
+      delete syncedProduct.lowStockThreshold;
+      delete syncedProduct.trackStock;
+
+      let currentBatch = batches[batches.length - 1];
+      if (batchCount >= 490) {
+        currentBatch = db.batch();
+        batches.push(currentBatch);
+        batchCount = 0;
+      }
+
+      currentBatch.set(
+        db.collection("users").doc(newUid).collection("products").doc(productDoc.id),
+        syncedProduct
+      );
+      batchCount++;
+    });
+
+    for (const b of batches) {
+      await b.commit();
+    }
+
+    // 6. Copy option templates from hub
+    const templateBatch = db.batch();
+    hubTemplates.forEach((tmplDoc) => {
+      templateBatch.set(
+        db.collection("users").doc(newUid).collection("optionTemplates").doc(tmplDoc.id),
+        tmplDoc.data()
+      );
+    });
+    await templateBatch.commit();
+
+    // 7. Create synthetic subscription so location is treated as Professional
+    await db.collection("users").doc(newUid).collection("subscriptions").doc("franchise-managed").set({
+      role: "Professional Plan",
+      status: "active",
+      created: admin.firestore.FieldValue.serverTimestamp(),
+      metadata: { source: "franchise", managedByFranchise: hubUid },
+    });
+
+    // 8. Add location to franchise doc
+    const locationInfo = {
+      uid: newUid,
+      name: locationName,
+      address: address || null,
+      phoneNumber: phoneNumber || "",
+      isActive: true,
+      acceptDelivery: acceptDelivery ?? false,
+      deliveryPrice: deliveryPrice || "",
+      deliveryRange: deliveryRange || "",
+    };
+
+    await db.collection("franchises").doc(hubUid).collection("locations").doc(newUid).set(locationInfo);
+    await db.collection("franchises").doc(hubUid).update({
+      locationUids: admin.firestore.FieldValue.arrayUnion(newUid),
+    });
+
+    // 9. Update the franchise public doc with new location
+    const franchiseData = franchiseDoc.data();
+    const publicDoc = await db.collection("public").doc(hubUid).get();
+    const currentLocations = publicDoc.exists ? (publicDoc.data()?.locations || []) : [];
+    currentLocations.push(locationInfo);
+    if (publicDoc.exists) {
+      await db.collection("public").doc(hubUid).update({
+        locations: currentLocations,
+      });
+    } else {
+      await db.collection("public").doc(hubUid).set({
+        isFranchise: true,
+        urlEnding: franchiseData?.urlEnding || "",
+        storeDetails: hubData.storeDetails || {},
+        categories: hubData.categories || [],
+        brandColor: franchiseData?.brandColor || "",
+        tagline: franchiseData?.tagline || "",
+        logoUrl: franchiseData?.logoUrl || "",
+        onlineStoreActive: true,
+        locations: currentLocations,
+      });
+    }
+
+    return { success: true, locationUid: newUid, email };
+  } catch (err) {
+    console.error("createFranchiseLocation failed:", err);
+    if (err instanceof functions.https.HttpsError) throw err;
+    throw new functions.https.HttpsError("internal", err.message || "Failed to create location");
+  }
+});
+
+// ─── Rebuild franchise public doc locations array from live location data ───
+export const rebuildFranchiseLocations = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+  }
+  // Allow superadmin OR the hub owner to call this
+  const { hubUid } = data;
+  if (!hubUid) throw new functions.https.HttpsError("invalid-argument", "Missing hubUid");
+  if (context.auth.uid !== SUPERADMIN_UID && context.auth.uid !== hubUid) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const locSnap = await db.collection("franchises").doc(hubUid).collection("locations").get();
+  const locations = [];
+
+  for (const loc of locSnap.docs) {
+    const locData = loc.data();
+    // Read LIVE data from the location's actual user doc
+    const userDoc = await db.collection("users").doc(loc.id).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+    const storeDetails = userData?.storeDetails || {};
+
+    const locationInfo = {
+      uid: loc.id,
+      name: locData.name || storeDetails.name || "",
+      address: storeDetails.address || locData.address || null,
+      phoneNumber: storeDetails.phoneNumber || locData.phoneNumber || "",
+      isActive: locData.isActive !== false,
+      acceptDelivery: storeDetails.acceptDelivery ?? locData.acceptDelivery ?? false,
+      deliveryPrice: storeDetails.deliveryPrice || locData.deliveryPrice || "",
+      deliveryRange: storeDetails.deliveryRange || locData.deliveryRange || "",
+      stripePublicKey: userData?.stripePublicKey || storeDetails.stripePublicKey || "",
+    };
+
+    locations.push(locationInfo);
+
+    // Also update the franchise subcollection with latest data
+    await db.collection("franchises").doc(hubUid).collection("locations").doc(loc.id).update(locationInfo);
+
+    // Ensure location user doc has franchise fields set
+    const locUserData = userDoc.exists ? userDoc.data() : {};
+    if (locUserData?.franchiseRole !== "location" || locUserData?.franchiseId !== hubUid) {
+      await db.collection("users").doc(loc.id).update({
+        franchiseRole: "location",
+        franchiseId: hubUid,
+      });
+    }
+
+    // Ensure location has franchise-managed subscription
+    const subDoc = await db.collection("users").doc(loc.id).collection("subscriptions").doc("franchise-managed").get();
+    if (!subDoc.exists) {
+      await db.collection("users").doc(loc.id).collection("subscriptions").doc("franchise-managed").set({
+        role: "Professional Plan",
+        status: "active",
+        created: admin.firestore.FieldValue.serverTimestamp(),
+        metadata: { source: "franchise", managedByFranchise: hubUid },
+      });
+    }
+  }
+
+  await db.collection("public").doc(hubUid).update({ locations });
+  return { success: true, count: locations.length };
+});
+
+// ─── Firestore trigger: Auto-sync location settings to franchise public doc ───
+export const onLocationSettingsChange = functions.firestore
+  .document("users/{uid}")
+  .onUpdate(async (change, context) => {
+    const uid = context.params.uid;
+    const before = change.before.data();
+    const after = change.after.data();
+
+    // Only trigger for franchise locations
+    if (after?.franchiseRole !== "location" || !after?.franchiseId) return;
+
+    // Only trigger if storeDetails or Stripe keys changed
+    const beforeDetails = JSON.stringify(before?.storeDetails || {});
+    const afterDetails = JSON.stringify(after?.storeDetails || {});
+    const stripeChanged = (before?.stripePublicKey || "") !== (after?.stripePublicKey || "");
+    if (beforeDetails === afterDetails && !stripeChanged) return;
+
+    const hubUid = after.franchiseId;
+    const storeDetails = after.storeDetails || {};
+
+    // Update the location entry in the franchise public doc
+    try {
+      const publicDoc = await db.collection("public").doc(hubUid).get();
+      if (!publicDoc.exists) return;
+
+      const locations = publicDoc.data()?.locations || [];
+      const locIndex = locations.findIndex((l) => l.uid === uid);
+      if (locIndex === -1) return;
+
+      locations[locIndex] = {
+        ...locations[locIndex],
+        address: storeDetails.address || locations[locIndex].address,
+        phoneNumber: storeDetails.phoneNumber || locations[locIndex].phoneNumber,
+        acceptDelivery: storeDetails.acceptDelivery ?? locations[locIndex].acceptDelivery,
+        deliveryPrice: storeDetails.deliveryPrice || locations[locIndex].deliveryPrice,
+        deliveryRange: storeDetails.deliveryRange || locations[locIndex].deliveryRange,
+        stripePublicKey: after.stripePublicKey || storeDetails.stripePublicKey || locations[locIndex].stripePublicKey || "",
+      };
+
+      await db.collection("public").doc(hubUid).update({ locations });
+
+      // Also update franchise subcollection
+      await db.collection("franchises").doc(hubUid).collection("locations").doc(uid).update({
+        address: storeDetails.address || null,
+        phoneNumber: storeDetails.phoneNumber || "",
+        acceptDelivery: storeDetails.acceptDelivery ?? false,
+        deliveryPrice: storeDetails.deliveryPrice || "",
+        deliveryRange: storeDetails.deliveryRange || "",
+        stripePublicKey: after.stripePublicKey || storeDetails.stripePublicKey || "",
+      });
+    } catch (err) {
+      console.error("onLocationSettingsChange failed:", err);
+    }
+  });
+
+// ─── Delete a franchise (superadmin only) ───
+export const deleteFranchise = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.uid !== SUPERADMIN_UID) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const { hubUid, deleteLocationAccounts } = data;
+  if (!hubUid) throw new functions.https.HttpsError("invalid-argument", "Missing hubUid");
+
+  try {
+    // Get all location UIDs
+    const franchiseDoc = await db.collection("franchises").doc(hubUid).get();
+    if (!franchiseDoc.exists) throw new functions.https.HttpsError("not-found", "Franchise not found");
+
+    const locationUids = franchiseDoc.data()?.locationUids || [];
+
+    // Remove franchise role from all location user docs
+    for (const locUid of locationUids) {
+      if (deleteLocationAccounts) {
+        // Delete the location account entirely
+        await admin.firestore().recursiveDelete(db.collection("users").doc(locUid));
+        await admin.firestore().recursiveDelete(db.collection("public").doc(locUid));
+        await admin.auth().deleteUser(locUid).catch(() => {});
+      } else {
+        // Just remove franchise fields
+        await db.collection("users").doc(locUid).update({
+          franchiseId: admin.firestore.FieldValue.delete(),
+          franchiseRole: admin.firestore.FieldValue.delete(),
+        }).catch(() => {});
+        // Remove franchise-managed subscription
+        await db.collection("users").doc(locUid).collection("subscriptions").doc("franchise-managed").delete().catch(() => {});
+      }
+    }
+
+    // Remove franchise role from hub user doc
+    await db.collection("users").doc(hubUid).update({
+      franchiseId: admin.firestore.FieldValue.delete(),
+      franchiseRole: admin.firestore.FieldValue.delete(),
+      onlineStoreSetUp: admin.firestore.FieldValue.delete(),
+      onlineStoreActive: admin.firestore.FieldValue.delete(),
+    }).catch(() => {});
+
+    // Remove franchise-hub subscription
+    await db.collection("users").doc(hubUid).collection("subscriptions").doc("franchise-hub").delete().catch(() => {});
+
+    // Delete franchise doc and subcollections
+    await admin.firestore().recursiveDelete(db.collection("franchises").doc(hubUid));
+
+    // Clean up public doc (remove isFranchise, locations)
+    await db.collection("public").doc(hubUid).update({
+      isFranchise: admin.firestore.FieldValue.delete(),
+      locations: admin.firestore.FieldValue.delete(),
+    }).catch(() => {});
+
+    return { success: true, deletedLocations: deleteLocationAccounts ? locationUids.length : 0 };
+  } catch (err) {
+    console.error("deleteFranchise failed:", err);
+    if (err instanceof functions.https.HttpsError) throw err;
+    throw new functions.https.HttpsError("internal", err.message || "Failed to delete franchise");
+  }
+});
+
+// ─── Firestore trigger: Sync product changes from hub to all locations ───
+export const onHubProductWrite = functions.firestore
+  .document("users/{uid}/products/{productId}")
+  .onWrite(async (change, context) => {
+    const uid = context.params.uid;
+    const productId = context.params.productId;
+
+    // Check if this user is a franchise hub
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists || userDoc.data()?.franchiseRole !== "hub") return;
+
+    const franchiseDoc = await db.collection("franchises").doc(uid).get();
+    if (!franchiseDoc.exists) return;
+
+    const locationUids = franchiseDoc.data()?.locationUids || [];
+    if (locationUids.length === 0) return;
+
+    // Chunk writes into batches of 490 (leave room for batch overhead)
+    const BATCH_LIMIT = 490;
+    let currentBatch = db.batch();
+    let opCount = 0;
+    const batches = [currentBatch];
+
+    const getNextBatch = () => {
+      if (opCount >= BATCH_LIMIT) {
+        currentBatch = db.batch();
+        batches.push(currentBatch);
+        opCount = 0;
+      }
+      return currentBatch;
+    };
+
+    if (!change.after.exists) {
+      // Product was deleted — delete from all locations
+      for (const locUid of locationUids) {
+        getNextBatch().delete(db.collection("users").doc(locUid).collection("products").doc(productId));
+        opCount++;
+        getNextBatch().delete(db.collection("public").doc(locUid).collection("products").doc(productId));
+        opCount++;
+      }
+      // Also delete from hub's public collection
+      getNextBatch().delete(db.collection("public").doc(uid).collection("products").doc(productId));
+      opCount++;
+    } else {
+      // Product was created or updated — sync to all locations
+      const product = change.after.data();
+      // Strip stock fields — each location manages its own inventory
+      const syncProduct = { ...product };
+      delete syncProduct.stockQuantity;
+      delete syncProduct.lowStockThreshold;
+      delete syncProduct.trackStock;
+
+      for (const locUid of locationUids) {
+        getNextBatch().set(
+          db.collection("users").doc(locUid).collection("products").doc(productId),
+          syncProduct,
+          { merge: true }
+        );
+        opCount++;
+        getNextBatch().set(
+          db.collection("public").doc(locUid).collection("products").doc(productId),
+          syncProduct,
+          { merge: true }
+        );
+        opCount++;
+      }
+      // Also sync to hub's public collection
+      getNextBatch().set(
+        db.collection("public").doc(uid).collection("products").doc(productId),
+        product,
+        { merge: true }
+      );
+      opCount++;
+    }
+
+    // Commit all batches
+    for (const b of batches) {
+      await b.commit();
+    }
+  });
+
+// ─── Firestore trigger: Sync category changes from hub to all locations ───
+export const onHubCategoryChange = functions.firestore
+  .document("users/{uid}")
+  .onUpdate(async (change, context) => {
+    const uid = context.params.uid;
+    const before = change.before.data();
+    const after = change.after.data();
+
+    // Only trigger if categories actually changed
+    if (JSON.stringify(before?.categories) === JSON.stringify(after?.categories)) return;
+
+    // Check if this user is a franchise hub
+    if (after?.franchiseRole !== "hub") return;
+
+    const franchiseDoc = await db.collection("franchises").doc(uid).get();
+    if (!franchiseDoc.exists) return;
+
+    const locationUids = franchiseDoc.data()?.locationUids || [];
+    if (locationUids.length === 0) return;
+
+    const newCategories = after?.categories || [];
+    const batch = db.batch();
+
+    for (const locUid of locationUids) {
+      batch.update(db.collection("users").doc(locUid), { categories: newCategories });
+      // Also update public docs if they exist
+      batch.set(db.collection("public").doc(locUid), { categories: newCategories }, { merge: true });
+    }
+
+    // Update hub's public doc
+    batch.set(db.collection("public").doc(uid), { categories: newCategories }, { merge: true });
+
+    await batch.commit();
+  });
+
+// ─── Create franchise from existing account (superadmin only) ───
+export const createFranchise = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.uid !== SUPERADMIN_UID) {
+    throw new functions.https.HttpsError("permission-denied", "Not authorized");
+  }
+
+  const { uid, name, urlEnding } = data;
+  if (!uid || !name) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing uid or name");
+  }
+
+  try {
+    // Verify user exists and is not already in a franchise
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError("not-found", "User not found");
+    }
+    if (userDoc.data()?.franchiseRole) {
+      throw new functions.https.HttpsError("already-exists", "User is already part of a franchise");
+    }
+
+    const userData = userDoc.data() || {};
+
+    // Generate URL slug from franchise name if not provided
+    const slug = (urlEnding || userData.urlEnding || name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")).toLowerCase();
+
+    // Create franchise doc
+    await db.collection("franchises").doc(uid).set({
+      hubUid: uid,
+      name,
+      locationUids: [],
+      urlEnding: slug,
+      brandColor: userData.brandColor || "",
+      tagline: userData.tagline || "",
+      logoUrl: userData.storeDetails?.logoUrl || "",
+      onlineStoreActive: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Update user doc with franchise role + auto-setup online store
+    await db.collection("users").doc(uid).update({
+      franchiseId: uid,
+      franchiseRole: "hub",
+      onlineStoreSetUp: true,
+      onlineStoreActive: true,
+      urlEnding: slug,
+    });
+
+    // Give hub account Professional subscription (franchise includes all features)
+    await db.collection("users").doc(uid).collection("subscriptions").doc("franchise-hub").set({
+      role: "Professional Plan",
+      status: "active",
+      created: admin.firestore.FieldValue.serverTimestamp(),
+      metadata: { source: "franchise-hub" },
+    });
+
+    // Create/update public doc for franchise online store
+    await db.collection("public").doc(uid).set({
+      isFranchise: true,
+      urlEnding: slug,
+      storeDetails: userData.storeDetails || {},
+      categories: userData.categories || [],
+      brandColor: userData.brandColor || "",
+      tagline: userData.tagline || "",
+      logoUrl: userData.storeDetails?.logoUrl || "",
+      onlineStoreActive: true,
+      onlineStoreSetUp: true,
+      locations: [],
+    }, { merge: true });
+
+    return { success: true };
+  } catch (err) {
+    console.error("createFranchise failed:", err);
+    if (err instanceof functions.https.HttpsError) throw err;
+    throw new functions.https.HttpsError("internal", err.message || "Failed to create franchise");
+  }
+});

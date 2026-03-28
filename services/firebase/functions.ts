@@ -1,0 +1,1105 @@
+import {
+  CartItemProp,
+  CustomerProp,
+  Ingredient,
+  IngredientStockHistoryEntry,
+  Option,
+  OptionTemplate,
+  StatsDataProps,
+  StockHistoryEntry,
+  StoreDetailsProps,
+  TransListStateItem,
+} from "types";
+import { auth, db, STRIPE_PUBLIC_KEY } from "./config";
+import { logSystemEvent } from "./systemLogging";
+import { loadStripe } from "@stripe/stripe-js";
+import firebase from "firebase/compat/app";
+const Timestamp = firebase.firestore.Timestamp;
+import {
+  customersState,
+  setCustomersState,
+  ingredientsState,
+  loyaltyConfigState,
+  onlineStoreState,
+  optionTemplatesState,
+  setIngredientsState,
+  setOptionTemplatesState,
+  setStoreProductsState,
+  storeProductsState,
+  updateIngredientsBatch,
+  updateIngredientStock,
+  updateStoreProductsState,
+} from "store/appState";
+
+// -------------------
+// 🔐 AUTH FUNCTIONS
+// -------------------
+export const signIn = (email: string, password: string) =>
+  auth.signInWithEmailAndPassword(email, password);
+
+export const signUp = async (
+  email: string,
+  password: string,
+  name: string,
+  phoneNumber: string
+) => {
+  const userAuth = await auth.createUserWithEmailAndPassword(email, password);
+
+  if (userAuth.user) {
+    const userDoc = db.collection("users").doc(userAuth.user.uid);
+    await userDoc.set({
+      categories: [],
+      wooCredentials: { apiUrl: "", ck: "", cs: "", useWoocommerce: false },
+      storeDetails: {
+        name: null,
+        address: null,
+        phoneNumber: null,
+        website: null,
+        deliveryPrice: null,
+        taxRate: 13,
+      },
+      ownerDetails: {
+        name,
+        address: null,
+        phoneNumber,
+        email,
+      },
+    });
+
+    await userAuth.user.updateProfile({ displayName: name });
+
+    logSystemEvent("signup", { name, email, phoneNumber });
+  }
+};
+
+// -------------------
+// 🧩 DATA UPDATES
+// -------------------
+export const updateData = async (categories: string[]) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  await db.collection("users").doc(uid).update({ categories });
+};
+
+// -------------------
+// 🪑 TABLES
+// -------------------
+export const saveTables = async (tables: import("types").Table[]) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  await db.collection("users").doc(uid).update({ tables });
+};
+
+export const saveTableSections = async (tableSections: string[]) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  await db.collection("users").doc(uid).update({ tableSections });
+};
+
+// -------------------
+// 📊 STATS HELPERS
+// -------------------
+interface ProductCount {
+  [productName: string]: number;
+}
+
+interface DayStats {
+  revenue: number;
+  orders: number;
+  inStore: number;
+  inStoreRevenue: number;
+  delivery: number;
+  deliveryRevenue: number;
+  pickup: number;
+  pickupRevenue: number;
+  productCounts: ProductCount;
+  totalWaitTime: number;
+  waitCount: number;
+  averageWaitTime?: number;
+}
+
+const initializeDayStats = (): DayStats => ({
+  revenue: 0,
+  orders: 0,
+  inStore: 0,
+  inStoreRevenue: 0,
+  delivery: 0,
+  deliveryRevenue: 0,
+  pickup: 0,
+  pickupRevenue: 0,
+  productCounts: {},
+  totalWaitTime: 0,
+  waitCount: 0,
+});
+
+const initializeStatsData = (): StatsDataProps => ({
+  totalRevenue: 0,
+  totalOrders: 0,
+  days: {},
+});
+
+// -------------------
+// 📈 UPDATE STATS
+// -------------------
+export const updateStats = async (
+  userId: string,
+  receipt: Partial<TransListStateItem>
+) => {
+  const statsRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("stats")
+    .doc("monthly");
+
+  await db.runTransaction(async (transaction) => {
+    const statsDoc = await transaction.get(statsRef);
+
+    const statsData: StatsDataProps = statsDoc.exists
+      ? (statsDoc.data() as StatsDataProps)
+      : initializeStatsData();
+
+    if (!(receipt.date instanceof Timestamp)) {
+      console.warn("Skipping stats update: receipt.date is not a valid Timestamp");
+      return;
+    }
+
+    const d = receipt.date.toDate();
+    const transactionDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    if (!statsData.days[transactionDate]) {
+      statsData.days[transactionDate] = initializeDayStats();
+    }
+
+    const day = statsData.days[transactionDate];
+    const total =
+      Number(receipt.total?.toString().replace(/[^0-9.-]+/g, "")) || 0;
+
+    day.orders += 1;
+    day.revenue += total;
+    statsData.totalOrders = (statsData.totalOrders || 0) + 1;
+    statsData.totalRevenue = (statsData.totalRevenue || 0) + total;
+
+    switch (receipt.method) {
+      case "inStoreOrder":
+        day.inStore++;
+        day.inStoreRevenue += total;
+        break;
+      case "deliveryOrder":
+        day.delivery++;
+        day.deliveryRevenue += total;
+        break;
+      case "pickupOrder":
+        day.pickup++;
+        day.pickupRevenue += total;
+        break;
+    }
+
+    if (Array.isArray(receipt.cart)) {
+      for (const item of receipt.cart) {
+        const itemName = item.name || "Unknown Item";
+        day.productCounts[itemName] = (day.productCounts[itemName] || 0) + 1;
+      }
+    }
+
+    if (
+      receipt.date instanceof Timestamp &&
+      receipt.dateCompleted instanceof Timestamp
+    ) {
+      const start = receipt.date.toDate();
+      const end = receipt.dateCompleted.toDate();
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const waitTime = (end.getTime() - start.getTime()) / 60000;
+        day.totalWaitTime += waitTime;
+        day.waitCount += 1;
+        day.averageWaitTime = day.totalWaitTime / day.waitCount;
+      }
+    }
+
+    // ── Enhanced analytics tracking ──────────────────────────────────
+    // Revenue by hour
+    const hour = String(d.getHours());
+    if (!day.revenueByHour) day.revenueByHour = {};
+    if (!day.ordersByHour) day.ordersByHour = {};
+    day.revenueByHour[hour] = (day.revenueByHour[hour] || 0) + total;
+    day.ordersByHour[hour] = (day.ordersByHour[hour] || 0) + 1;
+
+    // Revenue by payment method
+    if (!day.revenueByPaymentMethod) day.revenueByPaymentMethod = { cash: 0, card: 0 };
+    if (receipt.paymentMethod === "Cash") {
+      day.revenueByPaymentMethod.cash += total;
+    } else {
+      day.revenueByPaymentMethod.card += total;
+    }
+
+    // Online order tracking
+    if (receipt.online) {
+      day.onlineOrders = (day.onlineOrders || 0) + 1;
+      day.onlineRevenue = (day.onlineRevenue || 0) + total;
+    }
+
+    // Table order tracking
+    if (receipt.method === "tableOrder") {
+      day.tableOrders = (day.tableOrders || 0) + 1;
+      day.tableRevenue = (day.tableRevenue || 0) + total;
+    }
+
+    // Customer tracking for new vs returning
+    if (receipt.customer?.phone) {
+      if (!day.customerIds) day.customerIds = [];
+      if (!day.customerIds.includes(receipt.customer.phone)) {
+        day.customerIds.push(receipt.customer.phone);
+      }
+    }
+
+    transaction.set(statsRef, statsData);
+  });
+};
+
+// -------------------
+// 🔄 RECALCULATE STATS
+// -------------------
+export const recalculateStats = async () => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("User not authenticated");
+
+  const transListRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("transList");
+
+  const snapshot = await transListRef.get();
+  const statsData: StatsDataProps = initializeStatsData();
+
+  snapshot.forEach((doc) => {
+    const receipt = doc.data() as Record<string, any>;
+
+    // Try to get a valid date from the receipt
+    let d: Date | null = null;
+    if (receipt.date && typeof receipt.date.toDate === "function") {
+      d = receipt.date.toDate();
+    } else if (receipt.dateCompleted && typeof receipt.dateCompleted.toDate === "function") {
+      d = receipt.dateCompleted.toDate();
+    }
+    if (!d || isNaN(d.getTime())) return;
+
+    const transactionDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    if (!statsData.days[transactionDate]) {
+      statsData.days[transactionDate] = initializeDayStats();
+    }
+
+    const day = statsData.days[transactionDate] as any;
+    const total = Number(receipt.total?.toString().replace(/[^0-9.-]+/g, "")) || 0;
+
+    day.orders += 1;
+    day.revenue += total;
+    statsData.totalOrders = (statsData.totalOrders || 0) + 1;
+    statsData.totalRevenue = (statsData.totalRevenue || 0) + total;
+
+    switch (receipt.method) {
+      case "inStoreOrder":
+        day.inStore++;
+        day.inStoreRevenue += total;
+        break;
+      case "deliveryOrder":
+        day.delivery++;
+        day.deliveryRevenue += total;
+        break;
+      case "pickupOrder":
+        day.pickup++;
+        day.pickupRevenue += total;
+        break;
+    }
+
+    if (Array.isArray(receipt.cart)) {
+      for (const item of receipt.cart) {
+        const itemName = item.name || "Unknown Item";
+        day.productCounts[itemName] = (day.productCounts[itemName] || 0) + 1;
+      }
+    }
+
+    if (
+      receipt.date && typeof receipt.date.toDate === "function" &&
+      receipt.dateCompleted && typeof receipt.dateCompleted.toDate === "function"
+    ) {
+      const start = receipt.date.toDate();
+      const end = receipt.dateCompleted.toDate();
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const waitTime = (end.getTime() - start.getTime()) / 60000;
+        day.totalWaitTime += waitTime;
+        day.waitCount += 1;
+        day.averageWaitTime = day.totalWaitTime / day.waitCount;
+      }
+    }
+
+    // Enhanced analytics
+    const hour = String(d.getHours());
+    if (!day.revenueByHour) day.revenueByHour = {};
+    if (!day.ordersByHour) day.ordersByHour = {};
+    day.revenueByHour[hour] = (day.revenueByHour[hour] || 0) + total;
+    day.ordersByHour[hour] = (day.ordersByHour[hour] || 0) + 1;
+
+    if (!day.revenueByPaymentMethod) day.revenueByPaymentMethod = { cash: 0, card: 0 };
+    if (receipt.paymentMethod === "Cash") {
+      day.revenueByPaymentMethod.cash += total;
+    } else {
+      day.revenueByPaymentMethod.card += total;
+    }
+
+    if (receipt.online) {
+      day.onlineOrders = (day.onlineOrders || 0) + 1;
+      day.onlineRevenue = (day.onlineRevenue || 0) + total;
+    }
+
+    if (receipt.method === "tableOrder") {
+      day.tableOrders = (day.tableOrders || 0) + 1;
+      day.tableRevenue = (day.tableRevenue || 0) + total;
+    }
+
+    if (receipt.customer?.phone) {
+      if (!day.customerIds) day.customerIds = [];
+      if (!day.customerIds.includes(receipt.customer.phone)) {
+        day.customerIds.push(receipt.customer.phone);
+      }
+    }
+  });
+
+  const statsRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("stats")
+    .doc("monthly");
+
+  await statsRef.set(statsData);
+  return statsData;
+};
+
+// -------------------
+// 💵 TRANSACTIONS
+// -------------------
+export const updateTransList = async (receipt: Partial<TransListStateItem>) => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("User not authenticated");
+
+  const transListRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("transList");
+
+  const newReceipt: Record<string, any> = {
+    ...receipt,
+    dateCompleted: firebase.firestore.Timestamp.now(),
+  };
+
+  // Firestore does not allow undefined values
+  Object.keys(newReceipt).forEach((key) => {
+    if (newReceipt[key] === undefined) delete newReceipt[key];
+  });
+
+  const docRef = await transListRef.add(newReceipt);
+  await updateStats(userId, newReceipt);
+
+  if (receipt.cart && receipt.cart.length > 0) {
+    await deductStockForCart(userId, receipt.cart, docRef.id).catch(() => {
+      console.warn("Stock deduction failed for transaction", docRef.id);
+    });
+  }
+
+  // Award loyalty points if enabled
+  awardLoyaltyPoints(userId, newReceipt, docRef.id).catch(() => {
+    console.warn("Loyalty points award failed for", docRef.id);
+  });
+};
+
+// -------------------
+// 🎁 LOYALTY
+// -------------------
+const awardLoyaltyPoints = async (
+  userId: string,
+  receipt: Record<string, any>,
+  transactionId: string
+): Promise<void> => {
+  const config = loyaltyConfigState.get();
+  if (!config.enabled) return;
+  if (!receipt.customer?.phone && !receipt.customer?.name) return;
+
+  // Find customer by phone first, then by name as fallback
+  const customers = customersState.get();
+  let customer = receipt.customer?.phone
+    ? customers.find((c) => c.phone === receipt.customer.phone)
+    : null;
+  if (!customer && receipt.customer?.name) {
+    customer = customers.find((c) => c.name?.toLowerCase() === receipt.customer.name.toLowerCase());
+  }
+  if (!customer || !customer.id) return;
+
+  const total = parseFloat(receipt.total?.replace?.(/[^0-9.-]/g, "") || receipt.total || "0");
+  if (total <= 0) return;
+
+  // Calculate points with tier multiplier
+  const lifetimePoints = customer.lifetimePoints || 0;
+  const { getTierForPoints, calculatePointsEarned } = await import("utils/loyaltyHelpers");
+  const tier = getTierForPoints(lifetimePoints, config.tiers);
+  const pointsEarned = Math.floor(total * config.pointsPerDollar * tier.multiplier);
+  if (pointsEarned <= 0) return;
+
+  const newBalance = (customer.loyaltyPoints || 0) + pointsEarned;
+  const newLifetime = lifetimePoints + pointsEarned;
+  const newTier = getTierForPoints(newLifetime, config.tiers);
+
+  const customerRef = db.collection("users").doc(userId).collection("customers").doc(customer.id);
+
+  // Update customer doc
+  await customerRef.update({
+    loyaltyPoints: newBalance,
+    lifetimePoints: newLifetime,
+    tier: newTier.name,
+    totalSpent: firebase.firestore.FieldValue.increment(total),
+    orderCount: firebase.firestore.FieldValue.increment(1),
+    lastOrderDate: firebase.firestore.Timestamp.now(),
+  });
+
+  // Add points history entry
+  await customerRef.collection("pointsHistory").add({
+    type: "earn",
+    points: pointsEarned,
+    balance: newBalance,
+    description: `Earned from order #${receipt.transNum || transactionId.slice(0, 8)}`,
+    orderId: receipt.transNum || transactionId,
+    multiplier: tier.multiplier,
+    createdAt: firebase.firestore.Timestamp.now(),
+  });
+
+  // Add to denormalized loyalty events
+  await db.collection("users").doc(userId).collection("loyaltyEvents").add({
+    customerId: customer.id,
+    customerName: customer.name,
+    customerPhone: customer.phone,
+    type: "earn",
+    points: pointsEarned,
+    balance: newBalance,
+    description: `Earned from order #${receipt.transNum || transactionId.slice(0, 8)}`,
+    orderId: receipt.transNum || transactionId,
+    createdAt: firebase.firestore.Timestamp.now(),
+  });
+
+  // Update local state
+  const updatedCustomers = customers.map((c) =>
+    c.id === customer.id
+      ? { ...c, loyaltyPoints: newBalance, lifetimePoints: newLifetime, tier: newTier.name, totalSpent: (c.totalSpent || 0) + total, orderCount: (c.orderCount || 0) + 1 }
+      : c
+  );
+  setCustomersState(updatedCustomers);
+};
+
+// -------------------
+// 📦 INVENTORY
+// -------------------
+const deductStockForCart = async (
+  userId: string,
+  cart: CartItemProp[],
+  transactionId: string
+): Promise<void> => {
+  const products = storeProductsState.get().products;
+  const ingredients = ingredientsState.get();
+  const isOnlineStore = onlineStoreState.get().onlineStoreSetUp;
+  const batch = db.batch();
+  const historyWrites: { ref: firebase.firestore.DocumentReference; data: any }[] = [];
+  const productStockUpdates: { productId: string; newStock: number }[] = [];
+  const ingredientDeductions: Map<string, { currentStock: number; totalDeducted: number }> = new Map();
+
+  for (const item of cart) {
+    const productId = item.editableObj?.id;
+    if (!productId) continue;
+
+    const product = products.find((p) => p.id === productId);
+    if (!product || product.trackStock !== true) continue;
+
+    const qty = parseFloat(item.quantity ?? "1") || 1;
+
+    // ── Path A: Product has a recipe → deduct ingredients ──
+    if (product.recipe && product.recipe.length > 0) {
+      for (const recipeItem of product.recipe) {
+        const totalNeeded = recipeItem.quantity * qty;
+        if (!ingredientDeductions.has(recipeItem.ingredientId)) {
+          const ing = ingredients.find((i) => i.id === recipeItem.ingredientId);
+          ingredientDeductions.set(recipeItem.ingredientId, {
+            currentStock: ing?.stockQuantity ?? 0,
+            totalDeducted: 0,
+          });
+        }
+        const entry = ingredientDeductions.get(recipeItem.ingredientId)!;
+        entry.totalDeducted += totalNeeded;
+      }
+    }
+    // ── Path B: Simple product-level tracking (no recipe) ──
+    else {
+      const currentStock = product.stockQuantity ?? 0;
+      const newStock = Math.max(0, currentStock - qty);
+
+      const productRef = db
+        .collection("users")
+        .doc(userId)
+        .collection("products")
+        .doc(productId);
+
+      batch.update(productRef, { stockQuantity: newStock });
+
+      if (isOnlineStore) {
+        const publicRef = db
+          .collection("public")
+          .doc(userId)
+          .collection("products")
+          .doc(productId);
+        batch.set(publicRef, { stockQuantity: newStock }, { merge: true });
+      }
+
+      historyWrites.push({
+        ref: productRef.collection("stockHistory").doc(),
+        data: {
+          type: "sale",
+          quantityChange: -qty,
+          quantityBefore: currentStock,
+          quantityAfter: newStock,
+          transactionId,
+          createdAt: firebase.firestore.Timestamp.now(),
+          createdBy: "system",
+        },
+      });
+
+      productStockUpdates.push({ productId, newStock });
+    }
+  }
+
+  // ── Write ingredient deductions ──
+  for (const [ingredientId, data] of ingredientDeductions) {
+    const newStock = Math.max(0, data.currentStock - data.totalDeducted);
+    const ingredientRef = db
+      .collection("users")
+      .doc(userId)
+      .collection("ingredients")
+      .doc(ingredientId);
+
+    batch.update(ingredientRef, { stockQuantity: newStock });
+
+    historyWrites.push({
+      ref: ingredientRef.collection("stockHistory").doc(),
+      data: {
+        type: "sale",
+        quantityChange: -data.totalDeducted,
+        quantityBefore: data.currentStock,
+        quantityAfter: newStock,
+        transactionId,
+        createdAt: firebase.firestore.Timestamp.now(),
+        createdBy: "system",
+      },
+    });
+  }
+
+  if (productStockUpdates.length === 0 && ingredientDeductions.size === 0) return;
+
+  // Merge history writes into the main batch (single commit)
+  for (const hw of historyWrites) {
+    batch.set(hw.ref, hw.data);
+  }
+
+  await batch.commit();
+
+  // Update local state for products
+  if (productStockUpdates.length > 0) {
+    const updatedProducts = products.map((p) => {
+      const update = productStockUpdates.find((u) => u.productId === p.id);
+      return update ? { ...p, stockQuantity: update.newStock } : p;
+    });
+    updateStoreProductsState({ products: updatedProducts });
+  }
+
+  // Update local state for ingredients
+  if (ingredientDeductions.size > 0) {
+    const batchUpdates = Array.from(ingredientDeductions).map(
+      ([ingredientId, data]) => ({
+        ingredientId,
+        newStock: Math.max(0, data.currentStock - data.totalDeducted),
+      })
+    );
+    updateIngredientsBatch(batchUpdates);
+  }
+};
+
+export const adjustStockManually = async (
+  productId: string,
+  newQuantity: number,
+  type: "restock" | "adjustment" | "correction",
+  note?: string
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const products = storeProductsState.get().products;
+  const product = products.find((p) => p.id === productId);
+  if (!product) throw new Error("Product not found");
+
+  const currentStock = product.stockQuantity ?? 0;
+  const isOnlineStore = onlineStoreState.get().onlineStoreSetUp;
+
+  const productRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("products")
+    .doc(productId);
+
+  await productRef.update({ stockQuantity: newQuantity });
+
+  if (isOnlineStore) {
+    try {
+      await db
+        .collection("public")
+        .doc(userId)
+        .collection("products")
+        .doc(productId)
+        .set({ stockQuantity: newQuantity }, { merge: true });
+    } catch {
+      // Public doc may not exist — non-fatal
+    }
+  }
+
+  // Write history entry
+  await productRef.collection("stockHistory").add({
+    type,
+    quantityChange: newQuantity - currentStock,
+    quantityBefore: currentStock,
+    quantityAfter: newQuantity,
+    note: note ?? "",
+    createdAt: firebase.firestore.Timestamp.now(),
+    createdBy: userId,
+  });
+
+  // Update local state
+  const updatedProducts = products.map((p) =>
+    p.id === productId ? { ...p, stockQuantity: newQuantity } : p
+  );
+  updateStoreProductsState({ products: updatedProducts });
+};
+
+export const fetchStockHistory = async (
+  productId: string,
+  limit = 50
+): Promise<StockHistoryEntry[]> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const snap = await db
+    .collection("users")
+    .doc(userId)
+    .collection("products")
+    .doc(productId)
+    .collection("stockHistory")
+    .orderBy("createdAt", "desc")
+    .limit(limit)
+    .get();
+
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as Omit<StockHistoryEntry, "id">),
+  }));
+};
+
+// -------------------
+// 🥫 INGREDIENTS
+// -------------------
+export const addIngredient = async (
+  ingredient: Omit<Ingredient, "id">
+): Promise<string> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const id = Math.random().toString(36).substr(2, 9);
+  const fullIngredient: Ingredient = { ...ingredient, id };
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(id)
+    .set(fullIngredient);
+
+  const current = ingredientsState.get();
+  setIngredientsState([...current, fullIngredient]);
+
+  return id;
+};
+
+export const updateIngredient = async (
+  ingredientId: string,
+  updates: Partial<Ingredient>
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(ingredientId)
+    .update(updates);
+
+  const current = ingredientsState.get();
+  setIngredientsState(
+    current.map((ing) =>
+      ing.id === ingredientId ? { ...ing, ...updates } : ing
+    )
+  );
+};
+
+export const deleteIngredient = async (
+  ingredientId: string
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(ingredientId)
+    .delete();
+
+  const current = ingredientsState.get();
+  setIngredientsState(current.filter((ing) => ing.id !== ingredientId));
+};
+
+export const adjustIngredientStockManually = async (
+  ingredientId: string,
+  newQuantity: number,
+  type: "restock" | "adjustment" | "correction",
+  note?: string
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const ingredients = ingredientsState.get();
+  const ingredient = ingredients.find((i) => i.id === ingredientId);
+  if (!ingredient) throw new Error("Ingredient not found");
+
+  const currentStock = ingredient.stockQuantity ?? 0;
+
+  const ingredientRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(ingredientId);
+
+  await ingredientRef.update({ stockQuantity: newQuantity });
+
+  await ingredientRef.collection("stockHistory").add({
+    type,
+    quantityChange: newQuantity - currentStock,
+    quantityBefore: currentStock,
+    quantityAfter: newQuantity,
+    note: note ?? "",
+    createdAt: firebase.firestore.Timestamp.now(),
+    createdBy: userId,
+  });
+
+  updateIngredientStock(ingredientId, newQuantity);
+};
+
+export const fetchIngredientStockHistory = async (
+  ingredientId: string,
+  limit = 50
+): Promise<IngredientStockHistoryEntry[]> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const snap = await db
+    .collection("users")
+    .doc(userId)
+    .collection("ingredients")
+    .doc(ingredientId)
+    .collection("stockHistory")
+    .orderBy("createdAt", "desc")
+    .limit(limit)
+    .get();
+
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as Omit<IngredientStockHistoryEntry, "id">),
+  }));
+};
+
+// -------------------
+// 🏪 STORE DETAILS
+// -------------------
+export const updateStoreDetails = async (
+  storeDetails: Partial<StoreDetailsProps>
+) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+
+  const userRef = db.collection("users").doc(uid);
+  await userRef.update({ storeDetails });
+
+  if (storeDetails.onlineStoreActive) {
+    await db.collection("public").doc(uid).update({ storeDetails });
+  }
+};
+
+// -------------------
+// 🎁 FREE TRIAL
+// -------------------
+export const updateFreeTrial = async (endDate: Date | null) => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  const userRef = db.collection("users").doc(currentUser.uid);
+
+  if (!endDate) {
+    await userRef.update({
+      freeTrial: firebase.firestore.FieldValue.delete(),
+    });
+  } else {
+    const timestamp = firebase.firestore.Timestamp.fromDate(endDate);
+    await userRef.update({ freeTrial: timestamp });
+  }
+};
+
+// -------------------
+// 🚪 LOGOUT
+// -------------------
+export const logout = async () => {
+  await logSystemEvent("logout");
+  localStorage.removeItem("isAuthedBackend");
+  localStorage.removeItem("savedUserState");
+  sessionStorage.removeItem("loginLogged");
+  await auth.signOut();
+  window.location.href = "https://divinepos.com";
+};
+
+// -------------------
+// 👥 CUSTOMERS
+// -------------------
+export const addCustomerDetailsToDb = async (customer: CustomerProp) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error("User not authenticated");
+
+  return await db
+    .collection("users")
+    .doc(uid)
+    .collection("customers")
+    .add({
+      ...customer,
+      createdAt: firebase.firestore.Timestamp.now(),
+    });
+};
+
+// -------------------
+// 💳 STRIPE CHECKOUT
+// -------------------
+export const createCheckoutSession = async (
+  priceId: string,
+  successUrl: string,
+  cancelUrl: string,
+  onError?: (msg: string) => void,
+  quantity?: number
+) => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    onError?.("User not authenticated");
+    return;
+  }
+
+  const sessionData: Record<string, any> = {
+    price: priceId,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+  };
+  if (quantity !== undefined) {
+    sessionData.quantity = quantity;
+  }
+
+  const docRef = await db
+    .collection("users")
+    .doc(uid)
+    .collection("checkout_sessions")
+    .add(sessionData);
+
+  const unsubscribe = docRef.onSnapshot(async (snap) => {
+    const { error, sessionId } = snap.data() ?? {};
+
+    if (error) {
+      unsubscribe();
+      onError?.(error.message || "An error occurred");
+      return;
+    }
+
+    if (sessionId) {
+      unsubscribe();
+      const stripe = await loadStripe(STRIPE_PUBLIC_KEY);
+      if (!stripe) return;
+      await stripe.redirectToCheckout({ sessionId });
+    }
+  });
+};
+
+// -------------------
+// 💳 STRIPE CUSTOMER PORTAL
+// -------------------
+// -------------------
+// 🗑️ SUPERADMIN: DELETE ACCOUNT
+// -------------------
+export const setUserAccountPlan = async (
+  uid: string,
+  plan: "trial" | "starter" | "professional"
+): Promise<void> => {
+  const result = await firebase.functions().httpsCallable("setAccountPlan")({ uid, plan });
+  if (!result.data?.success) {
+    throw new Error("Plan switch failed");
+  }
+};
+
+export const deleteUserAccount = async (uid: string): Promise<void> => {
+  const result = await firebase.functions().httpsCallable("deleteAccount")({ uid });
+  if (!result.data?.success) {
+    throw new Error("Deletion failed");
+  }
+};
+
+export const openStripePortal = (onError?: (msg: string) => void) => {
+  firebase
+    .functions()
+    .httpsCallable("ext-firestore-stripe-payments-createPortalLink")({
+      returnUrl: `${window.location.href}`,
+      locale: "auto",
+    })
+    .then((response) => {
+      window.location = response.data.url;
+    })
+    .catch((error) => {
+      onError?.(error?.message || "Unknown error occurred");
+    });
+};
+
+// -------------------
+// 📋 OPTION TEMPLATES
+// -------------------
+
+export const saveOptionTemplate = async (
+  template: OptionTemplate
+): Promise<string> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const docRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("optionTemplates")
+    .doc(template.id);
+
+  const data = {
+    name: template.name,
+    option: template.option,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  await docRef.set(data);
+
+  // Update local state
+  const current = optionTemplatesState.get();
+  const existingIndex = current.findIndex((t) => t.id === template.id);
+  if (existingIndex > -1) {
+    const updated = [...current];
+    updated[existingIndex] = template;
+    setOptionTemplatesState(updated);
+  } else {
+    setOptionTemplatesState([...current, template]);
+  }
+
+  return template.id;
+};
+
+export const deleteOptionTemplate = async (
+  templateId: string
+): Promise<void> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("optionTemplates")
+    .doc(templateId)
+    .delete();
+
+  const current = optionTemplatesState.get();
+  setOptionTemplatesState(current.filter((t) => t.id !== templateId));
+};
+
+/**
+ * Sync an updated option template to all products that reference it.
+ * Finds products with options that have `templateId === template.id`,
+ * replaces the option data with the updated template, and saves to Firestore.
+ */
+export const syncOptionTemplateToProducts = async (
+  template: OptionTemplate
+): Promise<number> => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
+
+  const catalog = storeProductsState.get();
+  const isOnlineStoreActive = onlineStoreState.get().onlineStoreSetUp;
+  const batch = db.batch();
+  let updatedCount = 0;
+
+  const updatedProducts = catalog.products.map((product) => {
+    const hasTemplate = product.options.some(
+      (opt) => opt.templateId === template.id
+    );
+    if (!hasTemplate) return product;
+
+    const updatedOptions: Option[] = product.options.map((opt) => {
+      if (opt.templateId === template.id) {
+        return {
+          ...template.option,
+          templateId: template.id,
+          id: opt.id,
+        };
+      }
+      return opt;
+    });
+
+    const updatedProduct = { ...product, options: updatedOptions };
+
+    batch.update(
+      db
+        .collection("users")
+        .doc(userId)
+        .collection("products")
+        .doc(product.id),
+      { options: updatedOptions }
+    );
+
+    if (isOnlineStoreActive) {
+      batch.update(
+        db
+          .collection("public")
+          .doc(userId)
+          .collection("products")
+          .doc(product.id),
+        { options: updatedOptions }
+      );
+    }
+
+    updatedCount++;
+    return updatedProduct;
+  });
+
+  if (updatedCount > 0) {
+    await batch.commit();
+    setStoreProductsState({
+      products: updatedProducts,
+      categories: catalog.categories,
+    });
+  }
+
+  return updatedCount;
+};

@@ -1,0 +1,397 @@
+/* Global styles for Divine POS */
+
+/* Google Fonts for online store */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&display=swap');
+
+/* Online store font classes */
+.font-modern { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+.font-classic { font-family: 'Playfair Display', Georgia, serif; }
+.font-bold { font-family: 'Oswald', 'Impact', sans-serif; }
+
+/* Custom password masking font */
+@font-face {
+  font-family: "Password";
+  src: url("/assets/password.ttf") format("truetype");
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+ * React Native Web's View defaults: display:flex, flex-direction:column,
+ * flex-shrink:0, align-items:stretch, position:relative.
+ * Since every View was replaced with <div>, apply these defaults globally
+ * so layouts match the original RNW behavior. Inline styles override as needed.
+ */
+div {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: stretch;
+  /* RNW defaults: borderStyle "solid" with borderWidth 0 */
+  border: 0 solid black;
+}
+
+/* RNW Text defaults: inline-block so width/height/padding work on spans */
+span {
+  display: inline;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Image loading skeleton */
+.image-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Remove default button styles for Pressable replacements */
+button {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  outline: none;
+}
+
+/* Ensure inputs look consistent */
+input, textarea {
+  outline: none;
+  font-family: inherit;
+}
+
+/*
+ * Third-party component resets.
+ * Our global div { display:flex; flex-direction:column } breaks libraries
+ * that rely on browser-default display:block. Reset them here.
+ */
+
+/* Stripe Elements */
+.StripeElement,
+.StripeElement div,
+.__PrivateStripeElement,
+.__PrivateStripeElement div {
+  display: block;
+  flex-direction: initial;
+  flex-shrink: initial;
+  align-items: initial;
+  border: initial;
+}
+
+/* recharts */
+.recharts-wrapper,
+.recharts-wrapper div,
+.recharts-responsive-container {
+  display: block;
+  flex-direction: initial;
+  flex-shrink: initial;
+  align-items: initial;
+}
+
+/* react-alert */
+[data-testid="react-alert"],
+.__react_alert_stack,
+.__react_alert_stack div {
+  display: block;
+  flex-direction: initial;
+  flex-shrink: initial;
+  align-items: initial;
+}
+
+/* react-tooltip */
+[data-tooltip-id],
+.react-tooltip,
+.react-tooltip div {
+  display: block;
+  flex-direction: initial;
+  flex-shrink: initial;
+  align-items: initial;
+}
+
+/* ===== POS Animations & Hover Effects ===== */
+
+/* Product card hover — lift + shadow */
+.pos-product-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.pos-product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-color: #d0d5dd;
+}
+.pos-product-card:active {
+  transform: translateY(0px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* Sidebar nav button hover */
+.pos-sidebar-btn {
+  transition: background-color 0.15s ease, transform 0.12s ease;
+}
+.pos-sidebar-btn:hover:not(.pos-sidebar-btn-active) {
+  background-color: #f1f3f9;
+}
+.pos-sidebar-btn:active {
+  transform: scale(0.93);
+}
+
+/* Category tab */
+.pos-category-btn {
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.pos-category-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.pos-category-btn:active {
+  transform: scale(0.96);
+}
+
+/* Cart item entrance animation */
+@keyframes pos-cart-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.pos-cart-item {
+  animation: pos-cart-item-in 0.25s ease-out;
+}
+
+/* Cart +/- and edit buttons */
+.pos-cart-action-btn {
+  transition: background-color 0.12s ease, transform 0.1s ease, border-color 0.12s ease;
+}
+.pos-cart-action-btn:hover {
+  background-color: #f0f2f8;
+  border-color: #c0c0c0;
+}
+.pos-cart-action-btn:active {
+  transform: scale(0.88);
+  background-color: #e8eaf0;
+}
+
+/* Checkout buttons — shared base */
+.pos-checkout-btn {
+  transition: transform 0.14s ease, box-shadow 0.18s ease, opacity 0.15s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+.pos-checkout-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
+}
+
+/* Card / filled button hover */
+.pos-checkout-filled:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background-color: #334155;
+  box-shadow: 0 4px 14px rgba(30,41,59,0.25);
+}
+
+/* Cash / outlined button hover */
+.pos-checkout-outlined:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background-color: #f1f5f9;
+  border-color: #0f172a;
+  box-shadow: 0 4px 14px rgba(30,41,59,0.10);
+}
+
+/* Cancel (red) button hover */
+.pos-checkout-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background-color: #dc2626;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.25);
+}
+
+/* Cart clear button */
+.pos-clear-btn {
+  transition: background-color 0.12s ease, transform 0.1s ease;
+}
+.pos-clear-btn:hover {
+  background-color: #334155;
+}
+.pos-clear-btn:active {
+  transform: scale(0.9);
+}
+
+/* Discount remove button */
+.pos-remove-btn {
+  transition: background-color 0.12s ease, transform 0.1s ease;
+}
+.pos-remove-btn:hover {
+  background-color: #dc2626;
+}
+.pos-remove-btn:active {
+  transform: scale(0.88);
+}
+
+/* Admin product/category cards */
+.admin-card {
+  transition: transform 0.15s ease, box-shadow 0.18s ease, border-color 0.15s ease;
+}
+.admin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  border-color: #c8cad0;
+}
+.admin-card:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* Product grid fade-in when category switches */
+@keyframes pos-grid-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Smooth number transitions for totals */
+.pos-total-value {
+  transition: color 0.2s ease;
+}
+
+/* Textarea focus */
+.pos-note-textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pos-note-textarea:focus {
+  border-color: #1e293b;
+  box-shadow: 0 0 0 2px rgba(30,41,59,0.08);
+}
+
+/* Online store page transitions */
+@keyframes online-store-page-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.online-store-page {
+  animation: online-store-page-enter 0.35s ease-out;
+  width: 100%;
+  height: 100%;
+}
+
+/* Online store floating pizza */
+@keyframes pizza-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.pizza-float {
+  animation: pizza-float 4s ease-in-out infinite;
+}
+
+/* Online store hero overlay */
+.online-store-hero-overlay {
+  background: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 100%);
+}
+.online-store-hero-overlay-mobile {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 50%);
+}
+
+/* Frosted glass effect */
+.frosted-glass {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.frosted-glass-light {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Online store product card hover */
+.online-store-product-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.online-store-product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+/* Online store social icon hover */
+.online-store-social-icon {
+  transition: opacity 0.2s, transform 0.2s;
+  opacity: 0.5;
+}
+.online-store-social-icon:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* Online store CTA buttons */
+.online-store-cta-btn:hover {
+  background-color: rgba(255,255,255,0.15) !important;
+  border-color: rgba(255,255,255,0.25) !important;
+}
+.online-store-cta-btn-light:hover {
+  background-color: rgba(0,0,0,0.1) !important;
+  border-color: rgba(0,0,0,0.18) !important;
+}
+
+/* SweetAlert2 custom styling */
+.swal2-container {
+  z-index: 200000 !important;
+}
+.swal2-popup {
+  border-radius: 16px !important;
+  padding: 28px 24px 20px !important;
+  font-family: inherit !important;
+}
+.swal2-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+}
+.swal2-html-container {
+  font-size: 14px !important;
+  color: #64748b !important;
+  line-height: 1.5 !important;
+}
+.swal2-actions {
+  gap: 10px !important;
+}
+.swal2-confirm {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 24px !important;
+}
+.swal2-cancel {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 24px !important;
+}
