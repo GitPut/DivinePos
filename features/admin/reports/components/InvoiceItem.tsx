@@ -19,7 +19,12 @@ const InvoiceItem = React.memo(
     baseSelectedRows,
     deleteTransaction,
   }: InvoiceItemProps) => {
-    const date = item.date.toDate().toLocaleString("en-US", { hour12: true });
+    const rawDate = item.date && typeof item.date.toDate === "function"
+      ? item.date.toDate()
+      : item.dateCompleted && typeof (item.dateCompleted as any).toDate === "function"
+        ? (item.dateCompleted as any).toDate()
+        : item.date ? new Date(item.date as any) : null;
+    const date = rawDate ? rawDate.toLocaleString("en-US", { hour12: true }) : "—";
     const isSelected = baseSelectedRows?.includes(item.id);
 
     const typeColors: Record<string, { bg: string; text: string }> = {

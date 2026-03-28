@@ -56,7 +56,7 @@ const Invoices = () => {
       name: data.customer?.name || "N/A",
       date: data.date,
       amount: data.total,
-      system: "POS",
+      system: data.online ? "Online" : (data as any).deliveryPlatform ? (data as any).deliveryPlatform : "POS",
       type: orderType,
       method: data.method,
       originalData: {

@@ -327,7 +327,10 @@ export const processPayment = functions.https.onRequest(async (req, res) => {
         .collection("users")
         .doc(storeUID)
         .collection("pendingOrders")
-        .add(orderDetails);
+        .add({
+          ...orderDetails,
+          date: admin.firestore.Timestamp.now(),
+        });
 
       // Send success response immediately (don't wait for email)
       res.status(200).json({ success: true, message: "Payment succeeded" });

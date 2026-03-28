@@ -477,6 +477,7 @@ export type LoyaltyReward = {
   discountAmount?: string;
   discountType?: "flat" | "percent";
   freeItemName?: string;
+  freeItemProductId?: string;
   active: boolean;
   createdAt?: any;
 };

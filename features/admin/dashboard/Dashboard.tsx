@@ -3,6 +3,7 @@ import PeriodDropdown from "./components/PeriodDropdown";
 import BarGraph from "./components/stats/BarGraph";
 import { customersState, storeProductsState } from "store/appState";
 import { auth, db } from "services/firebase/config";
+import { recalculateStats } from "services/firebase/functions";
 import ComponentLoader from "shared/components/ui/ComponentLoader";
 import { CustomerProp, UserStoreStateProps } from "types";
 import { searchCustomersByDate as SearchDateCustomers } from "utils/searchFilters";
@@ -243,6 +244,7 @@ const Dashboard: React.FC = () => {
   const [period, setPeriod] = useState<string>("Today");
   const [allStats, setAllStats] = useState<DetailsProps | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -318,6 +320,17 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  const handleSyncStats = async () => {
+    setSyncing(true);
+    try {
+      const newStats = await recalculateStats();
+      setAllStats(newStats as unknown as DetailsProps);
+    } catch (err) {
+      console.error("Failed to recalculate stats:", err);
+    }
+    setSyncing(false);
+  };
+
   const { totalRevenue, pickupOrders, deliveryOrders, inStoreOrders } = details;
   const wait = details.averageWaitTime;
 
@@ -329,7 +342,17 @@ const Dashboard: React.FC = () => {
           <span style={styles.title}>Dashboard</span>
           <span style={styles.subtitle}>Overview of your store performance</span>
         </div>
-        <PeriodDropdown value={period} setValue={setPeriod} />
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <button
+            onClick={handleSyncStats}
+            disabled={syncing}
+            title="Recalculate stats from all transactions"
+            style={styles.syncBtn}
+          >
+            <FiTrendingUp size={14} color={syncing ? "#94a3b8" : "#1D294E"} style={syncing ? { animation: "spin 1s linear infinite" } : {}} />
+          </button>
+          <PeriodDropdown value={period} setValue={setPeriod} />
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -821,6 +844,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     color: "#64748b",
     fontWeight: "500",
+  },
+  syncBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
   },
 };
 

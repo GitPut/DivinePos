@@ -256,6 +256,125 @@ export const updateStats = async (
 };
 
 // -------------------
+// 🔄 RECALCULATE STATS
+// -------------------
+export const recalculateStats = async () => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("User not authenticated");
+
+  const transListRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("transList");
+
+  const snapshot = await transListRef.get();
+  const statsData: StatsDataProps = initializeStatsData();
+
+  snapshot.forEach((doc) => {
+    const receipt = doc.data() as Record<string, any>;
+
+    // Try to get a valid date from the receipt
+    let d: Date | null = null;
+    if (receipt.date && typeof receipt.date.toDate === "function") {
+      d = receipt.date.toDate();
+    } else if (receipt.dateCompleted && typeof receipt.dateCompleted.toDate === "function") {
+      d = receipt.dateCompleted.toDate();
+    }
+    if (!d || isNaN(d.getTime())) return;
+
+    const transactionDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    if (!statsData.days[transactionDate]) {
+      statsData.days[transactionDate] = initializeDayStats();
+    }
+
+    const day = statsData.days[transactionDate] as any;
+    const total = Number(receipt.total?.toString().replace(/[^0-9.-]+/g, "")) || 0;
+
+    day.orders += 1;
+    day.revenue += total;
+    statsData.totalOrders = (statsData.totalOrders || 0) + 1;
+    statsData.totalRevenue = (statsData.totalRevenue || 0) + total;
+
+    switch (receipt.method) {
+      case "inStoreOrder":
+        day.inStore++;
+        day.inStoreRevenue += total;
+        break;
+      case "deliveryOrder":
+        day.delivery++;
+        day.deliveryRevenue += total;
+        break;
+      case "pickupOrder":
+        day.pickup++;
+        day.pickupRevenue += total;
+        break;
+    }
+
+    if (Array.isArray(receipt.cart)) {
+      for (const item of receipt.cart) {
+        const itemName = item.name || "Unknown Item";
+        day.productCounts[itemName] = (day.productCounts[itemName] || 0) + 1;
+      }
+    }
+
+    if (
+      receipt.date && typeof receipt.date.toDate === "function" &&
+      receipt.dateCompleted && typeof receipt.dateCompleted.toDate === "function"
+    ) {
+      const start = receipt.date.toDate();
+      const end = receipt.dateCompleted.toDate();
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const waitTime = (end.getTime() - start.getTime()) / 60000;
+        day.totalWaitTime += waitTime;
+        day.waitCount += 1;
+        day.averageWaitTime = day.totalWaitTime / day.waitCount;
+      }
+    }
+
+    // Enhanced analytics
+    const hour = String(d.getHours());
+    if (!day.revenueByHour) day.revenueByHour = {};
+    if (!day.ordersByHour) day.ordersByHour = {};
+    day.revenueByHour[hour] = (day.revenueByHour[hour] || 0) + total;
+    day.ordersByHour[hour] = (day.ordersByHour[hour] || 0) + 1;
+
+    if (!day.revenueByPaymentMethod) day.revenueByPaymentMethod = { cash: 0, card: 0 };
+    if (receipt.paymentMethod === "Cash") {
+      day.revenueByPaymentMethod.cash += total;
+    } else {
+      day.revenueByPaymentMethod.card += total;
+    }
+
+    if (receipt.online) {
+      day.onlineOrders = (day.onlineOrders || 0) + 1;
+      day.onlineRevenue = (day.onlineRevenue || 0) + total;
+    }
+
+    if (receipt.method === "tableOrder") {
+      day.tableOrders = (day.tableOrders || 0) + 1;
+      day.tableRevenue = (day.tableRevenue || 0) + total;
+    }
+
+    if (receipt.customer?.phone) {
+      if (!day.customerIds) day.customerIds = [];
+      if (!day.customerIds.includes(receipt.customer.phone)) {
+        day.customerIds.push(receipt.customer.phone);
+      }
+    }
+  });
+
+  const statsRef = db
+    .collection("users")
+    .doc(userId)
+    .collection("stats")
+    .doc("monthly");
+
+  await statsRef.set(statsData);
+  return statsData;
+};
+
+// -------------------
 // 💵 TRANSACTIONS
 // -------------------
 export const updateTransList = async (receipt: Partial<TransListStateItem>) => {
@@ -301,11 +420,17 @@ const awardLoyaltyPoints = async (
   transactionId: string
 ): Promise<void> => {
   const config = loyaltyConfigState.get();
-  if (!config.enabled || !receipt.customer?.phone) return;
+  if (!config.enabled) return;
+  if (!receipt.customer?.phone && !receipt.customer?.name) return;
 
-  // Find customer by phone
+  // Find customer by phone first, then by name as fallback
   const customers = customersState.get();
-  const customer = customers.find((c) => c.phone === receipt.customer.phone);
+  let customer = receipt.customer?.phone
+    ? customers.find((c) => c.phone === receipt.customer.phone)
+    : null;
+  if (!customer && receipt.customer?.name) {
+    customer = customers.find((c) => c.name?.toLowerCase() === receipt.customer.name.toLowerCase());
+  }
   if (!customer || !customer.id) return;
 
   const total = parseFloat(receipt.total?.replace?.(/[^0-9.-]/g, "") || receipt.total || "0");

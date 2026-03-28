@@ -10,11 +10,11 @@ const ICONS: Record<string, any> = {
   FiCalendar, FiTrendingUp, FiTrendingDown, FiAlertTriangle, FiClock, FiUsers, FiStar, FiZap,
 };
 
-const TYPE_COLORS: Record<string, { bg: string; border: string; icon: string }> = {
-  info: { bg: "#eef2ff", border: "#c7d2fe", icon: "#6366f1" },
-  positive: { bg: "#f0fdf4", border: "#bbf7d0", icon: "#16a34a" },
-  warning: { bg: "#fff7ed", border: "#fed7aa", icon: "#f59e0b" },
-  action: { bg: "#fef2f2", border: "#fecaca", icon: "#ef4444" },
+const TYPE_COLORS: Record<string, { bg: string; border: string; icon: string; iconBg: string; accent: string }> = {
+  info: { bg: "#fff", border: "#e0e7ff", icon: "#6366f1", iconBg: "rgba(99,102,241,0.1)", accent: "#6366f1" },
+  positive: { bg: "#fff", border: "#bbf7d0", icon: "#16a34a", iconBg: "rgba(22,163,106,0.1)", accent: "#16a34a" },
+  warning: { bg: "#fff", border: "#fed7aa", icon: "#f59e0b", iconBg: "rgba(245,158,11,0.1)", accent: "#f59e0b" },
+  action: { bg: "#fff", border: "#fecaca", icon: "#ef4444", iconBg: "rgba(239,68,68,0.1)", accent: "#ef4444" },
 };
 
 function InsightsTab({ stats, period, loading }: Props) {
@@ -157,23 +157,44 @@ function InsightsTab({ stats, period, loading }: Props) {
     return results;
   }, [dayEntries, customers, start, end]);
 
-  if (loading) return <span style={{ color: "#94a3b8" }}>Loading...</span>;
+  if (loading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 60 }}>
+        <span style={{ color: "#94a3b8", fontSize: 14 }}>Loading analytics...</span>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <FiZap size={20} color="#6366f1" />
-        <span style={{ fontSize: 18, fontWeight: "700", color: "#0f172a" }}>AI-Powered Insights</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Header */}
+      <div style={headerCard}>
+        <div style={headerIconWrap}>
+          <FiZap size={22} color="#6366f1" />
+        </div>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 18, fontWeight: "700", color: "#0f172a", display: "block", letterSpacing: "-0.3px" }}>AI-Powered Insights</span>
+          <span style={{ fontSize: 13, color: "#94a3b8", marginTop: 2, display: "block" }}>
+            Automated recommendations based on your business data
+          </span>
+        </div>
+        {insights.length > 0 && (
+          <div style={insightCountBadge}>
+            <span style={{ fontSize: 13, fontWeight: "700", color: "#6366f1" }}>{insights.length}</span>
+          </div>
+        )}
       </div>
-      <span style={{ fontSize: 13, color: "#94a3b8", marginBottom: 8 }}>
-        Automated recommendations based on your business data
-      </span>
 
       {insights.length === 0 ? (
-        <div style={{ padding: 40, textAlign: "center", backgroundColor: "#fff", borderRadius: 14, border: "1px solid #e2e8f0" }}>
-          <FiZap size={28} color="#cbd5e1" />
-          <span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 8 }}>
-            Not enough data yet. Insights will appear as you process more orders.
+        <div style={emptyState}>
+          <div style={emptyIconWrap}>
+            <FiZap size={32} color="#cbd5e1" />
+          </div>
+          <span style={{ fontSize: 16, fontWeight: "600", color: "#475569", marginTop: 4 }}>
+            No insights yet
+          </span>
+          <span style={{ fontSize: 13, color: "#94a3b8", textAlign: "center" as const, maxWidth: 340, lineHeight: "1.5" }}>
+            Insights will appear as you process more orders. Keep using Divine POS and check back soon.
           </span>
         </div>
       ) : (
@@ -181,13 +202,48 @@ function InsightsTab({ stats, period, loading }: Props) {
           const colors = TYPE_COLORS[insight.type] || TYPE_COLORS.info;
           const IconComp = ICONS[insight.icon] || FiZap;
           return (
-            <div key={i} style={{ display: "flex", flexDirection: "row", gap: 16, padding: "18px 20px", backgroundColor: colors.bg, borderRadius: 14, border: `1px solid ${colors.border}` }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <IconComp size={20} color={colors.icon} />
+            <div key={i} style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: 18,
+              padding: "20px 24px",
+              backgroundColor: colors.bg,
+              borderRadius: 16,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)",
+              borderLeft: `4px solid ${colors.accent}`,
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+            }}>
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                backgroundColor: colors.iconBg,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <IconComp size={22} color={colors.icon} />
               </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: 15, fontWeight: "700", color: "#0f172a", display: "block", marginBottom: 4 }}>{insight.title}</span>
-                <span style={{ fontSize: 13, color: "#475569", lineHeight: "1.5" }}>{insight.description}</span>
+              <div style={{ flex: 1, justifyContent: "center" }}>
+                <span style={{ fontSize: 15, fontWeight: "700", color: "#0f172a", display: "block", marginBottom: 4, letterSpacing: "-0.2px" }}>
+                  {insight.title}
+                </span>
+                <span style={{ fontSize: 13, color: "#64748b", lineHeight: "1.6" }}>
+                  {insight.description}
+                </span>
+              </div>
+              <div style={{
+                alignSelf: "flex-start",
+                padding: "4px 10px",
+                borderRadius: 20,
+                backgroundColor: colors.iconBg,
+                flexShrink: 0,
+                marginTop: 2,
+              }}>
+                <span style={{ fontSize: 10, fontWeight: "700", color: colors.icon, textTransform: "uppercase" as const, letterSpacing: 0.5 }}>
+                  {insight.type}
+                </span>
               </div>
             </div>
           );
@@ -196,5 +252,56 @@ function InsightsTab({ stats, period, loading }: Props) {
     </div>
   );
 }
+
+const headerCard: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 14,
+  padding: "18px 22px",
+  backgroundColor: "#fff",
+  borderRadius: 16,
+  boxShadow: "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)",
+};
+const headerIconWrap: React.CSSProperties = {
+  width: 48,
+  height: 48,
+  borderRadius: 14,
+  background: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+const insightCountBadge: React.CSSProperties = {
+  width: 36,
+  height: 36,
+  borderRadius: 10,
+  backgroundColor: "rgba(99,102,241,0.1)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+const emptyState: React.CSSProperties = {
+  padding: 60,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 10,
+  backgroundColor: "#fff",
+  borderRadius: 16,
+  boxShadow: "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)",
+};
+const emptyIconWrap: React.CSSProperties = {
+  width: 64,
+  height: 64,
+  borderRadius: 20,
+  backgroundColor: "#f8fafc",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  marginBottom: 4,
+};
 
 export default InsightsTab;

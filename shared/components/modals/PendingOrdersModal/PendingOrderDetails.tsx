@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { FiChevronLeft, FiEdit3, FiX } from "react-icons/fi";
+import firebase from "firebase/compat/app";
 import { auth, db } from "services/firebase/config";
 import { updateTransList } from "services/firebase/functions";
 import { storeDetailsState } from "store/appState";
@@ -258,7 +259,14 @@ function PendingOrderDetails({
                 .collection("pendingOrders")
                 .doc(element.id)
                 .delete();
-              updateTransList(element);
+              // Ensure date is a Firestore Timestamp for stats tracking
+              const orderWithDate = {
+                ...element,
+                date: element.date instanceof firebase.firestore.Timestamp
+                  ? element.date
+                  : firebase.firestore.Timestamp.now(),
+              };
+              updateTransList(orderWithDate);
               fadeOut(false);
             } else {
               if (element?.method === "pickupOrder") {

@@ -56,6 +56,16 @@ service cloud.firestore {
         allow write: if request.auth.uid == uid;
       }
 
+      match /loyaltyConfig/{id} {
+        allow read: if request.auth.uid == uid || isSuperAdmin() || isFranchiseHub(uid);
+        allow write: if request.auth.uid == uid;
+      }
+
+      match /loyaltyEvents/{id} {
+        allow read: if request.auth.uid == uid || isSuperAdmin() || isFranchiseHub(uid);
+        allow write: if request.auth.uid == uid;
+      }
+
       match /products/{id} {
         allow read: if request.auth.uid == uid || isSuperAdmin();
         allow write: if request.auth.uid == uid;
