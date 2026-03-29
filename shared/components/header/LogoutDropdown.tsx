@@ -22,7 +22,7 @@ function LogoutDropdown({ isPosHeader }: LogoutDropdownProps) {
     .slice(0, 2);
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", zIndex: open ? 100000 : undefined }}>
       <button
         style={styles.trigger}
         onClick={() => setOpen((prev) => !prev)}

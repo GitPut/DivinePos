@@ -14,12 +14,25 @@ const ProductsSection = ({ catalog, searchQuery = "", section = "__all__" }: Pro
 
   const filteredProducts = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
-    return catalog.products.filter((product) => {
+    const filtered = catalog.products.filter((product) => {
       const matchesCategory = section === "__all__" || product.category === section;
       const matchesSearch = !query || product.name.toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
     });
-  }, [catalog.products, section, searchQuery]);
+    // In "All" view, sort by category order first, then rank within category
+    if (section === "__all__" && !query) {
+      const categories = catalog.categories;
+      return [...filtered].sort((a, b) => {
+        const catA = categories.indexOf(a.category ?? "");
+        const catB = categories.indexOf(b.category ?? "");
+        const orderA = catA === -1 ? categories.length : catA;
+        const orderB = catB === -1 ? categories.length : catB;
+        if (orderA !== orderB) return orderA - orderB;
+        return (parseFloat(a.rank ?? "999") - parseFloat(b.rank ?? "999"));
+      });
+    }
+    return filtered;
+  }, [catalog.products, catalog.categories, section, searchQuery]);
 
   const styles = {
     scrollAreaProducts: {

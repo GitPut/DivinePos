@@ -216,8 +216,8 @@ const AppRouter = () => {
   const sortByRank = (a: ProductProp, b: ProductProp) => {
     const rawA = parseFloat(a.rank ?? "");
     const rawB = parseFloat(b.rank ?? "");
-    const hasRankA = !isNaN(rawA) && rawA > 0;
-    const hasRankB = !isNaN(rawB) && rawB > 0;
+    const hasRankA = !isNaN(rawA) && rawA >= 0;
+    const hasRankB = !isNaN(rawB) && rawB >= 0;
 
     if (hasRankA && hasRankB) return rawA - rawB;
     if (hasRankA && !hasRankB) return -1;
@@ -283,11 +283,19 @@ const AppRouter = () => {
           });
         }
 
-        const sortedProducts = products.sort(sortByRank);
+        const categories: string[] = doc.data()?.categories ?? [];
+        const sortedProducts = products.sort((a, b) => {
+          const catA = categories.indexOf(a.category ?? "");
+          const catB = categories.indexOf(b.category ?? "");
+          const orderA = catA === -1 ? categories.length : catA;
+          const orderB = catB === -1 ? categories.length : catB;
+          if (orderA !== orderB) return orderA - orderB;
+          return sortByRank(a, b);
+        });
 
         setStoreProductsState({
           products: sortedProducts,
-          categories: doc.data()?.categories ?? [],
+          categories,
         });
 
         // Fire-and-forget image prefetch — don't block loading screen.

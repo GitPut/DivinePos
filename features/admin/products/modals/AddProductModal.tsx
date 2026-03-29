@@ -89,6 +89,7 @@ function AddProductModal({
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragHandledRef = useRef(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState("");
@@ -639,9 +640,15 @@ function AddProductModal({
                     setselectedID={setselectedID}
                     isDragging={dragIndex === index}
                     isDragOver={dragOverIndex === index && dragIndex !== index}
-                    onDragStart={(i) => { setDragIndex(i); setindexOn(null); }}
+                    onDragStart={(i) => { setDragIndex(i); setindexOn(null); setselectedID(null); dragHandledRef.current = false; }}
                     onDragOver={(i) => setDragOverIndex(i)}
                     onDragEnd={() => {
+                      if (dragHandledRef.current) {
+                        setDragIndex(null);
+                        setDragOverIndex(null);
+                        return;
+                      }
+                      dragHandledRef.current = true;
                       if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
                         setnewProductOptions((prev) => {
                           const clone = structuredClone(prev);
@@ -658,6 +665,7 @@ function AddProductModal({
                       }
                       setDragIndex(null);
                       setDragOverIndex(null);
+                      setselectedID(null);
                     }}
                   />
                 ))

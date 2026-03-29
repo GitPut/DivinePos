@@ -23,7 +23,11 @@ export function resolveOptionPrice(
   const selectedSize = sizeGroup.optionsList.find(
     (op) => op.selected === true
   );
-  if (!selectedSize?.label) return item.priceIncrease ?? "0";
+  if (!selectedSize?.label) {
+    // No size selected — use first available priceBySize value as fallback
+    const firstPrice = Object.values(item.priceBySize)[0];
+    return firstPrice ?? item.priceIncrease ?? "0";
+  }
 
   return item.priceBySize[selectedSize.label] ?? item.priceIncrease ?? "0";
 }

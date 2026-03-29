@@ -17,7 +17,19 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
   const [openOptions, setOpenOptions] = useState<string | null>(null);
 
   useEffect(() => {
-    setMyObjProfile(product);
+    const clone = structuredClone(product);
+    // Auto-select first choice for required single-select options
+    clone.options.forEach((op: any) => {
+      if (
+        op.isRequired &&
+        (op.optionType === "Row" || op.optionType === "Dropdown") &&
+        op.optionsList.length > 0 &&
+        !op.optionsList.some((item: any) => item.selected === true)
+      ) {
+        op.optionsList[0].selected = true;
+      }
+    });
+    setMyObjProfile(clone);
   }, [product]);
 
   useEffect(() => {
@@ -42,7 +54,8 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
               const resolved = op.sizeLinkedOptionLabel
                 ? parseFloat(resolveOptionPrice(item, op, myObjProfile.options))
                 : 0;
-              const perItemPrice = resolved > 0 ? resolved : flatExtraPrice;
+              const itemPrice = parseFloat(item.priceIncrease ?? "0");
+              const perItemPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : flatExtraPrice;
               total += extraFromThis * perItemPrice;
             }
           });

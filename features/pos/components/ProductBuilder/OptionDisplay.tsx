@@ -278,7 +278,8 @@ const OptionDisplay = ({
                 const resolved = filteredOption.sizeLinkedOptionLabel
                   ? parseFloat(resolveOptionPrice(item, filteredOption, myObjProfile.options))
                   : 0;
-                const perItemPrice = resolved > 0 ? resolved : flatExtraPrice;
+                const itemPrice = parseFloat(item.priceIncrease ?? "0");
+                const perItemPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : flatExtraPrice;
                 extraCost += extraFromThis * perItemPrice;
               }
             });
@@ -318,6 +319,8 @@ const OptionDisplay = ({
                 label={filteredOption.label ?? ""}
                 isRequired={filteredOption.isRequired ? true : false}
                 optionsSelectedLabel={optionsSelectedLabel}
+                isIncludedSelections={true}
+                includedCount={includedCount}
               />
             ) : (
               <IncludedSelectionsGroup

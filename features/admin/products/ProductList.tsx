@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import ProductOptionBox from "./components/ProductOptionBox";
 import { FiSearch, FiPlus, FiLayers, FiGrid, FiList } from "react-icons/fi";
+import { MdDragIndicator } from "react-icons/md";
 import {
   onlineStoreState,
   updateStoreProductsState,
@@ -26,6 +27,11 @@ function ProductList() {
   const [productTemplatesModalVisible, setProductTemplatesModalVisible] =
     useState<boolean>(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragHandledRef = useRef(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollIntervalRef = useRef<number | null>(null);
 
   const confirmText = (ProductID: string) => {
     Swal.fire({
@@ -67,16 +73,118 @@ function ProductList() {
     });
   };
 
+  const canDrag = !searchFilterValue;
+
+  // Auto-scroll when dragging near top/bottom edges
+  const handleDragOver = (ev: React.DragEvent) => {
+    if (!scrollAreaRef.current) return;
+    const rect = scrollAreaRef.current.getBoundingClientRect();
+    const y = ev.clientY;
+    const edgeSize = 120;
+
+    if (scrollIntervalRef.current) {
+      window.clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+
+    if (y < rect.top + edgeSize) {
+      scrollIntervalRef.current = window.setInterval(() => {
+        scrollAreaRef.current?.scrollBy(0, -8);
+      }, 16);
+    } else if (y > rect.bottom - edgeSize) {
+      scrollIntervalRef.current = window.setInterval(() => {
+        scrollAreaRef.current?.scrollBy(0, 8);
+      }, 16);
+    }
+  };
+
+  const stopAutoScroll = () => {
+    if (scrollIntervalRef.current) {
+      window.clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  };
+
+  const handleDragEnd = () => {
+    stopAutoScroll();
+    if (dragHandledRef.current) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    dragHandledRef.current = true;
+    if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
+      // Work with the filtered list to get the actual products being reordered
+      const productsToReorder = filteredProducts;
+      const movedProduct = productsToReorder[dragIndex];
+      const targetProduct = productsToReorder[dragOverIndex];
+
+      // Find their positions in the full catalog
+      const fullList = [...catalog.products];
+      const fromFullIndex = fullList.findIndex((p) => p.id === movedProduct.id);
+      const toFullIndex = fullList.findIndex((p) => p.id === targetProduct.id);
+
+      if (fromFullIndex !== -1 && toFullIndex !== -1) {
+        const [moved] = fullList.splice(fromFullIndex, 1);
+        fullList.splice(toFullIndex, 0, moved);
+
+        // Assign new ranks based on position
+        const userId = auth.currentUser?.uid;
+        const isOnlineStore = onlineStoreState.get().onlineStoreSetUp;
+        fullList.forEach((product, i) => {
+          product.rank = i.toString();
+          if (userId) {
+            db.collection("users")
+              .doc(userId)
+              .collection("products")
+              .doc(product.id)
+              .update({ rank: i.toString() })
+              .catch(() => {});
+            if (isOnlineStore) {
+              db.collection("public")
+                .doc(userId)
+                .collection("products")
+                .doc(product.id)
+                .update({ rank: i.toString() })
+                .catch(() => {});
+            }
+          }
+        });
+
+        updateStoreProductsState({ products: fullList });
+      }
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
   const filteredProducts = useMemo(() => {
     const query = searchFilterValue.toLowerCase().trim();
-    return catalog.products.filter((product) => {
+    let products = catalog.products.filter((product) => {
       const matchesCategory =
         !selectedCategory || product.category === selectedCategory;
       const matchesSearch =
         !query || product.name.toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
     });
-  }, [catalog.products, selectedCategory, searchFilterValue]);
+
+    // In "All" view (no category filter), sort by category order first, then rank within category
+    if (!selectedCategory && !query) {
+      const categoryOrder = catalog.categories;
+      products = [...products].sort((a, b) => {
+        const catA = categoryOrder.indexOf(a.category ?? "");
+        const catB = categoryOrder.indexOf(b.category ?? "");
+        // Products with no category or unknown category go to the end
+        const orderA = catA === -1 ? categoryOrder.length : catA;
+        const orderB = catB === -1 ? categoryOrder.length : catB;
+        if (orderA !== orderB) return orderA - orderB;
+        // Within same category, sort by rank
+        return parseFloat(a.rank ?? "0") - parseFloat(b.rank ?? "0");
+      });
+    }
+
+    return products;
+  }, [catalog.products, catalog.categories, selectedCategory, searchFilterValue]);
 
   return (
     <div style={styles.container}>
@@ -185,12 +293,13 @@ function ProductList() {
       )}
 
       {/* Product List/Grid */}
-      <div style={styles.scrollArea}>
+      <div style={styles.scrollArea} ref={scrollAreaRef} onDragOver={handleDragOver} onDragLeave={stopAutoScroll}>
         {filteredProducts.length > 0 ? (
           viewMode === "list" ? (
             <div style={styles.tableCard}>
               {/* Table Header */}
               <div style={styles.tableHeader}>
+                {canDrag && <span style={{ ...styles.tableHeaderTxt, width: 28 }} />}
                 <span style={{ ...styles.tableHeaderTxt, width: 52 }} />
                 <span style={{ ...styles.tableHeaderTxt, flex: 1 }}>Product</span>
                 <span style={{ ...styles.tableHeaderTxt, width: 80, textAlign: "center" }}>Price</span>
@@ -200,15 +309,53 @@ function ProductList() {
                 <span style={{ ...styles.tableHeaderTxt, width: 76, textAlign: "center" }}>Actions</span>
               </div>
               {filteredProducts.map((product, i) => (
-                <ProductOptionBox
+                <div
                   key={product.id}
-                  product={product}
-                  editMode={true}
-                  deleteProduct={() => confirmText(product.id)}
-                  setexistingProduct={setExistingProduct}
-                  viewMode="list"
-                  isLast={i === filteredProducts.length - 1}
-                />
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    ...(!canDrag ? {} : {}),
+                    ...(dragIndex === i ? { opacity: 0.4 } : {}),
+                    ...(dragOverIndex === i && dragIndex !== i
+                      ? { borderTop: "2px solid #1D294E" }
+                      : {}),
+                  }}
+                  onDragOver={(ev) => {
+                    if (!canDrag) return;
+                    ev.preventDefault();
+                    setDragOverIndex(i);
+                  }}
+                  onDrop={(ev) => {
+                    ev.preventDefault();
+                    handleDragEnd();
+                  }}
+                >
+                  {canDrag && (
+                    <div
+                      draggable
+                      onDragStart={() => {
+                        setDragIndex(i);
+                        dragHandledRef.current = false;
+                      }}
+                      onDragEnd={() => handleDragEnd()}
+                      style={styles.dragHandle}
+                      title="Drag to reorder"
+                    >
+                      <MdDragIndicator size={16} color="#94a3b8" />
+                    </div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <ProductOptionBox
+                      product={product}
+                      editMode={true}
+                      deleteProduct={() => confirmText(product.id)}
+                      setexistingProduct={setExistingProduct}
+                      viewMode="list"
+                      isLast={i === filteredProducts.length - 1}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
@@ -492,6 +639,15 @@ const styles: Record<string, React.CSSProperties> = {
     paddingLeft: 16,
     paddingRight: 16,
     cursor: "pointer",
+  },
+  dragHandle: {
+    width: 28,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "grab",
+    flexShrink: 0,
+    paddingLeft: 8,
   },
   modalWrap: {
     display: "flex",

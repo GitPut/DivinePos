@@ -68,7 +68,7 @@ describe("resolveOptionPrice", () => {
     expect(result).toBe("2.00");
   });
 
-  it("falls back to priceIncrease when no size is selected", () => {
+  it("uses first priceBySize value when no size is selected", () => {
     const sizeGroup = makeOptionGroup({
       label: "Size",
       optionsList: [
@@ -85,7 +85,27 @@ describe("resolveOptionPrice", () => {
     });
 
     const result = resolveOptionPrice(item, toppingsGroup, [sizeGroup, toppingsGroup]);
-    expect(result).toBe("2.00");
+    expect(result).toBe("1.50");
+  });
+
+  it("uses first priceBySize when no size selected and priceIncrease is null", () => {
+    const sizeGroup = makeOptionGroup({
+      label: "Size",
+      optionsList: [
+        { label: "Small", selected: false },
+        { label: "Large", selected: false },
+      ],
+    });
+    const toppingsGroup = makeOptionGroup({
+      sizeLinkedOptionLabel: "Size",
+    });
+    const item = makeOptionItem({
+      priceIncrease: undefined,
+      priceBySize: { Small: "1.25", Medium: "1.50" },
+    });
+
+    const result = resolveOptionPrice(item, toppingsGroup, [sizeGroup, toppingsGroup]);
+    expect(result).toBe("1.25");
   });
 
   it("falls back to priceIncrease when selected size not in priceBySize", () => {

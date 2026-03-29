@@ -79,6 +79,10 @@ function IncludedSelectionsGroup({
     (op) => parseFloat(op.selectedTimes ?? "0") > 0
   );
 
+  const totalSelected = getTotalSelected();
+  const includedCount = parseFloat(e.includedSelections ?? "0");
+  const hasExceededIncluded = totalSelected > includedCount;
+
   return (
     <div style={styles.container}>
       <div style={styles.headerRow}>
@@ -118,10 +122,13 @@ function IncludedSelectionsGroup({
                   {option.label}
                 </span>
                 {(() => {
+                  // Only show price tag when selections have exceeded the included count
+                  if (!hasExceededIncluded) return null;
                   const resolved = e.sizeLinkedOptionLabel
                     ? parseFloat(resolveOptionPrice(option, e, myObjProfile.options))
                     : 0;
-                  const displayPrice = resolved > 0 ? resolved : parseFloat(e.extraSelectionPrice ?? "0");
+                  const itemPrice = parseFloat(option.priceIncrease ?? "0");
+                  const displayPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : parseFloat(e.extraSelectionPrice ?? "0");
                   return displayPrice > 0 ? (
                     <span style={styles.priceTag}>+${displayPrice.toFixed(2)}</span>
                   ) : null;

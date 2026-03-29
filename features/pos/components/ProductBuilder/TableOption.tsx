@@ -14,6 +14,8 @@ interface TableOptionProps {
   index: number;
   e: Option;
   optionsSelectedLabel: string;
+  isIncludedSelections?: boolean;
+  includedCount?: number;
 }
 
 function TableOption({
@@ -24,6 +26,8 @@ function TableOption({
   index,
   e,
   optionsSelectedLabel,
+  isIncludedSelections,
+  includedCount = 0,
 }: TableOptionProps) {
   const options = e.optionsList;
 
@@ -215,6 +219,8 @@ function TableOption({
                 </div>
                 <div style={styles.gridItemRight}>
                   {(() => {
+                    // Hide price tags for included selections when still within the included count
+                    if (isIncludedSelections && getTotalSelected() <= includedCount) return null;
                     const displayPrice = resolveOptionPrice(option, e, myObjProfile.options);
                     return parseFloat(displayPrice) > 0 ? (
                       <span style={styles.priceTag}>+${displayPrice}</span>

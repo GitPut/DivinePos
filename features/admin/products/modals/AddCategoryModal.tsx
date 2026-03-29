@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { FiMinus, FiPlus } from "react-icons/fi";
 import { updateData } from "services/firebase/functions";
-import { setStoreProductsState, storeProductsState } from "store/appState";
+import { setStoreProductsState, storeProductsState, onlineStoreState } from "store/appState";
+import { auth, db } from "services/firebase/config";
 import { useAlert } from "react-alert";
 
 interface AddCategoryModalProps {
@@ -52,7 +53,46 @@ function AddCategoryModal({
       newCategories.push(categoryName);
     }
     updateData(newCategories);
-    setStoreProductsState({ ...catalog, categories: newCategories });
+
+    // If renaming a category, update all products that reference the old name
+    if (existingCategory && existingCategory !== categoryName) {
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        const affectedProducts = catalog.products.filter(
+          (p) => p.category === existingCategory
+        );
+        const isOnlineStore = onlineStoreState.get().onlineStoreSetUp;
+
+        affectedProducts.forEach((product) => {
+          db.collection("users")
+            .doc(userId)
+            .collection("products")
+            .doc(product.id)
+            .update({ category: categoryName })
+            .catch(() => {});
+
+          if (isOnlineStore) {
+            db.collection("public")
+              .doc(userId)
+              .collection("products")
+              .doc(product.id)
+              .update({ category: categoryName })
+              .catch(() => {});
+          }
+        });
+
+        // Update local state products
+        const updatedProducts = catalog.products.map((p) =>
+          p.category === existingCategory ? { ...p, category: categoryName } : p
+        );
+        setStoreProductsState({ ...catalog, categories: newCategories, products: updatedProducts });
+      } else {
+        setStoreProductsState({ ...catalog, categories: newCategories });
+      }
+    } else {
+      setStoreProductsState({ ...catalog, categories: newCategories });
+    }
+
     setaddCategoryModal(false);
   };
 

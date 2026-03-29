@@ -133,7 +133,11 @@ function OptionsItem({
                 ev.stopPropagation();
                 onDragStart?.(index);
               }}
-              onDragEnd={() => onDragEnd?.()}
+              onDragEnd={(ev) => {
+                // Only clean up if onDrop didn't already handle it
+                ev.preventDefault();
+                onDragEnd?.();
+              }}
               style={styles.dragHandle}
               title="Drag to reorder"
               onClick={(ev) => ev.stopPropagation()}

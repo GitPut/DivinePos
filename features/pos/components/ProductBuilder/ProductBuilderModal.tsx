@@ -36,7 +36,19 @@ function ProductBuilderModal() {
 
   useEffect(() => {
     if (product !== null) {
-      setMyObjProfile(structuredClone(product));
+      const clone = structuredClone(product);
+      // Auto-select first choice for required single-select options
+      clone.options.forEach((op) => {
+        if (
+          op.isRequired &&
+          (op.optionType === "Row" || op.optionType === "Dropdown") &&
+          op.optionsList.length > 0 &&
+          !op.optionsList.some((item) => item.selected === true)
+        ) {
+          op.optionsList[0].selected = true;
+        }
+      });
+      setMyObjProfile(clone);
     }
   }, [product]);
 
@@ -60,11 +72,12 @@ function ProductBuilderModal() {
             const extraFromThis = qty - freeFromThis;
             freeRemaining -= freeFromThis;
             if (extraFromThis > 0) {
-              // Try size-linked price, fall back to flat extra price
+              // Try size-linked price, then item's own priceIncrease, then flat extra price
               const resolved = op.sizeLinkedOptionLabel
                 ? parseFloat(resolveOptionPrice(item, op, myObjProfile.options))
                 : 0;
-              const perItemPrice = resolved > 0 ? resolved : flatExtraPrice;
+              const itemPrice = parseFloat(item.priceIncrease ?? "0");
+              const perItemPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : flatExtraPrice;
               t += extraFromThis * perItemPrice;
             }
           });
@@ -202,15 +215,31 @@ function ProductBuilderModal() {
     myObjProfile.options.forEach((op) => {
       if (op.optionType === "Included Selections") {
         const includedCount = parseFloat(op.includedSelections ?? "0");
-        const extraPrice = parseFloat(op.extraSelectionPrice ?? "0");
+        const flatExtraPrice = parseFloat(op.extraSelectionPrice ?? "0");
         let totalSelected = 0;
+        let extraCost = 0;
+        let freeRemaining = includedCount;
         op.optionsList.forEach((item) => {
-          totalSelected += parseFloat(item.selectedTimes ?? "0");
+          const qty = parseFloat(item.selectedTimes ?? "0");
+          totalSelected += qty;
+          if (qty > 0) {
+            const freeFromThis = Math.min(qty, freeRemaining);
+            const extraFromThis = qty - freeFromThis;
+            freeRemaining -= freeFromThis;
+            if (extraFromThis > 0) {
+              const resolved = op.sizeLinkedOptionLabel
+                ? parseFloat(resolveOptionPrice(item, op, myObjProfile.options))
+                : 0;
+              const itemPrice = parseFloat(item.priceIncrease ?? "0");
+              const perItemPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : flatExtraPrice;
+              extraCost += extraFromThis * perItemPrice;
+            }
+          }
         });
         const extraSelections = Math.max(0, totalSelected - includedCount);
         if (extraSelections > 0) {
           extras.push(
-            `Includes ${extraSelections} extra ${op.label?.toLowerCase() ?? "selections"} (+$${(extraSelections * extraPrice).toFixed(2)})`
+            `Includes ${extraSelections} extra ${op.label?.toLowerCase() ?? "selections"} (+$${extraCost.toFixed(2)})`
           );
         }
       }
