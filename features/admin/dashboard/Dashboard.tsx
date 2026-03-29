@@ -294,18 +294,21 @@ const Dashboard: React.FC = () => {
       "Dec",
     ];
     const data = months.map((name) => ({ name, uv: 0, pv: 0, amt: 0 }));
-    if (details?.days) {
-      Object.keys(details.days).forEach((date) => {
+    // Always show full year data regardless of period filter
+    if (allStats?.days) {
+      const year = new Date().getFullYear().toString();
+      Object.keys(allStats.days).forEach((date) => {
+        if (!date.startsWith(year)) return;
         const month = parseInt(date.split("-")[1], 10) - 1;
         if (data[month]) {
-          data[month].uv += details.days[date].revenue || 0;
-          data[month].pv += details.days[date].orders || 0;
-          data[month].amt += details.days[date].orders || 0;
+          data[month].uv += allStats.days[date].revenue || 0;
+          data[month].pv += allStats.days[date].orders || 0;
+          data[month].amt += allStats.days[date].orders || 0;
         }
       });
     }
     return data;
-  }, [details]);
+  }, [allStats]);
 
   const customerCount = useMemo(
     () => getFilteredCustomerCount(customers, period),

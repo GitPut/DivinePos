@@ -37,7 +37,7 @@ function PeriodDropdown({
   }, []);
 
   return (
-    <div style={{ zIndex: 1000, position: "relative" }}>
+    <div style={{ zIndex: 10, position: "relative" }}>
       <button
         style={{
           ...styles.container,
