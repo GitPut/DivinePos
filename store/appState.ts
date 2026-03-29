@@ -428,3 +428,10 @@ export const setFranchiseState = (val: FranchiseStateProps): void => {
 export const updateFranchiseState = (val: Partial<FranchiseStateProps>): void => {
   franchiseState.set({ ...franchiseState.get(), ...val });
 };
+
+// ─── Demo Mode ──────────────────────────────────────────────────────────────
+
+export const isDemoState = entity(false);
+export const setIsDemoState = (val: boolean): void => {
+  isDemoState.set(val);
+};

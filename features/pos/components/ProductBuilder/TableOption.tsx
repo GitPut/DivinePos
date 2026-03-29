@@ -219,11 +219,26 @@ function TableOption({
                 </div>
                 <div style={styles.gridItemRight}>
                   {(() => {
-                    // Hide price tags for included selections when still within the included count
+                    // Hide all prices for included selections when still within the included count
                     if (isIncludedSelections && getTotalSelected() <= includedCount) return null;
+                    // For included selections, hide the price on items that are covered by the free allowance
+                    if (isIncludedSelections && isSelected) {
+                      let freeRemaining = includedCount;
+                      for (const op of myObjProfile.options[index].optionsList) {
+                        const qty = parseFloat(op.selectedTimes ?? "0") * parseFloat(op.countsAs ?? "1");
+                        if (qty > 0) {
+                          if (op.id === option.id) {
+                            if (freeRemaining > 0) return null;
+                            break;
+                          }
+                          freeRemaining -= qty;
+                          if (freeRemaining <= 0) break;
+                        }
+                      }
+                    }
                     const displayPrice = resolveOptionPrice(option, e, myObjProfile.options);
                     return parseFloat(displayPrice) > 0 ? (
-                      <span style={styles.priceTag}>+${displayPrice}</span>
+                      <span style={isIncludedSelections ? styles.priceTagExtra : styles.priceTag}>+${displayPrice}</span>
                     ) : null;
                   })()}
                   {selectedTimes > 1 && (
@@ -390,6 +405,14 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#6366f1",
     fontWeight: "500",
     backgroundColor: "#eef2ff",
+    padding: "2px 8px",
+    borderRadius: 10,
+  },
+  priceTagExtra: {
+    fontSize: 12,
+    color: "#d97706",
+    fontWeight: "500",
+    backgroundColor: "#fffbeb",
     padding: "2px 8px",
     borderRadius: 10,
   },

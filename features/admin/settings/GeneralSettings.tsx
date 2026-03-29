@@ -33,6 +33,9 @@ function GeneralSettings() {
   const [deliveryRange, setdeliveryRange] = useState<string>(
     storeDetails.deliveryRange,
   );
+  const [minimumDeliveryOrder, setMinimumDeliveryOrder] = useState<string>(
+    storeDetails.minimumDeliveryOrder ?? "",
+  );
   const [taxRate, settaxRate] = useState<string>(storeDetails.taxRate ?? "0");
   const [settingsPassword, setsettingsPassword] = useState<string>(
     storeDetails.settingsPassword,
@@ -56,6 +59,7 @@ function GeneralSettings() {
           : false,
         acceptDelivery: acceptDelivery ? acceptDelivery : false,
         deliveryRange: deliveryRange ? deliveryRange : "",
+        minimumDeliveryOrder: minimumDeliveryOrder || "",
       });
       updateStoreDetails({
         name: name ? name : "",
@@ -73,6 +77,7 @@ function GeneralSettings() {
           : false,
         acceptDelivery: acceptDelivery ? acceptDelivery : false,
         deliveryRange: deliveryRange ? deliveryRange : "",
+        minimumDeliveryOrder: minimumDeliveryOrder || "",
       });
       alertP.success("Settings updated successfully");
     } else {
@@ -205,6 +210,20 @@ function GeneralSettings() {
                   placeholder="Enter delivery range in KM"
                   value={deliveryRange}
                   onChange={(e) => setdeliveryRange(e.target.value)}
+                />
+              </div>
+              <div style={styles.fieldGroup}>
+                <span style={styles.fieldLabel}>Minimum Order ($)</span>
+                <input
+                  style={styles.input}
+                  placeholder="No minimum"
+                  value={minimumDeliveryOrder}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                      setMinimumDeliveryOrder(val);
+                    }
+                  }}
                 />
               </div>
             </div>

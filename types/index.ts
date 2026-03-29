@@ -68,6 +68,7 @@ export type Option = {
   sizeLinkedOptionLabel?: string;
   allowHalfAndHalf?: boolean;
   templateId?: string;
+  page?: string;
 };
 
 export type OptionTemplate = {
@@ -87,6 +88,7 @@ export type OptionsList = {
   priceBySize?: Record<string, string>;
   halfSide?: "left" | "right" | "whole";
   selectedCaseList?: SelectedCaseListItem[];
+  defaultSelectedTimes?: string;
 };
 
 export type CartItemProp = {
@@ -134,6 +136,7 @@ export type StoreDetailsProps = {
   taxRate: string;
   acceptDelivery: boolean;
   deliveryRange: string;
+  minimumDeliveryOrder?: string;
   onlineStoreActive?: boolean;
   hasLogo?: boolean;
   logoUrl?: string;

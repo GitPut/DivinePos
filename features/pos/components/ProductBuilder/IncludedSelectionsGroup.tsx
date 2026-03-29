@@ -31,7 +31,8 @@ function IncludedSelectionsGroup({
   const getTotalSelected = () => {
     let total = 0;
     myObjProfile.options[index].optionsList.forEach((item) => {
-      total += parseFloat(item.selectedTimes ?? "0");
+      const countsAs = parseFloat(item.countsAs ?? "1");
+      total += parseFloat(item.selectedTimes ?? "0") * countsAs;
     });
     return total;
   };
@@ -52,8 +53,9 @@ function IncludedSelectionsGroup({
   const onPlusPress = (listIndex: number) => {
     const totalSelected = getTotalSelected();
     const numOfSelectable = parseFloat(e.numOfSelectable ?? "0");
+    const countsAs = parseFloat(myObjProfile.options[index].optionsList[listIndex].countsAs ?? "1");
 
-    if (numOfSelectable > 0 && totalSelected + 1 > numOfSelectable) {
+    if (numOfSelectable > 0 && totalSelected + countsAs > numOfSelectable) {
       return;
     }
 
@@ -124,13 +126,28 @@ function IncludedSelectionsGroup({
                 {(() => {
                   // Only show price tag when selections have exceeded the included count
                   if (!hasExceededIncluded) return null;
+                  // Hide price on items covered by the free allowance
+                  if (isSelected) {
+                    let freeRemaining = includedCount;
+                    for (const op of myObjProfile.options[index].optionsList) {
+                      const qty = parseFloat(op.selectedTimes ?? "0") * parseFloat(op.countsAs ?? "1");
+                      if (qty > 0) {
+                        if (op.id === option.id) {
+                          if (freeRemaining > 0) return null;
+                          break;
+                        }
+                        freeRemaining -= qty;
+                        if (freeRemaining <= 0) break;
+                      }
+                    }
+                  }
                   const resolved = e.sizeLinkedOptionLabel
                     ? parseFloat(resolveOptionPrice(option, e, myObjProfile.options))
                     : 0;
                   const itemPrice = parseFloat(option.priceIncrease ?? "0");
                   const displayPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : parseFloat(e.extraSelectionPrice ?? "0");
                   return displayPrice > 0 ? (
-                    <span style={styles.priceTag}>+${displayPrice.toFixed(2)}</span>
+                    <span style={styles.priceTagExtra}>+${displayPrice.toFixed(2)}</span>
                   ) : null;
                 })()}
               </div>
@@ -230,6 +247,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#6366f1",
     fontWeight: "500",
     backgroundColor: "#eef2ff",
+    padding: "2px 6px",
+    borderRadius: 10,
+    whiteSpace: "nowrap",
+  },
+  priceTagExtra: {
+    fontSize: 11,
+    color: "#d97706",
+    fontWeight: "500",
+    backgroundColor: "#fffbeb",
     padding: "2px 6px",
     borderRadius: 10,
     whiteSpace: "nowrap",

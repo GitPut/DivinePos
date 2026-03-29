@@ -26,6 +26,7 @@ const PublicRoute: React.FC<PublicRouteProps> = (props) => {
       location.pathname !== "/sign-up" &&
       location.pathname !== "/reset-password" &&
       location.pathname !== "/404" &&
+      location.pathname !== "/demo" &&
       !location.pathname.includes("/order/")
     ) {
       history.push("/log-in");

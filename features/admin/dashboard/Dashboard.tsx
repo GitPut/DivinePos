@@ -1,7 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import PeriodDropdown from "./components/PeriodDropdown";
 import BarGraph from "./components/stats/BarGraph";
-import { customersState, storeProductsState } from "store/appState";
+import {
+  customersState,
+  isDemoState,
+  storeProductsState,
+  storeDetailsState,
+  employeesState,
+  tablesState,
+  tableSectionsState,
+  ingredientsState,
+} from "store/appState";
 import { auth, db } from "services/firebase/config";
 import { recalculateStats } from "services/firebase/functions";
 import ComponentLoader from "shared/components/ui/ComponentLoader";
@@ -135,22 +144,24 @@ const calculateDetails = (
   const mostOrderedItems: ProductCount = {};
 
   Object.values(days).forEach((dayStats) => {
-    totalOrders += dayStats.orders;
-    totalRevenue += dayStats.revenue;
-    inStoreOrders.orders += dayStats.inStore;
-    inStoreOrders.revenue += dayStats.inStoreRevenue;
-    deliveryOrders.orders += dayStats.delivery;
-    deliveryOrders.revenue += dayStats.deliveryRevenue;
-    pickupOrders.orders += dayStats.pickup;
-    pickupOrders.revenue += dayStats.pickupRevenue;
-    totalWaitTime += dayStats.totalWaitTime;
-    waitCount += dayStats.waitCount;
+    totalOrders += Number(dayStats.orders) || 0;
+    totalRevenue += Number(dayStats.revenue) || 0;
+    inStoreOrders.orders += Number(dayStats.inStore) || 0;
+    inStoreOrders.revenue += Number(dayStats.inStoreRevenue) || 0;
+    deliveryOrders.orders += Number(dayStats.delivery) || 0;
+    deliveryOrders.revenue += Number(dayStats.deliveryRevenue) || 0;
+    pickupOrders.orders += Number(dayStats.pickup) || 0;
+    pickupOrders.revenue += Number(dayStats.pickupRevenue) || 0;
+    totalWaitTime += Number(dayStats.totalWaitTime) || 0;
+    waitCount += Number(dayStats.waitCount) || 0;
 
-    Object.entries(dayStats.productCounts).forEach(([itemName, count]) => {
-      mostOrderedItems[itemName] = (mostOrderedItems[itemName] || 0) + count;
-    });
+    if (dayStats.productCounts && typeof dayStats.productCounts === "object") {
+      Object.entries(dayStats.productCounts).forEach(([itemName, count]) => {
+        mostOrderedItems[itemName] = (mostOrderedItems[itemName] || 0) + (Number(count) || 0);
+      });
+    }
 
-    const avgWait = dayStats.averageWaitTime ?? 0;
+    const avgWait = Number(dayStats.averageWaitTime) || 0;
     if (avgWait > 0) {
       shortest = Math.min(shortest, avgWait);
       longest = Math.max(longest, avgWait);
@@ -245,10 +256,49 @@ const Dashboard: React.FC = () => {
   const [allStats, setAllStats] = useState<DetailsProps | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [syncing, setSyncing] = useState(false);
+  const [exported, setExported] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
+
+      // In demo mode, use mock stats data instead of Firebase
+      if (isDemoState.get()) {
+        const today = new Date();
+        const fmt = (d: Date) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}-${m}-${day}`;
+        };
+        const mockDays: { [key: string]: DayStats } = {};
+        // Generate 30 days of mock stats
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          const key = fmt(d);
+          const orders = Math.floor(Math.random() * 20) + 5;
+          const revenue = Math.round((Math.random() * 400 + 100) * 100) / 100;
+          mockDays[key] = {
+            revenue,
+            orders,
+            inStore: Math.floor(orders * 0.5),
+            delivery: Math.floor(orders * 0.3),
+            pickup: orders - Math.floor(orders * 0.5) - Math.floor(orders * 0.3),
+            productCounts: { "Pepperoni Pizza": Math.floor(Math.random() * 10) + 1, "Chicken Wings": Math.floor(Math.random() * 8) + 1, "Caesar Salad": Math.floor(Math.random() * 5) },
+            totalWaitTime: Math.floor(Math.random() * 200) + 50,
+            waitCount: orders,
+            averageWaitTime: Math.floor(Math.random() * 15) + 5,
+            inStoreRevenue: Math.round(revenue * 0.5 * 100) / 100,
+            deliveryRevenue: Math.round(revenue * 0.3 * 100) / 100,
+            pickupRevenue: Math.round(revenue * 0.2 * 100) / 100,
+          };
+        }
+        setAllStats({ days: mockDays } as DetailsProps);
+        setLoading(false);
+        return;
+      }
+
       const userId = auth.currentUser?.uid;
       if (!userId) return;
       try {
@@ -301,9 +351,11 @@ const Dashboard: React.FC = () => {
         if (!date.startsWith(year)) return;
         const month = parseInt(date.split("-")[1], 10) - 1;
         if (data[month]) {
-          data[month].uv += allStats.days[date].revenue || 0;
-          data[month].pv += allStats.days[date].orders || 0;
-          data[month].amt += allStats.days[date].orders || 0;
+          const rev = Number(allStats.days[date].revenue) || 0;
+          const ord = Number(allStats.days[date].orders) || 0;
+          data[month].uv += rev;
+          data[month].pv += ord;
+          data[month].amt += ord;
         }
       });
     }
@@ -322,6 +374,84 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
+
+  const handleExportStoreData = async () => {
+    const storeDetails = storeDetailsState.get();
+    const catalog = storeProductsState.get();
+    const customers = customersState.get();
+    const employees = employeesState.get();
+    const tables = tablesState.get();
+    const tableSections = tableSectionsState.get();
+    const ingredients = ingredientsState.get();
+
+    const exportData = {
+      storeDetails: {
+        name: storeDetails.name,
+        phoneNumber: storeDetails.phoneNumber,
+        address: storeDetails.address,
+        taxRate: storeDetails.taxRate,
+        deliveryPrice: storeDetails.deliveryPrice,
+        acceptDelivery: storeDetails.acceptDelivery,
+        deliveryRange: storeDetails.deliveryRange,
+        hasLogo: storeDetails.hasLogo,
+        logoUrl: storeDetails.logoUrl,
+        website: storeDetails.website,
+      },
+      categories: catalog.categories,
+      products: catalog.products.map((p) => ({
+        name: p.name,
+        price: p.price,
+        description: p.description,
+        category: p.category,
+        options: p.options,
+        id: p.id,
+        imageUrl: p.imageUrl,
+        hasImage: p.hasImage,
+        rank: p.rank,
+        trackStock: p.trackStock,
+        stockQuantity: p.stockQuantity,
+        lowStockThreshold: p.lowStockThreshold,
+        costPrice: p.costPrice,
+        recipe: p.recipe,
+        hideFromOnlineStore: p.hideFromOnlineStore,
+        calorieDetails: p.calorieDetails,
+      })),
+      customers: customers.slice(0, 20).map((c) => ({
+        name: c.name,
+        phone: c.phone,
+        address: c.address,
+        orders: c.orders?.slice(0, 5) ?? [],
+        id: c.id,
+      })),
+      employees: employees.map((e) => ({
+        name: e.name,
+        role: e.role,
+        id: e.id,
+        permissions: e.permissions,
+      })),
+      tables,
+      tableSections,
+      ingredients: ingredients.map((ing) => ({
+        id: ing.id,
+        name: ing.name,
+        unit: ing.unit,
+        stockQuantity: ing.stockQuantity,
+        lowStockThreshold: ing.lowStockThreshold,
+        costPerUnit: ing.costPerUnit,
+        category: ing.category,
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "store-data-export.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    setExported(true);
+    setTimeout(() => setExported(false), 3000);
+  };
 
   const handleSyncStats = async () => {
     setSyncing(true);
@@ -346,6 +476,23 @@ const Dashboard: React.FC = () => {
           <span style={styles.subtitle}>Overview of your store performance</span>
         </div>
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <button
+            onClick={handleExportStoreData}
+            title="Export store data to clipboard"
+            style={{
+              ...styles.syncBtn,
+              ...(exported ? { backgroundColor: "#f0fdf4", borderColor: "#86efac" } : {}),
+              width: "auto",
+              paddingLeft: 12,
+              paddingRight: 12,
+              gap: 6,
+              flexDirection: "row" as const,
+            }}
+          >
+            <span style={{ fontSize: 12, fontWeight: "500", color: exported ? "#16a34a" : "#1D294E" }}>
+              {exported ? "Downloaded!" : "Export Data"}
+            </span>
+          </button>
           <button
             onClick={handleSyncStats}
             disabled={syncing}

@@ -40,6 +40,7 @@ import Loader from "shared/components/ui/Loader";
 const NavigationContent = React.lazy(() => import("./NavigationContent"));
 const PublicRoute = React.lazy(() => import("./PublicRoute"));
 const ScrollToTop = React.lazy(() => import("utils/scrollToTop"));
+const DemoPage = React.lazy(() => import("features/demo/DemoPage"));
 
 const AppRouter = () => {
   const savedUserState = JSON.parse(
@@ -937,6 +938,7 @@ const AppRouter = () => {
     <Router>
       <Suspense fallback={<div />}>
         <ScrollToTop />
+        <Route path="/demo" component={DemoPage} />
         {auth.currentUser && !loading && (
           <NavigationContent
             isNewUser={isNewUser ?? false}

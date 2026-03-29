@@ -16,6 +16,7 @@ interface OptionSelectionItemProps {
   scrollToPositionIncluding: (val: number) => void;
   sizeLinkedLabels?: string[];
   allOptions?: Option[];
+  optionType?: string | null;
 }
 
 function OptionSelectionItem({
@@ -32,6 +33,7 @@ function OptionSelectionItem({
   scrollToPositionIncluding,
   sizeLinkedLabels,
   allOptions,
+  optionType,
 }: OptionSelectionItemProps) {
   const eInnerList = structuredClone(eInnerListStart);
   const [showVisibility, setShowVisibility] = useState(
@@ -139,6 +141,54 @@ function OptionSelectionItem({
         )}
       </div>
       <div style={styles.btnsRow}>
+        {(optionType === "Included Selections" || optionType === "Table View" || optionType === "Quantity Dropdown") && (
+          <>
+            <div style={styles.defaultQtyRow}>
+              <span style={styles.defaultQtyLabel}>Default</span>
+              <input
+                style={{
+                  ...styles.defaultQtyInput,
+                  ...(parseFloat(eInnerList?.defaultSelectedTimes ?? "0") > 0
+                    ? { borderColor: "#1D294E", backgroundColor: "#f0f4ff" }
+                    : {}),
+                }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const re = /^\d*$/;
+                  if (val === "" || re.test(val)) {
+                    updateChoiceField((choice) => {
+                      choice.defaultSelectedTimes = val || undefined;
+                    });
+                  }
+                }}
+                value={eInnerList?.defaultSelectedTimes ?? ""}
+                placeholder="0"
+              />
+            </div>
+            <div style={styles.defaultQtyRow}>
+              <span style={styles.defaultQtyLabel}>Counts As</span>
+              <input
+                style={{
+                  ...styles.defaultQtyInput,
+                  ...(parseFloat(eInnerList?.countsAs ?? "1") > 1
+                    ? { borderColor: "#d97706", backgroundColor: "#fffbeb" }
+                    : {}),
+                }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const re = /^\d*\.?\d*$/;
+                  if (val === "" || re.test(val)) {
+                    updateChoiceField((choice) => {
+                      choice.countsAs = val || undefined;
+                    });
+                  }
+                }}
+                value={eInnerList?.countsAs ?? ""}
+                placeholder="1"
+              />
+            </div>
+          </>
+        )}
         {otherOptions.length > 0 && (
           <button
             style={{
@@ -359,6 +409,30 @@ const styles: Record<string, React.CSSProperties> = {
     flex: "1 1 60px",
     minWidth: 55,
     maxWidth: 90,
+  },
+  defaultQtyRow: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginRight: 8,
+  },
+  defaultQtyLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "#94a3b8",
+  },
+  defaultQtyInput: {
+    width: 34,
+    height: 26,
+    border: "1px solid #e2e8f0",
+    borderRadius: 6,
+    padding: "0 4px",
+    fontSize: 12,
+    color: "#0f172a",
+    textAlign: "center" as const,
+    boxSizing: "border-box" as const,
+    outline: "none",
   },
   btnsRow: {
     display: "flex",

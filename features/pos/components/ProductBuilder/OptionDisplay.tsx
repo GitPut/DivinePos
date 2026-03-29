@@ -259,7 +259,8 @@ const OptionDisplay = ({
         const flatExtraPrice = parseFloat(filteredOption.extraSelectionPrice ?? "0");
         let totalSelected = 0;
         filteredOption.optionsList.forEach((item) => {
-          totalSelected += parseFloat(item.selectedTimes ?? "0");
+          const countsAs = parseFloat(item.countsAs ?? "1");
+          totalSelected += parseFloat(item.selectedTimes ?? "0") * countsAs;
         });
         const extraSelections = Math.max(0, totalSelected - includedCount);
 
@@ -270,7 +271,8 @@ const OptionDisplay = ({
           filteredOption.optionsList
             .filter((item) => parseFloat(item.selectedTimes ?? "0") > 0)
             .forEach((item) => {
-              const qty = parseFloat(item.selectedTimes ?? "0");
+              const countsAs = parseFloat(item.countsAs ?? "1");
+              const qty = parseFloat(item.selectedTimes ?? "0") * countsAs;
               const freeFromThis = Math.min(qty, freeRemaining);
               const extraFromThis = qty - freeFromThis;
               freeRemaining -= freeFromThis;

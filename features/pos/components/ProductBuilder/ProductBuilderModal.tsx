@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import GoBackButton from "./GoBackButton";
 import ProductImage from "shared/components/ui/ProductImage";
 import AddToCartButton from "./AddToCartButton";
@@ -14,6 +14,7 @@ import OptionDisplay from "./OptionDisplay";
 import { ProductProp } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
 import { resolveOptionPrice } from "utils/resolveOptionPrice";
+import { FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 function ProductBuilderModal() {
   const { product, itemIndex, imageUrl, isOnlineOrder } =
@@ -33,11 +34,44 @@ function ProductBuilderModal() {
   const alertP = useAlert();
   const [scrollY, setScrollY] = useState<number>(0);
   const { width } = useWindowSize();
+  const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
+  const optionsScrollRef = useRef<HTMLDivElement>(null);
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
+
+  // ─── Page grouping ─────────────────────────────────────────────────────────
+  const pages = useMemo(() => {
+    const pageMap = new Map<string, number[]>();
+    myObjProfile.options.forEach((option, idx) => {
+      const pageName = option.page || "";
+      if (!pageMap.has(pageName)) {
+        pageMap.set(pageName, []);
+      }
+      pageMap.get(pageName)!.push(idx);
+    });
+    return Array.from(pageMap.entries()).map(([name, indices]) => ({
+      name: name || "Options",
+      optionIndices: indices,
+    }));
+  }, [myObjProfile.options]);
+
+  const isMultiPage = pages.length > 1;
+  const currentPage = pages[currentPageIndex] ?? pages[0];
+  const isLastPage = currentPageIndex === pages.length - 1;
+  const isFirstPage = currentPageIndex === 0;
+
+  const visibleOptionIndices = isMultiPage
+    ? currentPage.optionIndices
+    : myObjProfile.options.map((_, i) => i);
+
+  // Reset scroll to top when switching pages
+  useEffect(() => {
+    if (optionsScrollRef.current) optionsScrollRef.current.scrollTop = 0;
+    if (mobileScrollRef.current) mobileScrollRef.current.scrollTop = 0;
+  }, [currentPageIndex]);
 
   useEffect(() => {
     if (product !== null) {
       const clone = structuredClone(product);
-      // Auto-select first choice for required single-select options
       clone.options.forEach((op) => {
         if (
           op.isRequired &&
@@ -47,8 +81,17 @@ function ProductBuilderModal() {
         ) {
           op.optionsList[0].selected = true;
         }
+        // Apply default selections for Included Selections / Table View / Quantity Dropdown
+        op.optionsList.forEach((item) => {
+          if (item.defaultSelectedTimes && parseFloat(item.defaultSelectedTimes) > 0) {
+            if (!item.selectedTimes || parseFloat(item.selectedTimes) === 0) {
+              item.selectedTimes = item.defaultSelectedTimes;
+            }
+          }
+        });
       });
       setMyObjProfile(clone);
+      setCurrentPageIndex(0);
     }
   }, [product]);
 
@@ -67,12 +110,12 @@ function ProductBuilderModal() {
         op.optionsList
           .filter((item) => parseFloat(item.selectedTimes ?? "0") > 0)
           .forEach((item) => {
-            const qty = parseFloat(item.selectedTimes ?? "0");
+            const countsAs = parseFloat(item.countsAs ?? "1");
+            const qty = parseFloat(item.selectedTimes ?? "0") * countsAs;
             const freeFromThis = Math.min(qty, freeRemaining);
             const extraFromThis = qty - freeFromThis;
             freeRemaining -= freeFromThis;
             if (extraFromThis > 0) {
-              // Try size-linked price, then item's own priceIncrease, then flat extra price
               const resolved = op.sizeLinkedOptionLabel
                 ? parseFloat(resolveOptionPrice(item, op, myObjProfile.options))
                 : 0;
@@ -111,6 +154,31 @@ function ProductBuilderModal() {
   useEffect(() => {
     setTotal(price);
   }, [price]);
+
+  // ─── Per-page validation for Next button ───────────────────────────────────
+  const validateCurrentPage = (): boolean => {
+    for (const idx of currentPage.optionIndices) {
+      const op = myObjProfile.options[idx];
+      if (op.isRequired && (op.optionType === "Dropdown" || op.optionType === "Row")) {
+        const hasSelection = op.optionsList.some((item) => item.selected === true);
+        if (!hasSelection) {
+          alertP.error(op.label + " is required. Please fill out before continuing.");
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (validateCurrentPage()) {
+      setCurrentPageIndex((prev) => Math.min(prev + 1, pages.length - 1));
+    }
+  };
+
+  const handlePageBack = () => {
+    setCurrentPageIndex((prev) => Math.max(prev - 1, 0));
+  };
 
   const AddToCart = () => {
     const opsArray: string[] = [];
@@ -220,7 +288,8 @@ function ProductBuilderModal() {
         let extraCost = 0;
         let freeRemaining = includedCount;
         op.optionsList.forEach((item) => {
-          const qty = parseFloat(item.selectedTimes ?? "0");
+          const countsAs = parseFloat(item.countsAs ?? "1");
+          const qty = parseFloat(item.selectedTimes ?? "0") * countsAs;
           totalSelected += qty;
           if (qty > 0) {
             const freeFromThis = Math.min(qty, freeRemaining);
@@ -247,19 +316,137 @@ function ProductBuilderModal() {
     return extras;
   }, [myObjProfile]);
 
+  // ─── Stepper ───────────────────────────────────────────────────────────────
+  const renderStepper = () => {
+    if (!isMultiPage) return null;
+    return (
+      <div style={styles.stepperContainer}>
+        {pages.map((pg, idx) => (
+          <React.Fragment key={pg.name + idx}>
+            {idx > 0 && (
+              <div
+                style={{
+                  ...styles.stepLine,
+                  backgroundColor: idx <= currentPageIndex ? "#1e293b" : "#e2e8f0",
+                }}
+              />
+            )}
+            <button
+              style={styles.stepItem}
+              onClick={() => {
+                if (idx < currentPageIndex) setCurrentPageIndex(idx);
+              }}
+            >
+              <div
+                style={{
+                  ...styles.stepCircle,
+                  backgroundColor:
+                    idx < currentPageIndex
+                      ? "#10b981"
+                      : idx === currentPageIndex
+                        ? "#1e293b"
+                        : "#f1f5f9",
+                  color: idx <= currentPageIndex ? "#ffffff" : "#94a3b8",
+                }}
+              >
+                {idx < currentPageIndex ? (
+                  <FiCheck size={14} color="#fff" />
+                ) : (
+                  idx + 1
+                )}
+              </div>
+              <span
+                style={{
+                  ...styles.stepLabel,
+                  color: idx === currentPageIndex ? "#1e293b" : idx < currentPageIndex ? "#10b981" : "#94a3b8",
+                  fontWeight: idx === currentPageIndex ? "700" : "500",
+                }}
+              >
+                {pg.name}
+              </span>
+            </button>
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  };
+
+  // ─── Options list for current page ─────────────────────────────────────────
+  const renderOptions = () =>
+    visibleOptionIndices.map((optionIndex) => (
+      <OptionDisplay
+        key={optionIndex}
+        e={myObjProfile.options[optionIndex]}
+        index={optionIndex}
+        myObjProfile={myObjProfile}
+        setMyObjProfile={setMyObjProfile}
+        setOpenOptions={setOpenOptions}
+        openOptions={openOptions}
+        isOnlineOrder={isOnlineOrder}
+        scrollY={scrollY}
+      />
+    ));
+
+  // ─── Bottom navigation ─────────────────────────────────────────────────────
+  const renderBottomBar = (isMobileStyle?: boolean) => {
+    const barStyle = isMobileStyle ? styles.mobileBottomBar : styles.bottomBar;
+
+    if (!isMultiPage) {
+      return (
+        <div style={barStyle}>
+          <AddToCartButton
+            title={isEditing ? "Save" : "Add to Cart"}
+            total={total}
+            onPress={AddToCart}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div style={barStyle}>
+        <div style={styles.navRow}>
+          {!isFirstPage ? (
+            <button style={styles.backBtn} onClick={handlePageBack}>
+              <FiChevronLeft size={18} color="#64748b" />
+              <span style={styles.backBtnText}>Back</span>
+            </button>
+          ) : (
+            <div />
+          )}
+          <div style={{ flex: 1 }}>
+            {isLastPage ? (
+              <AddToCartButton
+                title={isEditing ? "Save" : "Add to Cart"}
+                total={total}
+                onPress={AddToCart}
+              />
+            ) : (
+              <button style={styles.nextBtn} onClick={handleNext}>
+                <span style={styles.nextBtnText}>
+                  Next: {pages[currentPageIndex + 1]?.name}
+                </span>
+                <FiChevronRight size={18} color="#fff" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const isMobile = width < 800;
 
   if (isMobile) {
     return (
       <div style={styles.container}>
-        {/* Mobile: single scroll layout */}
-        <div style={styles.mobileScrollArea}>
-          {/* Back button */}
+        <div ref={mobileScrollRef} style={styles.mobileScrollArea}>
           <div style={styles.mobileTopBar}>
             <GoBackButton onPress={goBack} />
           </div>
 
-          {/* Product info */}
+          {renderStepper()}
+
           {imageUrl && (
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
               <ProductImage
@@ -280,36 +467,23 @@ function ProductBuilderModal() {
             <span style={styles.price}>${parseFloat(myObj.price).toFixed(2)}</span>
           </div>
 
-          {/* Options inline */}
           <div style={{ padding: "0 16px" }}>
-            {myObjProfile.options.map((option, index) => (
-              <OptionDisplay
-                key={index}
-                e={option}
-                index={index}
-                myObjProfile={myObjProfile}
-                setMyObjProfile={setMyObjProfile}
-                setOpenOptions={setOpenOptions}
-                openOptions={openOptions}
-                isOnlineOrder={isOnlineOrder}
-                scrollY={scrollY}
+            {renderOptions()}
+          </div>
+
+          {(!isMultiPage || isLastPage) && (
+            <div style={{ padding: "0 16px", marginTop: 16 }}>
+              <span style={styles.sectionLabel}>Special Instructions</span>
+              <textarea
+                style={styles.notesInput}
+                placeholder="Add any special requests..."
+                rows={2}
+                onChange={(e) => setExtraInput(e.target.value)}
+                value={extraInput}
               />
-            ))}
-          </div>
+            </div>
+          )}
 
-          {/* Notes */}
-          <div style={{ padding: "0 16px", marginTop: 16 }}>
-            <span style={styles.sectionLabel}>Special Instructions</span>
-            <textarea
-              style={styles.notesInput}
-              placeholder="Add any special requests..."
-              rows={2}
-              onChange={(e) => setExtraInput(e.target.value)}
-              value={extraInput}
-            />
-          </div>
-
-          {/* Item total */}
           <div style={{ padding: "12px 16px 16px" }}>
             <div style={styles.itemTotalCard}>
               <span style={styles.itemTotalLabel}>Item Total</span>
@@ -321,28 +495,25 @@ function ProductBuilderModal() {
           </div>
         </div>
 
-        {/* Sticky bottom button */}
-        <div style={styles.mobileBottomBar}>
-          <AddToCartButton
-            title={isEditing ? "Save" : "Add to Cart"}
-            total={total}
-            onPress={AddToCart}
-          />
-        </div>
+        {renderBottomBar(true)}
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
-      {/* Top bar */}
       <div style={styles.topBar}>
         <GoBackButton onPress={goBack} />
       </div>
 
-      {/* Content */}
+      {isMultiPage && (
+        <div style={styles.stepperRow}>
+          <div style={{ width: 240, flexShrink: 0 }} />
+          {renderStepper()}
+        </div>
+      )}
+
       <div style={styles.contentRow}>
-        {/* Left column - product info */}
         <div style={styles.leftColumn}>
           {imageUrl && (
             <ProductImage
@@ -380,37 +551,18 @@ function ProductBuilderModal() {
           </div>
         </div>
 
-        {/* Right column - options */}
         <div style={styles.rightColumn}>
           <div
+            ref={optionsScrollRef}
             style={styles.optionsScrollArea}
             onScroll={(e) => setScrollY((e.target as HTMLDivElement).scrollTop)}
           >
-            {myObjProfile.options.map((option, index) => (
-              <OptionDisplay
-                key={index}
-                e={option}
-                index={index}
-                myObjProfile={myObjProfile}
-                setMyObjProfile={setMyObjProfile}
-                setOpenOptions={setOpenOptions}
-                openOptions={openOptions}
-                isOnlineOrder={isOnlineOrder}
-                scrollY={scrollY}
-              />
-            ))}
+            {renderOptions()}
           </div>
         </div>
       </div>
 
-      {/* Bottom button */}
-      <div style={styles.bottomBar}>
-        <AddToCartButton
-          title={isEditing ? "Save" : "Add to Cart"}
-          total={total}
-          onPress={AddToCart}
-        />
-      </div>
+      {renderBottomBar()}
     </div>
   );
 }
@@ -565,6 +717,110 @@ const styles: Record<string, React.CSSProperties> = {
   bottomBar: {
     padding: "16px 24px",
     flexShrink: 0,
+  },
+
+  // ─── Stepper styles ──────────────────────────────────────────────────────
+  stepperRow: {
+    display: "flex",
+    flexDirection: "row",
+    padding: "0 24px",
+    gap: 24,
+    flexShrink: 0,
+  },
+  stepperContainer: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    padding: "8px 0 12px",
+    gap: 0,
+    flexShrink: 0,
+    overflowX: "auto",
+  },
+  stepItem: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 80,
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "4px 12px",
+  },
+  stepCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  stepLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    textAlign: "center" as const,
+    maxWidth: 110,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  },
+  stepLine: {
+    height: 2,
+    flex: 1,
+    minWidth: 24,
+    maxWidth: 60,
+    borderRadius: 1,
+  },
+
+  // ─── Navigation styles ───────────────────────────────────────────────────
+  navRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+  },
+  backBtn: {
+    height: 50,
+    paddingLeft: 16,
+    paddingRight: 20,
+    backgroundColor: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    flexShrink: 0,
+  },
+  backBtnText: {
+    fontWeight: "600",
+    color: "#64748b",
+    fontSize: 15,
+  },
+  nextBtn: {
+    width: "100%",
+    height: 50,
+    backgroundColor: "#1e293b",
+    borderRadius: 12,
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  nextBtnText: {
+    fontWeight: "700",
+    color: "#ffffff",
+    fontSize: 16,
+    letterSpacing: 0.3,
   },
 };
 

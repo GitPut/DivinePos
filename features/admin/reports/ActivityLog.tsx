@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "services/firebase/config";
 import { parseDate } from "utils/dateFormatting";
+import { isDemoState } from "store/appState";
 
 interface ActivityEntry {
   employeeId: string;
@@ -15,6 +16,16 @@ function ActivityLog() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemoState.get()) {
+      // Show mock activity log entries in demo mode
+      setEntries([
+        { employeeId: "emp_demo_1", employeeName: "Johnny", action: "Applied 10% discount to order", timestamp: { seconds: Math.floor(Date.now() / 1000) - 3600, toDate: () => new Date(Date.now() - 3600000) }, id: "act_1" },
+        { employeeId: "emp_demo_3", employeeName: "Peter", action: "Voided order #DM001", timestamp: { seconds: Math.floor(Date.now() / 1000) - 7200, toDate: () => new Date(Date.now() - 7200000) }, id: "act_2" },
+        { employeeId: "emp_demo_1", employeeName: "Johnny", action: "Processed custom cash payment of $50.00", timestamp: { seconds: Math.floor(Date.now() / 1000) - 14400, toDate: () => new Date(Date.now() - 14400000) }, id: "act_3" },
+      ]);
+      setLoading(false);
+      return;
+    }
     const userId = auth.currentUser?.uid;
     if (!userId) return;
     db.collection("users")

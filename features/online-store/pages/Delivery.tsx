@@ -47,6 +47,11 @@ function OnlineOrderHomeDelivery() {
               ? ` ($${parseFloat(storeDetails.deliveryPrice).toFixed(2)} delivery fee)`
               : ""}
           </span>
+          {storeDetails.minimumDeliveryOrder && parseFloat(storeDetails.minimumDeliveryOrder) > 0 && (
+            <span style={{ ...styles.minimumBadge, backgroundColor: c.overlay, borderColor: c.overlayBorder, color: c.textMuted }}>
+              Minimum order: ${parseFloat(storeDetails.minimumDeliveryOrder).toFixed(2)}
+            </span>
+          )}
           <DeliveryDetails contrast={c} />
         </div>
       </div>
@@ -124,8 +129,16 @@ const styles: Record<string, React.CSSProperties> = {
     color: "rgba(255,255,255,0.35)",
     textAlign: "center" as const,
     maxWidth: 340,
-    marginBottom: 20,
+    marginBottom: 8,
     lineHeight: "1.5",
+  },
+  minimumBadge: {
+    fontSize: 13,
+    fontWeight: "600",
+    padding: "6px 14px",
+    borderRadius: 8,
+    border: "1px solid rgba(255,255,255,0.08)",
+    marginBottom: 12,
   },
 };
 

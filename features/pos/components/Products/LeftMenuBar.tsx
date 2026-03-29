@@ -2,8 +2,9 @@ import React from "react";
 import { FiHome, FiClock, FiPhone, FiPercent, FiDollarSign, FiSettings, FiClipboard, FiGrid } from "react-icons/fi";
 import { posState, updatePosState } from "store/posState";
 import { shallowEqual } from "simpler-state";
-import { activePlanState, settingsAuthState, storeDetailsState } from "store/appState";
+import { activePlanState, isDemoState, settingsAuthState, storeDetailsState } from "store/appState";
 import { useHistory } from "react-router-dom";
+import { getDemoSwitchToAdmin } from "features/demo/demoContext";
 
 const menuItems = [
   { key: "home", label: "Home", Icon: FiHome },
@@ -152,6 +153,11 @@ const LeftMenuBar = () => {
           className="pos-sidebar-btn"
           style={styles.menuBtn}
           onClick={() => {
+            if (isDemoState.get()) {
+              const switchToAdmin = getDemoSwitchToAdmin();
+              if (switchToAdmin) switchToAdmin();
+              return;
+            }
             if (storeDetails.settingsPassword?.length > 0) {
               updatePosState({ settingsPasswordModalVis: true });
             } else {

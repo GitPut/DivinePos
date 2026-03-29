@@ -93,6 +93,12 @@ const PhoneOrderModal = () => {
   };
 
   useEffect(() => {
+    if (!deliveryModal) {
+      setsaveCustomerChecked(false);
+    }
+  }, [deliveryModal]);
+
+  useEffect(() => {
     if (!address) return;
     if (address.value?.reference && storeDetails?.address?.value?.reference) {
       setlocalAddress(address);
@@ -124,6 +130,7 @@ const PhoneOrderModal = () => {
     if (ongoingDelivery || updatingOrder) {
       updatePosState({ deliveryModal: false });
     } else {
+      setsaveCustomerChecked(false);
       updatePosState({ deliveryModal: false, ongoingDelivery: false, name: "", phone: "", address: null, buzzCode: "", unitNumber: "", deliveryChecked: false });
     }
   };

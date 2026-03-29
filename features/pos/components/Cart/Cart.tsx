@@ -20,6 +20,7 @@ import firebase from "firebase/compat/app";
 import { calculateCartTotals } from "utils/cartCalculations";
 import { broadcastCartUpdate } from "utils/customerDisplayBroadcast";
 import useWindowSize from "shared/hooks/useWindowSize";
+import { useAlert } from "react-alert";
 import LoyaltyInfoBar from "./LoyaltyInfoBar";
 import LoyaltyRedeemModal from "shared/components/modals/LoyaltyRedeemModal";
 
@@ -41,6 +42,7 @@ const Cart = () => {
   const [total, setTotal] = useState(0);
   const isOnlineOrder = productBuilderState.use().isOnlineOrder;
   const orderDetails = orderDetailsState.use();
+  const alertP = useAlert();
 
   useEffect(() => {
     if (isOnlineOrder) {
@@ -268,6 +270,15 @@ const Cart = () => {
           }}
           disabled={cart.length < 1}
           onClick={() => {
+            // Check minimum delivery order
+            if (orderDetails.delivery && storeDetails.minimumDeliveryOrder) {
+              const min = parseFloat(storeDetails.minimumDeliveryOrder);
+              if (min > 0 && cartSub < min) {
+                alertP.error(`Minimum order for delivery is $${min.toFixed(2)}`);
+                return;
+              }
+            }
+
             const today = firebase.firestore.Timestamp.now();
             const transNum = Math.random().toString(36).substr(2, 9);
 

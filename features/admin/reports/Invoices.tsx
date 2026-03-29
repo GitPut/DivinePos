@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { IoSearch, IoClose } from "react-icons/io5";
 import { FiDownload, FiPrinter } from "react-icons/fi";
 import InvoiceItem from "./components/InvoiceItem";
-import { deviceState, storeDetailsState } from "store/appState";
+import { deviceState, isDemoState, storeDetailsState } from "store/appState";
 import { Excel as ExcelDownload } from "antd-table-saveas-excel";
 import { auth, db } from "services/firebase/config";
 import { receiptPrint } from "services/printing/receiptPrint";
@@ -114,6 +114,24 @@ const Invoices = () => {
   };
 
   useEffect(() => {
+    if (isDemoState.get()) {
+      // In demo mode, show mock transaction data
+      try {
+        const demoData = require("features/demo/demoData.json");
+        const mockInvoices = (demoData.transactionsList || []).map((txn: any) => ({
+          ...txn,
+          name: txn.customer?.name || "N/A",
+          amount: txn.total,
+          system: txn.online ? "Online" : "POS",
+          type: txn.method === "deliveryOrder" ? "Delivery" : txn.method === "pickupOrder" ? "Pickup" : txn.method === "inStoreOrder" ? "In Store" : "Other",
+          originalData: { ...txn, cart: txn.cart || [], cartNote: "", customer: txn.customer || { name: "", phone: "" }, online: txn.online || false, isInStoreOrder: txn.method === "inStoreOrder", transNum: txn.transNum || "", total: txn.total || "", date: txn.date },
+          docID: txn.id,
+        }));
+        setInvoices(mockInvoices);
+      } catch {}
+      setInitialLoad(true);
+      return;
+    }
     fetchInvoices();
     return () => {
       lastVisibleDoc.current = null;

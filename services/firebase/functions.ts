@@ -17,6 +17,7 @@ import firebase from "firebase/compat/app";
 const Timestamp = firebase.firestore.Timestamp;
 import {
   customersState,
+  isDemoState,
   setCustomersState,
   ingredientsState,
   loyaltyConfigState,
@@ -30,6 +31,8 @@ import {
   updateIngredientStock,
   updateStoreProductsState,
 } from "store/appState";
+
+const isDemoMode = (): boolean => isDemoState.get();
 
 // -------------------
 // 🔐 AUTH FUNCTIONS
@@ -76,6 +79,7 @@ export const signUp = async (
 // 🧩 DATA UPDATES
 // -------------------
 export const updateData = async (categories: string[]) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const uid = auth.currentUser?.uid;
   if (!uid) return;
   await db.collection("users").doc(uid).update({ categories });
@@ -85,12 +89,14 @@ export const updateData = async (categories: string[]) => {
 // 🪑 TABLES
 // -------------------
 export const saveTables = async (tables: import("types").Table[]) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const uid = auth.currentUser?.uid;
   if (!uid) return;
   await db.collection("users").doc(uid).update({ tables });
 };
 
 export const saveTableSections = async (tableSections: string[]) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const uid = auth.currentUser?.uid;
   if (!uid) return;
   await db.collection("users").doc(uid).update({ tableSections });
@@ -145,6 +151,7 @@ export const updateStats = async (
   userId: string,
   receipt: Partial<TransListStateItem>
 ) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const statsRef = db
     .collection("users")
     .doc(userId)
@@ -259,6 +266,7 @@ export const updateStats = async (
 // 🔄 RECALCULATE STATS
 // -------------------
 export const recalculateStats = async () => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("User not authenticated");
 
@@ -378,6 +386,7 @@ export const recalculateStats = async () => {
 // 💵 TRANSACTIONS
 // -------------------
 export const updateTransList = async (receipt: Partial<TransListStateItem>) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("User not authenticated");
 
@@ -632,6 +641,7 @@ export const adjustStockManually = async (
   type: "restock" | "adjustment" | "correction",
   note?: string
 ): Promise<void> => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("Not authenticated");
 
@@ -710,6 +720,7 @@ export const fetchStockHistory = async (
 export const addIngredient = async (
   ingredient: Omit<Ingredient, "id">
 ): Promise<string> => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return ""; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("Not authenticated");
 
@@ -733,6 +744,7 @@ export const updateIngredient = async (
   ingredientId: string,
   updates: Partial<Ingredient>
 ): Promise<void> => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("Not authenticated");
 
@@ -754,6 +766,7 @@ export const updateIngredient = async (
 export const deleteIngredient = async (
   ingredientId: string
 ): Promise<void> => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("Not authenticated");
 
@@ -774,6 +787,7 @@ export const adjustIngredientStockManually = async (
   type: "restock" | "adjustment" | "correction",
   note?: string
 ): Promise<void> => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("Not authenticated");
 
@@ -833,6 +847,7 @@ export const fetchIngredientStockHistory = async (
 export const updateStoreDetails = async (
   storeDetails: Partial<StoreDetailsProps>
 ) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const uid = auth.currentUser?.uid;
   if (!uid) return;
 
@@ -848,6 +863,7 @@ export const updateStoreDetails = async (
 // 🎁 FREE TRIAL
 // -------------------
 export const updateFreeTrial = async (endDate: Date | null) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const currentUser = auth.currentUser;
   if (!currentUser) return;
 
@@ -867,6 +883,7 @@ export const updateFreeTrial = async (endDate: Date | null) => {
 // 🚪 LOGOUT
 // -------------------
 export const logout = async () => {
+  if (isDemoMode()) { console.log("Demo mode: logout blocked"); return; }
   await logSystemEvent("logout");
   localStorage.removeItem("isAuthedBackend");
   localStorage.removeItem("savedUserState");
@@ -879,6 +896,7 @@ export const logout = async () => {
 // 👥 CUSTOMERS
 // -------------------
 export const addCustomerDetailsToDb = async (customer: CustomerProp) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const uid = auth.currentUser?.uid;
   if (!uid) throw new Error("User not authenticated");
 
@@ -902,6 +920,7 @@ export const createCheckoutSession = async (
   onError?: (msg: string) => void,
   quantity?: number
 ) => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const uid = auth.currentUser?.uid;
   if (!uid) {
     onError?.("User not authenticated");
@@ -986,6 +1005,7 @@ export const openStripePortal = (onError?: (msg: string) => void) => {
 export const saveOptionTemplate = async (
   template: OptionTemplate
 ): Promise<string> => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return template.id; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("Not authenticated");
 
@@ -1020,6 +1040,7 @@ export const saveOptionTemplate = async (
 export const deleteOptionTemplate = async (
   templateId: string
 ): Promise<void> => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("Not authenticated");
 
@@ -1042,6 +1063,7 @@ export const deleteOptionTemplate = async (
 export const syncOptionTemplateToProducts = async (
   template: OptionTemplate
 ): Promise<number> => {
+  if (isDemoMode()) { console.log("Demo mode: write blocked"); return 0; }
   const userId = auth.currentUser?.uid;
   if (!userId) throw new Error("Not authenticated");
 

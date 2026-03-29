@@ -3,6 +3,8 @@ import { useHistory } from "react-router-dom";
 import LogoutDropdown from "./LogoutDropdown";
 import Logo from "assets/dpos-logo-black.png";
 import { FiMonitor, FiGrid } from "react-icons/fi";
+import { isDemoState } from "store/appState";
+import { getDemoSwitchToPOS } from "features/demo/demoContext";
 
 interface HeaderProps {
   onPressLogo?: () => void;
@@ -11,6 +13,16 @@ interface HeaderProps {
 
 const Header = ({ onPressLogo, isPosHeader }: HeaderProps) => {
   const history = useHistory();
+  const isDemo = isDemoState.use();
+
+  const handlePosPress = () => {
+    if (isDemo) {
+      const cb = getDemoSwitchToPOS();
+      if (cb) cb();
+    } else {
+      history.push("/pos");
+    }
+  };
 
   return (
     <div style={styles.header}>
@@ -23,17 +35,19 @@ const Header = ({ onPressLogo, isPosHeader }: HeaderProps) => {
       <div style={styles.rightSide}>
         {isPosHeader && (
           <>
+            {!isDemo && (
+              <button
+                onClick={() =>
+                  window.open("/customer-display", "customerDisplay")
+                }
+                style={styles.customerDisplayBtn}
+              >
+                <FiMonitor size={14} color="#475569" />
+                <span style={styles.customerDisplayTxt}>Customer Display</span>
+              </button>
+            )}
             <button
-              onClick={() =>
-                window.open("/customer-display", "customerDisplay")
-              }
-              style={styles.customerDisplayBtn}
-            >
-              <FiMonitor size={14} color="#475569" />
-              <span style={styles.customerDisplayTxt}>Customer Display</span>
-            </button>
-            <button
-              onClick={() => history.push("/pos")}
+              onClick={handlePosPress}
               style={styles.posBtn}
             >
               <FiGrid size={14} color="#fff" />

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FiChevronDown, FiLogOut, FiUser } from "react-icons/fi";
 import { logout } from "services/firebase/functions";
-import { storeDetailsState } from "store/appState";
+import { isDemoState, storeDetailsState } from "store/appState";
 import { auth } from "services/firebase/config";
 
 interface LogoutDropdownProps {
@@ -11,8 +11,11 @@ interface LogoutDropdownProps {
 function LogoutDropdown({ isPosHeader }: LogoutDropdownProps) {
   const [open, setOpen] = useState(false);
   const storeDetails = storeDetailsState.use();
-  const name =
-    (isPosHeader ? storeDetails.name : auth.currentUser?.displayName) ?? "User";
+  const isDemo = isDemoState.use();
+  const name = isDemo
+    ? storeDetails.name || "Demo Store"
+    : (isPosHeader ? storeDetails.name : auth.currentUser?.displayName) ?? "User";
+  const email = isDemo ? "demo@divinepos.com" : (auth.currentUser?.email ?? "");
 
   const initials = name
     .split(" ")
@@ -20,6 +23,14 @@ function LogoutDropdown({ isPosHeader }: LogoutDropdownProps) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const handleLogout = () => {
+    if (isDemo) {
+      window.location.href = "/sign-up";
+    } else {
+      logout();
+    }
+  };
 
   return (
     <div style={{ position: "relative", zIndex: open ? 100000 : undefined }}>
@@ -54,14 +65,16 @@ function LogoutDropdown({ isPosHeader }: LogoutDropdownProps) {
               <div>
                 <span style={styles.dropdownName}>{name}</span>
                 <span style={styles.dropdownEmail}>
-                  {auth.currentUser?.email ?? ""}
+                  {email}
                 </span>
               </div>
             </div>
             <div style={styles.divider} />
-            <button style={styles.logoutBtn} onClick={logout}>
-              <FiLogOut size={16} color="#ef4444" />
-              <span style={styles.logoutTxt}>Log Out</span>
+            <button style={styles.logoutBtn} onClick={handleLogout}>
+              <FiLogOut size={16} color={isDemo ? "#1D294E" : "#ef4444"} />
+              <span style={{ ...styles.logoutTxt, color: isDemo ? "#1D294E" : "#ef4444" }}>
+                {isDemo ? "Exit Demo" : "Log Out"}
+              </span>
             </button>
           </div>
         </>

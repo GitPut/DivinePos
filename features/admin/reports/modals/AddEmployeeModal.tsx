@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import useWindowSize from "shared/hooks/useWindowSize";
-import InputField from "../components/InputField";
+import { FiUser, FiShield, FiLock, FiX } from "react-icons/fi";
 import { auth, db } from "services/firebase/config";
 import { employeesState, setEmployeesState } from "store/appState";
 import { useAlert } from "react-alert";
@@ -16,7 +15,6 @@ function AddEmployeeModal({
   setaddEmployeeModal,
   addEmployeeModal,
 }: AddEmployeeModalProps) {
-  const { height, width } = useWindowSize();
   const employees = employeesState.use();
   const [name, setname] = useState("");
   const [role, setrole] = useState("");
@@ -55,213 +53,291 @@ function AddEmployeeModal({
     setaddEmployeeModal(false);
   };
 
+  const permissionItems: { key: keyof EmployeePermissions; label: string; description: string }[] = [
+    { key: "accessBackend", label: "Access Backend", description: "View admin panel and settings" },
+    { key: "discount", label: "Apply Discounts", description: "Apply discounts to orders" },
+    { key: "customPayment", label: "Custom Payment", description: "Process custom cash payments" },
+    { key: "manageOrders", label: "Manage Orders", description: "Complete, cancel, or modify orders" },
+  ];
+
   return (
-    <button
+    <div
+      style={styles.backdrop}
       onClick={() => setaddEmployeeModal(false)}
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: height,
-        width: width,
-        border: "none",
-        background: "none",
-        cursor: "default",
-        padding: 0,
-      }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ cursor: "default" }}
+        style={styles.container}
       >
-        <div style={styles.container}>
-          <div style={styles.innerContainer}>
-            <span style={styles.addEmployeeHeaderLbl}>Add Employee</span>
-            <div style={styles.inputsGroup}>
-              <InputField
-                lbl="Name"
-                placeholder="Enter name"
-                style={styles.nameInput}
+        {/* Header */}
+        <div style={styles.header}>
+          <div>
+            <span style={styles.title}>Add Employee</span>
+            <span style={styles.subtitle}>Add a new team member to your store</span>
+          </div>
+          <button style={styles.closeBtn} onClick={() => setaddEmployeeModal(false)}>
+            <FiX size={16} color="#64748b" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div style={styles.form}>
+          <div style={styles.fieldGroup}>
+            <span style={styles.fieldLabel}>Name</span>
+            <div style={styles.inputRow}>
+              <FiUser size={16} color="#94a3b8" />
+              <input
+                style={styles.input}
+                placeholder="Employee name"
                 value={name}
-                setValue={setname}
-              />
-              <InputField
-                lbl="Role"
-                placeholder="Enter role"
-                style={styles.roleInput}
-                value={role}
-                setValue={setrole}
-              />
-              <InputField
-                lbl="Pin"
-                placeholder="Enter pin"
-                style={styles.pinInput}
-                value={pin}
-                setValue={setpin}
+                onChange={(e) => setname(e.target.value)}
               />
             </div>
-            <div style={styles.permissionsSection}>
-              <span style={styles.permissionsHeader}>Permissions</span>
-              <div style={styles.permissionRow}>
-                <span style={styles.permissionLabel}>Access Backend</span>
-                <Switch
-                  isActive={!!permissions.accessBackend}
-                  toggleSwitch={() =>
-                    setPermissions((p) => ({ ...p, accessBackend: !p.accessBackend }))
-                  }
-                />
-              </div>
-              <div style={styles.permissionRow}>
-                <span style={styles.permissionLabel}>Apply Discounts</span>
-                <Switch
-                  isActive={!!permissions.discount}
-                  toggleSwitch={() =>
-                    setPermissions((p) => ({ ...p, discount: !p.discount }))
-                  }
-                />
-              </div>
-              <div style={styles.permissionRow}>
-                <span style={styles.permissionLabel}>Custom Payment</span>
-                <Switch
-                  isActive={!!permissions.customPayment}
-                  toggleSwitch={() =>
-                    setPermissions((p) => ({ ...p, customPayment: !p.customPayment }))
-                  }
-                />
-              </div>
-              <div style={styles.permissionRow}>
-                <span style={styles.permissionLabel}>Manage Orders</span>
-                <Switch
-                  isActive={!!permissions.manageOrders}
-                  toggleSwitch={() =>
-                    setPermissions((p) => ({ ...p, manageOrders: !p.manageOrders }))
-                  }
+          </div>
+
+          <div style={styles.fieldRowGroup}>
+            <div style={{ ...styles.fieldGroup, flex: 1 }}>
+              <span style={styles.fieldLabel}>Role</span>
+              <div style={styles.inputRow}>
+                <FiShield size={16} color="#94a3b8" />
+                <input
+                  style={styles.input}
+                  placeholder="e.g. Manager, Cashier"
+                  value={role}
+                  onChange={(e) => setrole(e.target.value)}
                 />
               </div>
             </div>
-            <div style={styles.bottomBtnsRow}>
-              <button
-                style={styles.cancelBtn}
-                onClick={() => setaddEmployeeModal(false)}
-              >
-                <span style={styles.cancelBtnTxt}>Cancel</span>
-              </button>
-              <button
-                style={styles.saveBtn}
-                onClick={AddEmployee}
-              >
-                <span style={styles.saveBtnTxt}>Save</span>
-              </button>
+            <div style={{ ...styles.fieldGroup, width: 140 }}>
+              <span style={styles.fieldLabel}>PIN</span>
+              <div style={styles.inputRow}>
+                <FiLock size={16} color="#94a3b8" />
+                <input
+                  style={styles.input}
+                  placeholder="4-digit PIN"
+                  value={pin}
+                  onChange={(e) => setpin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  maxLength={4}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Permissions */}
+          <div style={styles.divider} />
+          <div style={styles.permissionsSection}>
+            <span style={styles.sectionTitle}>Permissions</span>
+            <div style={styles.permissionsGrid}>
+              {permissionItems.map((item) => (
+                <div key={item.key} style={styles.permissionCard}>
+                  <div style={styles.permissionInfo}>
+                    <span style={styles.permissionLabel}>{item.label}</span>
+                    <span style={styles.permissionDesc}>{item.description}</span>
+                  </div>
+                  <Switch
+                    isActive={!!permissions[item.key]}
+                    toggleSwitch={() =>
+                      setPermissions((p) => ({ ...p, [item.key]: !p[item.key] }))
+                    }
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <div style={styles.footer}>
+          <button
+            style={styles.cancelBtn}
+            onClick={() => setaddEmployeeModal(false)}
+          >
+            <span style={styles.cancelBtnTxt}>Cancel</span>
+          </button>
+          <button style={styles.saveBtn} onClick={AddEmployee}>
+            <span style={styles.saveBtnTxt}>Add Employee</span>
+          </button>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
+  backdrop: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
+    width: "100%",
+    cursor: "default",
+  },
   container: {
-    borderRadius: 10,
+    width: 500,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    cursor: "default",
+  },
+  header: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    padding: "22px 24px 16px",
+    borderBottom: "1px solid #e2e8f0",
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+    display: "block",
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 2,
+    display: "block",
+  },
+  closeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: 609,
-    backgroundColor: "white",
-    padding: "30px 0",
+    cursor: "pointer",
+    padding: 0,
   },
-  innerContainer: {
-    width: 352,
+  form: {
+    padding: "20px 24px",
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    gap: 20,
+    gap: 16,
   },
-  addEmployeeHeaderLbl: {
-    fontWeight: "700",
-    color: "#121212",
-    fontSize: 17,
-  },
-  inputsGroup: {
-    width: 279,
-    height: 258,
+  fieldGroup: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "center",
+    gap: 6,
   },
-  nameInput: {
-    height: 77,
-    width: 278,
+  fieldRowGroup: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 12,
   },
-  roleInput: {
-    height: 77,
-    width: 278,
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#344054",
   },
-  pinInput: {
-    height: 77,
-    width: 278,
-  },
-  bottomBtnsRow: {
-    width: 352,
-    height: 47,
+  inputRow: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 10,
+    height: 44,
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "0 14px",
   },
-  cancelBtn: {
-    width: 170,
-    height: 47,
-    borderRadius: 20,
-    backgroundColor: "#eef2ff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+  input: {
+    flex: 1,
+    height: 42,
     border: "none",
-    cursor: "pointer",
+    outline: "none",
+    fontSize: 14,
+    color: "#0f172a",
+    backgroundColor: "transparent",
   },
-  cancelBtnTxt: {
-    fontWeight: "700",
-    color: "rgba(0,0,0,1)",
-    fontSize: 16,
-  },
-  saveBtn: {
-    width: 170,
-    height: 47,
-    borderRadius: 20,
-    backgroundColor: "#1c294e",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    cursor: "pointer",
-  },
-  saveBtnTxt: {
-    fontWeight: "700",
-    color: "rgba(255,255,255,1)",
-    fontSize: 16,
+  divider: {
+    height: 1,
+    backgroundColor: "#e2e8f0",
+    margin: "4px 0",
   },
   permissionsSection: {
-    width: 278,
     display: "flex",
     flexDirection: "column",
     gap: 10,
   },
-  permissionsHeader: {
+  sectionTitle: {
+    fontSize: 14,
     fontWeight: "700",
-    color: "#121212",
-    fontSize: 15,
+    color: "#0f172a",
   },
-  permissionRow: {
+  permissionsGrid: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  permissionCard: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    padding: "10px 14px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    border: "1px solid #f1f5f9",
+  },
+  permissionInfo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
   },
   permissionLabel: {
     fontSize: 14,
-    color: "#333",
+    fontWeight: "500",
+    color: "#0f172a",
+  },
+  permissionDesc: {
+    fontSize: 12,
+    color: "#94a3b8",
+  },
+  footer: {
+    display: "flex",
+    flexDirection: "row",
+    gap: 10,
+    padding: "16px 24px 20px",
+    borderTop: "1px solid #e2e8f0",
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  },
+  cancelBtnTxt: {
+    fontWeight: "600",
+    color: "#475569",
+    fontSize: 14,
+  },
+  saveBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: "#1D294E",
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+  },
+  saveBtnTxt: {
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: 14,
   },
 };
 

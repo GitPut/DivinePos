@@ -130,6 +130,28 @@ function OptionsItemExpanded({
         </div>
       </div>
 
+      {/* Page / Step grouping */}
+      <div style={styles.fieldRow}>
+        <div style={styles.fieldGroup}>
+          <span style={styles.fieldLabel}>Page / Step</span>
+          <input
+            style={styles.input}
+            onChange={(ev) => {
+              const val = ev.target.value;
+              sete((prevState) => ({ ...prevState, page: val || undefined }));
+              setnewProductOptions((prev) => {
+                const clone = structuredClone(prev);
+                clone[index].page = val || undefined;
+                return clone;
+              });
+            }}
+            value={e.page ?? ""}
+            placeholder='e.g. "Pizza 1", "Sides"'
+          />
+          <span style={styles.typeHintText}>Options with the same page show together as a wizard step</span>
+        </div>
+      </div>
+
       {/* Type description hint */}
       {e.optionType && OPTION_TYPE_DESCRIPTIONS[e.optionType] && (
         <div style={styles.typeHint}>
@@ -256,6 +278,7 @@ function OptionsItemExpanded({
           scrollToPositionIncluding={scrollToPositionIncluding}
           sizeLinkedLabels={sizeLinkedLabels}
           allOptions={newProductOptions}
+          optionType={item.optionType}
         />
       ))}
       <div style={styles.addBtnRow}>
