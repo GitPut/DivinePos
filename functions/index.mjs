@@ -48,6 +48,109 @@ function getTransporter() {
 // Backward compat — existing code references `transporter` directly
 const transporter = { sendMail: (...args) => getTransporter().sendMail(...args) };
 
+// ─── Error Alert: Email support when a system error is logged ───
+// Rate-limited: max 1 email per 5 minutes to avoid spam during error storms
+let lastErrorEmailSent = 0;
+const ERROR_EMAIL_COOLDOWN_MS = 5 * 60 * 1000;
+
+export const onSystemError = functions.firestore
+  .document("systemErrors/{errorId}")
+  .onCreate(async (snap, context) => {
+    const error = snap.data();
+    const now = Date.now();
+
+    // Only email for critical/high severity, or all if first error in window
+    const severity = error.severity || "medium";
+    if (severity !== "critical" && severity !== "high" && now - lastErrorEmailSent < ERROR_EMAIL_COOLDOWN_MS) {
+      return null;
+    }
+
+    // Rate limit emails
+    if (now - lastErrorEmailSent < ERROR_EMAIL_COOLDOWN_MS) {
+      return null;
+    }
+    lastErrorEmailSent = now;
+
+    const severityColors = {
+      critical: "#dc2626",
+      high: "#ea580c",
+      medium: "#d97706",
+      low: "#6b7280",
+    };
+    const severityColor = severityColors[severity] || "#6b7280";
+
+    const mailOptions = {
+      from: "support@divinepos.com",
+      to: "support@divinepos.com",
+      subject: `[${severity.toUpperCase()}] System Error — Divine POS`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; padding: 24px;">
+          <div style="background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="background: ${severityColor}; padding: 16px 24px;">
+              <h2 style="margin: 0; color: #fff; font-size: 18px;">System Error Alert</h2>
+            </div>
+            <div style="padding: 24px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 12px; font-weight: 600; color: #374151; width: 120px; vertical-align: top;">Severity</td>
+                  <td style="padding: 8px 12px;">
+                    <span style="background: ${severityColor}; color: #fff; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${severity}</span>
+                  </td>
+                </tr>
+                <tr style="background: #f9fafb;">
+                  <td style="padding: 8px 12px; font-weight: 600; color: #374151; vertical-align: top;">Source</td>
+                  <td style="padding: 8px 12px; color: #111827;">${error.source || "unknown"}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 12px; font-weight: 600; color: #374151; vertical-align: top;">Message</td>
+                  <td style="padding: 8px 12px; color: #111827;">${(error.message || "Unknown error").slice(0, 500)}</td>
+                </tr>
+                <tr style="background: #f9fafb;">
+                  <td style="padding: 8px 12px; font-weight: 600; color: #374151; vertical-align: top;">Route</td>
+                  <td style="padding: 8px 12px; color: #111827;">${error.route || "N/A"}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 12px; font-weight: 600; color: #374151; vertical-align: top;">User</td>
+                  <td style="padding: 8px 12px; color: #111827;">${error.email || error.uid || "Not logged in"}</td>
+                </tr>
+                <tr style="background: #f9fafb;">
+                  <td style="padding: 8px 12px; font-weight: 600; color: #374151; vertical-align: top;">App Version</td>
+                  <td style="padding: 8px 12px; color: #111827;">${error.appVersion || "N/A"}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 12px; font-weight: 600; color: #374151; vertical-align: top;">Time</td>
+                  <td style="padding: 8px 12px; color: #111827;">${new Date().toLocaleString("en-CA", { timeZone: "America/Toronto" })}</td>
+                </tr>
+                <tr style="background: #f9fafb;">
+                  <td style="padding: 8px 12px; font-weight: 600; color: #374151; vertical-align: top;">Error ID</td>
+                  <td style="padding: 8px 12px; color: #6b7280; font-family: monospace; font-size: 12px;">${context.params.errorId}</td>
+                </tr>
+              </table>
+              ${error.stack ? `
+              <div style="margin-top: 16px;">
+                <div style="font-weight: 600; color: #374151; font-size: 13px; margin-bottom: 8px;">Stack Trace</div>
+                <pre style="background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; margin: 0;">${(error.stack || "").slice(0, 1500)}</pre>
+              </div>
+              ` : ""}
+            </div>
+            <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
+              Divine POS Error Monitor — <a href="https://console.firebase.google.com/project/posmate-5fc0a/firestore/data/~2FsystemErrors~2F${context.params.errorId}" style="color: #2563eb;">View in Firebase Console</a>
+            </div>
+          </div>
+        </div>
+      `,
+    };
+
+    try {
+      await getTransporter().sendMail(mailOptions);
+      console.log(`Error alert email sent for ${context.params.errorId} (${severity})`);
+    } catch (emailErr) {
+      console.error("Failed to send error alert email:", emailErr);
+    }
+
+    return null;
+  });
+
 // ─── Auth Trigger: Log new user signups ───
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   try {
