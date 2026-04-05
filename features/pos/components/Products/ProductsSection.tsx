@@ -1,7 +1,9 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import ItemContainer from "../Cart/ItemContainer";
 import useWindowSize from "shared/hooks/useWindowSize";
 import { UserStoreStateProps } from "types";
+import { isProductAvailableNow } from "utils/productAvailability";
+import useInterval from "shared/hooks/useInterval";
 
 interface ProductsSectionProps {
   catalog: UserStoreStateProps;
@@ -11,13 +13,17 @@ interface ProductsSectionProps {
 
 const ProductsSection = ({ catalog, searchQuery = "", section = "__all__" }: ProductsSectionProps) => {
   const { width } = useWindowSize();
+  const [tick, setTick] = useState(0);
+  // Re-check availability every 60s so time-restricted products appear/disappear
+  useInterval(() => setTick((t) => t + 1), 60000);
 
   const filteredProducts = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     const filtered = catalog.products.filter((product) => {
       const matchesCategory = section === "__all__" || product.category === section;
       const matchesSearch = !query || product.name.toLowerCase().includes(query);
-      return matchesCategory && matchesSearch;
+      const matchesTime = isProductAvailableNow(product);
+      return matchesCategory && matchesSearch && matchesTime;
     });
     // In "All" view, sort by category order first, then rank within category
     if (section === "__all__" && !query) {
@@ -32,7 +38,7 @@ const ProductsSection = ({ catalog, searchQuery = "", section = "__all__" }: Pro
       });
     }
     return filtered;
-  }, [catalog.products, catalog.categories, section, searchQuery]);
+  }, [catalog.products, catalog.categories, section, searchQuery, tick]);
 
   const styles = {
     scrollAreaProducts: {

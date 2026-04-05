@@ -49,6 +49,8 @@ export type ProductProp = {
   lowStockThreshold?: number;
   costPrice?: string;
   recipe?: RecipeItem[];
+  availableAfter?: string;
+  availableBefore?: string;
 };
 
 export type Option = {
@@ -69,6 +71,8 @@ export type Option = {
   allowHalfAndHalf?: boolean;
   templateId?: string;
   page?: string;
+  sharedIncludedGroup?: string;
+  conditionLogic?: "and" | "or";
 };
 
 export type OptionTemplate = {
@@ -89,6 +93,7 @@ export type OptionsList = {
   halfSide?: "left" | "right" | "whole";
   selectedCaseList?: SelectedCaseListItem[];
   defaultSelectedTimes?: string;
+  conditionLogic?: "and" | "or";
 };
 
 export type CartItemProp = {

@@ -16,6 +16,7 @@ interface IncludedSelectionsGroupProps {
   myObjProfile: ProductProp;
   setmyObjProfile: (val: ProductProp) => void;
   optionsSelectedLabel: string;
+  effectiveIncludedCount?: number;
 }
 
 function IncludedSelectionsGroup({
@@ -25,6 +26,7 @@ function IncludedSelectionsGroup({
   setmyObjProfile,
   index,
   e,
+  effectiveIncludedCount,
 }: IncludedSelectionsGroupProps) {
   const options = e.optionsList;
 
@@ -82,7 +84,7 @@ function IncludedSelectionsGroup({
   );
 
   const totalSelected = getTotalSelected();
-  const includedCount = parseFloat(e.includedSelections ?? "0");
+  const includedCount = effectiveIncludedCount ?? parseFloat(e.includedSelections ?? "0");
   const hasExceededIncluded = totalSelected > includedCount;
 
   return (
@@ -123,6 +125,9 @@ function IncludedSelectionsGroup({
                 >
                   {option.label}
                 </span>
+                {parseFloat(option.countsAs ?? "1") > 1 && (
+                  <span style={styles.countsAsBadge}>Counts as {option.countsAs}</span>
+                )}
                 {(() => {
                   // Only show price tag when selections have exceeded the included count
                   if (!hasExceededIncluded) return null;
@@ -241,6 +246,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     color: "#1a1a1a",
     fontWeight: "400",
+  },
+  countsAsBadge: {
+    fontSize: 10,
+    color: "#64748b",
+    backgroundColor: "#f1f5f9",
+    padding: "2px 6px",
+    borderRadius: 4,
+    fontWeight: "500",
+    whiteSpace: "nowrap",
   },
   priceTag: {
     fontSize: 11,

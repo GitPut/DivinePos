@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { FiPlus, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import OptionSelectionItem from "./OptionSelectionItem";
 import OptionConditionItem from "./OptionConditionItem";
@@ -46,7 +46,15 @@ function OptionsItemExpanded({
   scrollToPositionIncluding,
 }: OptionsItemExpandedProps) {
   const [testMap, settestMap] = useState(structuredClone(item.optionsList));
-  const [highlightedOptionID, sethighlightedOptionID] = useState<string | null>(null);
+  const [highlightedOptionID, sethighlightedOptionIDRaw] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sethighlightedOptionID = useCallback((id: string | null) => {
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    sethighlightedOptionIDRaw(id);
+    if (id) {
+      highlightTimer.current = setTimeout(() => sethighlightedOptionIDRaw(null), 1500);
+    }
+  }, []);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const advancedRef = useRef<HTMLDivElement>(null);
   const caseList = e.selectedCaseList ?? [];
@@ -396,47 +404,81 @@ function OptionsItemExpanded({
 
               {/* Included Selections fields */}
               {e.optionType === "Included Selections" && (
-                <div style={styles.fieldRow}>
-                  <div style={styles.fieldGroup}>
-                    <span style={styles.fieldLabel}>Free Included <span style={styles.fieldHint}>How many are free</span></span>
-                    <input
-                      style={styles.input}
-                      onChange={(ev) => {
-                        const val = ev.target.value;
-                        sete((prevState) => ({ ...prevState, includedSelections: val }));
-                        setnewProductOptions((prev) => { const clone = structuredClone(prev); clone[index].includedSelections = val; return clone; });
-                      }}
-                      value={e.includedSelections ?? ""}
-                      placeholder="e.g. 3"
-                    />
+                <>
+                  <div style={styles.fieldRow}>
+                    <div style={styles.fieldGroup}>
+                      <span style={styles.fieldLabel}>Free Included <span style={styles.fieldHint}>How many are free</span></span>
+                      <input
+                        style={styles.input}
+                        onChange={(ev) => {
+                          const val = ev.target.value;
+                          sete((prevState) => ({ ...prevState, includedSelections: val }));
+                          setnewProductOptions((prev) => { const clone = structuredClone(prev); clone[index].includedSelections = val; return clone; });
+                        }}
+                        value={e.includedSelections ?? ""}
+                        placeholder="e.g. 3"
+                      />
+                    </div>
+                    <div style={styles.fieldGroup}>
+                      <span style={styles.fieldLabel}>Extra Price <span style={styles.fieldHint}>Cost per extra choice</span></span>
+                      <input
+                        style={styles.input}
+                        onChange={(ev) => {
+                          const val = ev.target.value;
+                          sete((prevState) => ({ ...prevState, extraSelectionPrice: val }));
+                          setnewProductOptions((prev) => { const clone = structuredClone(prev); clone[index].extraSelectionPrice = val; return clone; });
+                        }}
+                        value={e.extraSelectionPrice ?? ""}
+                        placeholder="e.g. 1.50"
+                      />
+                    </div>
+                    <div style={styles.fieldGroup}>
+                      <span style={styles.fieldLabel}>Display Style</span>
+                      <DropdownStringOptions
+                        placeholder="Choose style"
+                        value={e.includedDisplayStyle ?? null}
+                        setValue={(val) => {
+                          sete((prevState) => ({ ...prevState, includedDisplayStyle: val ?? undefined }));
+                          setnewProductOptions((prev) => { const clone = structuredClone(prev); clone[index].includedDisplayStyle = val ?? undefined; return clone; });
+                        }}
+                        options={["Quantity Dropdown", "Table View"]}
+                        scrollY={scrollY}
+                      />
+                    </div>
                   </div>
                   <div style={styles.fieldGroup}>
-                    <span style={styles.fieldLabel}>Extra Price <span style={styles.fieldHint}>Cost per extra choice</span></span>
-                    <input
-                      style={styles.input}
-                      onChange={(ev) => {
-                        const val = ev.target.value;
-                        sete((prevState) => ({ ...prevState, extraSelectionPrice: val }));
-                        setnewProductOptions((prev) => { const clone = structuredClone(prev); clone[index].extraSelectionPrice = val; return clone; });
-                      }}
-                      value={e.extraSelectionPrice ?? ""}
-                      placeholder="e.g. 1.50"
-                    />
-                  </div>
-                  <div style={styles.fieldGroup}>
-                    <span style={styles.fieldLabel}>Display Style</span>
+                    <span style={styles.fieldLabel}>Shared Included Pool <span style={styles.fieldHint}>Link options that share the same free included count</span></span>
                     <DropdownStringOptions
-                      placeholder="Choose style"
-                      value={e.includedDisplayStyle ?? null}
+                      placeholder="None (independent)"
+                      value={e.sharedIncludedGroup ?? null}
                       setValue={(val) => {
-                        sete((prevState) => ({ ...prevState, includedDisplayStyle: val ?? undefined }));
-                        setnewProductOptions((prev) => { const clone = structuredClone(prev); clone[index].includedDisplayStyle = val ?? undefined; return clone; });
+                        sete((prevState) => ({ ...prevState, sharedIncludedGroup: val ?? undefined }));
+                        setnewProductOptions((prev) => { const clone = structuredClone(prev); clone[index].sharedIncludedGroup = val ?? undefined; return clone; });
                       }}
-                      options={["Quantity Dropdown", "Table View"]}
+                      options={(() => {
+                        // Collect existing group names from other Included Selections options
+                        const groups = new Set<string>();
+                        newProductOptions.forEach((op, i) => {
+                          if (i !== index && op.optionType === "Included Selections" && op.sharedIncludedGroup) {
+                            groups.add(op.sharedIncludedGroup);
+                          }
+                        });
+                        return [...groups];
+                      })()}
                       scrollY={scrollY}
+                      createPlaceholder="Group name"
+                      onCreateNew={(name) => {
+                        sete((prevState) => ({ ...prevState, sharedIncludedGroup: name }));
+                        setnewProductOptions((prev) => { const clone = structuredClone(prev); clone[index].sharedIncludedGroup = name; return clone; });
+                      }}
                     />
+                    {e.sharedIncludedGroup && (
+                      <span style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                        Pool: "{e.sharedIncludedGroup}" — {newProductOptions.filter((op, i) => i !== index && op.sharedIncludedGroup === e.sharedIncludedGroup).length} other option{newProductOptions.filter((op, i) => i !== index && op.sharedIncludedGroup === e.sharedIncludedGroup).length === 1 ? "" : "s"} linked
+                      </span>
+                    )}
                   </div>
-                </div>
+                </>
               )}
 
               {/* Link Pricing To */}
@@ -462,23 +504,48 @@ function OptionsItemExpanded({
                   {caseList.length > 0 && (
                     <div style={styles.sectionDivider}>
                       <span style={styles.sectionTitle}>Visibility Rules</span>
-                      <span style={styles.sectionHint}>Only show this option when another option has a specific value</span>
+                      <span style={styles.sectionHint}>Same option = OR (any match), different options = AND (all must match)</span>
                     </div>
                   )}
                   {caseList.length > 0 &&
-                    caseList.map((ifStatement, indexOfIf) => (
-                      <OptionConditionItem
-                        key={indexOfIf}
-                        ifStatement={ifStatement}
-                        indexOfIf={indexOfIf}
-                        scrollY={scrollY}
-                        index={index}
-                        setnewProductOptions={setnewProductOptions}
-                        sete={sete}
-                        ifOptionOptions={optionLbls}
-                        newProduct={newProduct}
-                      />
-                    ))}
+                    caseList.map((ifStatement, indexOfIf) => {
+                      // Determine connector label between this rule and the next
+                      let connector: string | null = null;
+                      if (indexOfIf < caseList.length - 1) {
+                        const nextRule = caseList[indexOfIf + 1];
+                        const sameKey = ifStatement.selectedCaseKey && nextRule.selectedCaseKey
+                          && ifStatement.selectedCaseKey === nextRule.selectedCaseKey;
+                        connector = sameKey ? "OR" : "AND";
+                      }
+                      return (
+                        <div key={indexOfIf}>
+                          <OptionConditionItem
+                            ifStatement={ifStatement}
+                            indexOfIf={indexOfIf}
+                            scrollY={scrollY}
+                            index={index}
+                            setnewProductOptions={setnewProductOptions}
+                            sete={sete}
+                            ifOptionOptions={optionLbls}
+                            newProduct={newProduct}
+                          />
+                          {connector && (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "4px 0" }}>
+                              <span style={{
+                                fontSize: 11,
+                                fontWeight: "700",
+                                color: connector === "OR" ? "#2563eb" : "#d97706",
+                                backgroundColor: connector === "OR" ? "#eff6ff" : "#fef3c7",
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                              }}>
+                                {connector}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   <div style={styles.addBtnRow}>
                     <button
                       style={styles.addSelectionBtn}

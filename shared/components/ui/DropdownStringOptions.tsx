@@ -8,12 +8,13 @@ interface DropdownStringOptionsProps {
   options: string[];
   scrollY: number;
   onCreateNew?: (name: string) => void;
+  createPlaceholder?: string;
 }
 
 function DropdownStringOptions(
   props: DropdownStringOptionsProps
 ): JSX.Element {
-  const { placeholder, value, setValue, options, scrollY, onCreateNew } = props;
+  const { placeholder, value, setValue, options, scrollY, onCreateNew, createPlaceholder } = props;
   const dropdownRef = useRef<HTMLButtonElement>(null);
   const [openDropdown, setopenDropdown] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -140,7 +141,7 @@ function DropdownStringOptions(
                     <input
                       autoFocus
                       style={styles.createInput}
-                      placeholder="Category name"
+                      placeholder={createPlaceholder ?? "Category name"}
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       onKeyDown={(e) => {

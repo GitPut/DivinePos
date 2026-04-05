@@ -255,7 +255,7 @@ function ProductList() {
               ...styles.categoryPill,
               ...(selectedCategory === null ? styles.categoryPillActive : {}),
             }}
-            onClick={() => setSelectedCategory(null)}
+            onClick={(ev) => { setSelectedCategory(null); ev.currentTarget.blur(); }}
           >
             <span
               style={{
@@ -273,11 +273,12 @@ function ProductList() {
                 ...styles.categoryPill,
                 ...(selectedCategory === category ? styles.categoryPillActive : {}),
               }}
-              onClick={() =>
+              onClick={(ev) => {
                 setSelectedCategory((prev) =>
                   prev === category ? null : category
-                )
-              }
+                );
+                ev.currentTarget.blur();
+              }}
             >
               <span
                 style={{

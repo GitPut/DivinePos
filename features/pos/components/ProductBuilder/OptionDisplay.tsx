@@ -7,6 +7,7 @@ import IncludedSelectionsGroup from "./IncludedSelectionsGroup";
 import { Option, OptionsList, ProductProp } from "types";
 import { filterVisibleChoices } from "utils/filterVisibleChoices";
 import { resolveOptionPrice } from "utils/resolveOptionPrice";
+import { getSharedIncludedState } from "utils/sharedIncludedSelections";
 
 interface OptionDisplayProps {
   e: Option;
@@ -32,18 +33,26 @@ const OptionDisplay = ({
   isOnlineOrder,
 }: OptionDisplayProps) => {
   const checkCases = () => {
-    if (!e.selectedCaseList) return true;
-    if (e.selectedCaseList?.length > 0) {
-      return e.selectedCaseList.every((ifStatement) => {
-        const option = myObjProfile.options
-          .find((op) => op.label === ifStatement.selectedCaseKey)
-          ?.optionsList.find(
-            (opL) => opL.label === ifStatement.selectedCaseValue
-          );
-        return option?.selected;
-      });
+    if (!e.selectedCaseList || e.selectedCaseList.length === 0) return true;
+    // Group rules by the option they reference (selectedCaseKey).
+    // Within the same option → OR (e.g. Size=Large OR Size=X-Large)
+    // Between different options → AND (e.g. Size group AND Crust group)
+    const groups = new Map<string, { selectedCaseKey: string | null; selectedCaseValue: string | null }[]>();
+    for (const rule of e.selectedCaseList) {
+      const key = rule.selectedCaseKey ?? "";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(rule);
     }
-    return true;
+    const checkRule = (rule: { selectedCaseKey: string | null; selectedCaseValue: string | null }) => {
+      const option = myObjProfile.options
+        .find((op) => op.label === rule.selectedCaseKey)
+        ?.optionsList.find(
+          (opL) => opL.label === rule.selectedCaseValue
+        );
+      return option?.selected ?? false;
+    };
+    // AND between groups, OR within each group
+    return [...groups.values()].every((group) => group.some(checkRule));
   };
 
   const [optionVal, setOptionVal] = useState<OptionsList | null>(null);
@@ -255,19 +264,27 @@ const OptionDisplay = ({
       case "Included Selections": {
         const displayStyle = filteredOption.includedDisplayStyle ?? "Quantity Dropdown";
 
-        const includedCount = parseFloat(filteredOption.includedSelections ?? "0");
-        const flatExtraPrice = parseFloat(filteredOption.extraSelectionPrice ?? "0");
-        let totalSelected = 0;
+        // Check if this option is part of a shared group
+        const shared = getSharedIncludedState(myObjProfile.options, index);
+        const effectiveIncludedCount = shared ? shared.sharedIncludedCount : parseFloat(filteredOption.includedSelections ?? "0");
+        const effectiveFreeRemaining = shared ? shared.freeRemainingForCurrent : effectiveIncludedCount;
+
+        const flatExtraPrice = parseFloat(filteredOption.extraSelectionPrice ?? "0") || (shared?.sharedExtraPrice ?? 0);
+        let totalSelectedThisOption = 0;
         filteredOption.optionsList.forEach((item) => {
           const countsAs = parseFloat(item.countsAs ?? "1");
-          totalSelected += parseFloat(item.selectedTimes ?? "0") * countsAs;
+          totalSelectedThisOption += parseFloat(item.selectedTimes ?? "0") * countsAs;
         });
-        const extraSelections = Math.max(0, totalSelected - includedCount);
 
-        // Calculate extra cost: try size-linked price per item, fall back to flat extra price
-        let extraCost = 0;
-        if (extraSelections > 0) {
-          let freeRemaining = includedCount;
+        // For display summary: show shared pool state if in a group
+        const displayTotalUsed = shared ? shared.sharedTotalUsed : totalSelectedThisOption;
+        const displayIncluded = effectiveIncludedCount;
+        const extraSelections = Math.max(0, displayTotalUsed - displayIncluded);
+
+        // Calculate extra cost for THIS option only (for the per-option "+extra" display)
+        let extraCostThisOption = 0;
+        if (totalSelectedThisOption > effectiveFreeRemaining) {
+          let freeRemaining = effectiveFreeRemaining;
           filteredOption.optionsList
             .filter((item) => parseFloat(item.selectedTimes ?? "0") > 0)
             .forEach((item) => {
@@ -282,36 +299,40 @@ const OptionDisplay = ({
                   : 0;
                 const itemPrice = parseFloat(item.priceIncrease ?? "0");
                 const perItemPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : flatExtraPrice;
-                extraCost += extraFromThis * perItemPrice;
+                extraCostThisOption += extraFromThis * perItemPrice;
               }
             });
         }
 
+        // Only show shared summary on the FIRST option in the group
         return (
           <div style={{ alignSelf: "stretch" }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 4,
-            }}>
-              <span style={{
-                fontSize: 12,
-                color: "#64748b",
-                fontWeight: "500",
+            {/* Show shared pool summary on every option in the group */}
+            {(
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 4,
               }}>
-                {Math.min(totalSelected, includedCount)} of {includedCount} included
-              </span>
-              {extraSelections > 0 && (
                 <span style={{
                   fontSize: 12,
-                  color: "#ef4444",
-                  fontWeight: "600",
+                  color: "#64748b",
+                  fontWeight: "500",
                 }}>
-                  +{extraSelections} extra = +${extraCost.toFixed(2)}
+                  {Math.min(displayTotalUsed, displayIncluded)} of {displayIncluded} included{shared ? " (shared)" : ""}
                 </span>
-              )}
-            </div>
+                {extraSelections > 0 && (
+                  <span style={{
+                    fontSize: 12,
+                    color: "#ef4444",
+                    fontWeight: "600",
+                  }}>
+                    +{extraSelections} extra
+                  </span>
+                )}
+              </div>
+            )}
             {displayStyle === "Table View" ? (
               <TableOption
                 e={filteredOption}
@@ -322,7 +343,7 @@ const OptionDisplay = ({
                 isRequired={filteredOption.isRequired ? true : false}
                 optionsSelectedLabel={optionsSelectedLabel}
                 isIncludedSelections={true}
-                includedCount={includedCount}
+                includedCount={effectiveFreeRemaining}
               />
             ) : (
               <IncludedSelectionsGroup
@@ -337,6 +358,7 @@ const OptionDisplay = ({
                 isRequired={filteredOption.isRequired ? true : false}
                 optionsSelectedLabel={optionsSelectedLabel}
                 scrollY={scrollY}
+                effectiveIncludedCount={effectiveFreeRemaining}
               />
             )}
           </div>

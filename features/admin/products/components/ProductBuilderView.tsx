@@ -18,16 +18,24 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
 
   useEffect(() => {
     const clone = structuredClone(product);
-    // Auto-select first choice for required single-select options
+    // Auto-select first choice for single-select options (Row/Dropdown)
+    // so the preview reflects the starting price even before interaction
     clone.options.forEach((op: any) => {
       if (
-        op.isRequired &&
         (op.optionType === "Row" || op.optionType === "Dropdown") &&
         op.optionsList.length > 0 &&
         !op.optionsList.some((item: any) => item.selected === true)
       ) {
         op.optionsList[0].selected = true;
       }
+      // Apply default selections for Included Selections / Table View / Quantity Dropdown
+      op.optionsList.forEach((item: any) => {
+        if (item.defaultSelectedTimes && parseFloat(item.defaultSelectedTimes) > 0) {
+          if (!item.selectedTimes || parseFloat(item.selectedTimes) === 0) {
+            item.selectedTimes = item.defaultSelectedTimes;
+          }
+        }
+      });
     });
     setMyObjProfile(clone);
   }, [product]);
@@ -37,7 +45,7 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
   }, [myObjProfile]);
 
   const getPrice = () => {
-    let total = parseFloat(myObjProfile.price);
+    let total = parseFloat(myObjProfile.price) || 0;
     myObjProfile.options.forEach((op) => {
       if (op.optionType === "Included Selections") {
         const includedCount = parseFloat(op.includedSelections ?? "0");
@@ -141,7 +149,7 @@ function ProductBuilderView({ product, imageUrl }: ProductBuilderViewProps) {
             <div style={styles.totalRow}>
               <span style={styles.totalLabel}>Total</span>
               <span style={styles.totalAmount}>
-                ${parseFloat(total).toFixed(2)}
+                ${(parseFloat(total) || 0).toFixed(2)}
               </span>
             </div>
           </div>

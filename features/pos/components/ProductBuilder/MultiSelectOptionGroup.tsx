@@ -167,10 +167,13 @@ function MultiSelectOptionGroup({
                 >
                   {option.label}
                 </span>
+                {parseFloat(option.countsAs ?? "1") > 1 && (
+                  <span style={styles.countsAsBadge}>Counts as {option.countsAs}</span>
+                )}
                 {(() => {
                   const displayPrice = resolveOptionPrice(option, e, myObjProfile.options);
                   return parseFloat(displayPrice) > 0 ? (
-                    <span style={styles.priceTag}>+${displayPrice}</span>
+                    <span style={styles.priceTag}>+${parseFloat(displayPrice).toFixed(2)}</span>
                   ) : null;
                 })()}
               </div>
@@ -314,6 +317,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     color: "#1a1a1a",
     fontWeight: "400",
+  },
+  countsAsBadge: {
+    fontSize: 10,
+    color: "#64748b",
+    backgroundColor: "#f1f5f9",
+    padding: "2px 6px",
+    borderRadius: 4,
+    fontWeight: "500",
+    whiteSpace: "nowrap",
   },
   priceTag: {
     fontSize: 11,

@@ -254,9 +254,24 @@ const AppRouter = () => {
         import("./AuthRoute");
         import("features/pos/PosScreen");
 
-        // Fetch user doc AND all subcollections in parallel (1 round-trip)
-        const [doc, productDocs, employeeDocs, subDocs, customerDocs, deviceDocs, wooDocs, ingredientDocs, optionTemplateDocs, loyaltyConfigDoc] = await Promise.all([
-          userRef.get(),
+        // After signup, the auth state fires before the user doc is written.
+        // Wait for the doc to exist before loading all subcollections.
+        let doc = await userRef.get();
+        if (!doc.exists) {
+          // Retry up to 5 times with 1s delay — covers the signup race condition
+          for (let attempt = 0; attempt < 5 && !doc.exists; attempt++) {
+            await new Promise((r) => setTimeout(r, 1000));
+            doc = await userRef.get();
+          }
+          if (!doc.exists) {
+            console.error("User document not found after retries");
+            setloading(false);
+            return;
+          }
+        }
+
+        // Fetch all subcollections in parallel (1 round-trip)
+        const [productDocs, employeeDocs, subDocs, customerDocs, deviceDocs, wooDocs, ingredientDocs, optionTemplateDocs, loyaltyConfigDoc] = await Promise.all([
           userRef.collection("products").get().catch(() => null),
           userRef.collection("employees").get().catch(() => null),
           userRef.collection("subscriptions").get().catch(() => null),

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "services/firebase/config";
 import { useHistory } from "react-router-dom";
+import { isProductAvailableNow } from "utils/productAvailability";
 import OnlineOrderHome from "./pages/StoreFront";
 import OrderCartMain from "./pages/Order";
 import OnlineOrderHomeCompleted from "./pages/Completed";
@@ -222,6 +223,7 @@ const OrderPage = () => {
               const grouped: ProductProp[] = [];
               products.forEach((product, index) => {
                 if (product.dontDisplayOnOnlineStore) return;
+                if (!isProductAvailableNow(product)) return;
                 let lastIndex = -1;
                 for (let i = grouped.length - 1; i >= 0; i--) {
                   if (grouped[i].category === product.category) { lastIndex = i; break; }
@@ -310,6 +312,7 @@ const OrderPage = () => {
             const grouped: ProductProp[] = [];
             products.forEach((product, index) => {
               if (product.dontDisplayOnOnlineStore) return;
+              if (!isProductAvailableNow(product)) return;
               let lastIndex = -1;
               for (let i = grouped.length - 1; i >= 0; i--) {
                 if (grouped[i].category === product.category) { lastIndex = i; break; }

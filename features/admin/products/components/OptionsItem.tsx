@@ -101,7 +101,7 @@ function OptionsItem({
             ? { borderColor: "#1D294E", boxShadow: "0 0 0 1px #1D294E" }
             : {}),
           ...(isDragging ? { opacity: 0.4 } : {}),
-          ...(isDragOver ? { borderColor: "#1D294E", borderStyle: "dashed" } : {}),
+          ...(isDragOver ? { borderColor: "#1D294E", borderStyle: "dashed", boxShadow: "none" } : {}),
         }}
         onDragOver={(ev) => {
           ev.preventDefault();

@@ -14,6 +14,7 @@ import OptionDisplay from "./OptionDisplay";
 import { ProductProp } from "types";
 import useWindowSize from "shared/hooks/useWindowSize";
 import { resolveOptionPrice } from "utils/resolveOptionPrice";
+import { getSharedIncludedState } from "utils/sharedIncludedSelections";
 import { FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 function ProductBuilderModal() {
@@ -74,7 +75,6 @@ function ProductBuilderModal() {
       const clone = structuredClone(product);
       clone.options.forEach((op) => {
         if (
-          op.isRequired &&
           (op.optionType === "Row" || op.optionType === "Dropdown") &&
           op.optionsList.length > 0 &&
           !op.optionsList.some((item) => item.selected === true)
@@ -101,8 +101,47 @@ function ProductBuilderModal() {
 
   const price = useMemo(() => {
     let t = parseFloat(myObjProfile.price);
-    myObjProfile.options.forEach((op) => {
+    const processedSharedGroups = new Set<string>();
+    myObjProfile.options.forEach((op, opIdx) => {
       if (op.optionType === "Included Selections") {
+        // For shared groups, only process the entire group once (on the first option)
+        if (op.sharedIncludedGroup) {
+          if (processedSharedGroups.has(op.sharedIncludedGroup)) return;
+          processedSharedGroups.add(op.sharedIncludedGroup);
+
+          // Get shared pool info from the first option in the group
+          const shared = getSharedIncludedState(myObjProfile.options, opIdx);
+          if (!shared) return;
+          const sharedIncludedCount = shared.sharedIncludedCount;
+
+          // Iterate ALL items across ALL options in this shared group
+          let freeRemaining = sharedIncludedCount;
+          for (let i = 0; i < myObjProfile.options.length; i++) {
+            const groupOp = myObjProfile.options[i];
+            if (groupOp.sharedIncludedGroup !== op.sharedIncludedGroup || groupOp.optionType !== "Included Selections") continue;
+            const flatExtraPrice = parseFloat(groupOp.extraSelectionPrice ?? "0") || shared.sharedExtraPrice;
+            groupOp.optionsList
+              .filter((item) => parseFloat(item.selectedTimes ?? "0") > 0)
+              .forEach((item) => {
+                const countsAs = parseFloat(item.countsAs ?? "1");
+                const qty = parseFloat(item.selectedTimes ?? "0") * countsAs;
+                const freeFromThis = Math.min(qty, freeRemaining);
+                const extraFromThis = qty - freeFromThis;
+                freeRemaining -= freeFromThis;
+                if (extraFromThis > 0) {
+                  const resolved = groupOp.sizeLinkedOptionLabel
+                    ? parseFloat(resolveOptionPrice(item, groupOp, myObjProfile.options))
+                    : 0;
+                  const itemPrice = parseFloat(item.priceIncrease ?? "0");
+                  const perItemPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : flatExtraPrice;
+                  t += extraFromThis * perItemPrice;
+                }
+              });
+          }
+          return;
+        }
+
+        // Non-shared: original logic
         const includedCount = parseFloat(op.includedSelections ?? "0");
         const flatExtraPrice = parseFloat(op.extraSelectionPrice ?? "0");
 
@@ -280,8 +319,49 @@ function ProductBuilderModal() {
 
   const extrasSummary = useMemo(() => {
     const extras: string[] = [];
-    myObjProfile.options.forEach((op) => {
+    const processedSharedGroups = new Set<string>();
+    myObjProfile.options.forEach((op, opIdx) => {
       if (op.optionType === "Included Selections") {
+        if (op.sharedIncludedGroup) {
+          if (processedSharedGroups.has(op.sharedIncludedGroup)) return;
+          processedSharedGroups.add(op.sharedIncludedGroup);
+
+          const shared = getSharedIncludedState(myObjProfile.options, opIdx);
+          if (!shared) return;
+          const extraSelections = Math.max(0, shared.sharedTotalUsed - shared.sharedIncludedCount);
+          if (extraSelections > 0) {
+            // Recalculate cost across the group
+            let extraCost = 0;
+            let freeRemaining = shared.sharedIncludedCount;
+            for (let i = 0; i < myObjProfile.options.length; i++) {
+              const groupOp = myObjProfile.options[i];
+              if (groupOp.sharedIncludedGroup !== op.sharedIncludedGroup || groupOp.optionType !== "Included Selections") continue;
+              const flatExtraPrice = parseFloat(groupOp.extraSelectionPrice ?? "0") || shared.sharedExtraPrice;
+              groupOp.optionsList.forEach((item) => {
+                const countsAs = parseFloat(item.countsAs ?? "1");
+                const qty = parseFloat(item.selectedTimes ?? "0") * countsAs;
+                if (qty > 0) {
+                  const freeFromThis = Math.min(qty, freeRemaining);
+                  const extraFromThis = qty - freeFromThis;
+                  freeRemaining -= freeFromThis;
+                  if (extraFromThis > 0) {
+                    const resolved = groupOp.sizeLinkedOptionLabel
+                      ? parseFloat(resolveOptionPrice(item, groupOp, myObjProfile.options))
+                      : 0;
+                    const itemPrice = parseFloat(item.priceIncrease ?? "0");
+                    const perItemPrice = resolved > 0 ? resolved : itemPrice > 0 ? itemPrice : flatExtraPrice;
+                    extraCost += extraFromThis * perItemPrice;
+                  }
+                }
+              });
+            }
+            extras.push(
+              `Includes ${extraSelections} extra toppings (+$${extraCost.toFixed(2)})`
+            );
+          }
+          return;
+        }
+
         const includedCount = parseFloat(op.includedSelections ?? "0");
         const flatExtraPrice = parseFloat(op.extraSelectionPrice ?? "0");
         let totalSelected = 0;

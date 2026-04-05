@@ -5,7 +5,7 @@ import React, {
   useState,
 } from "react";
 import { IoCopy } from "react-icons/io5";
-import { FiUpload, FiX, FiPlus, FiClipboard, FiEye, FiEyeOff, FiLayers, FiCode } from "react-icons/fi";
+import { FiUpload, FiX, FiPlus, FiClipboard, FiEye, FiEyeOff, FiLayers, FiCode, FiClock } from "react-icons/fi";
 import OptionsItem from "../components/OptionsItem";
 import {
   onlineStoreState,
@@ -90,6 +90,7 @@ function AddProductModal({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragHandledRef = useRef(false);
+  const [dragKey, setDragKey] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState("");
@@ -199,16 +200,12 @@ function AddProductModal({
       alertP.error("Please enter a product name");
       return;
     }
-    if (!newProduct.price) {
-      alertP.error("Please enter a price");
-      return;
-    }
-
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
     const cleanedOptions = cleanOptions(newProductOptions);
-    const productToSave: ProductProp = { ...newProduct, options: cleanedOptions };
+    // Default empty price to "0" — price may come entirely from options (e.g. size-based)
+    const productToSave: ProductProp = { ...newProduct, price: newProduct.price || "0", options: cleanedOptions };
 
     // Handle image upload/removal
     if (selectedFile) {
@@ -534,13 +531,49 @@ function AddProductModal({
                   </div>
                   <Switch isActive={newProduct?.dontDisplayOnOnlineStore ?? false} toggleSwitch={() => setnewProduct((prev) => ({ ...prev, dontDisplayOnOnlineStore: !prev.dontDisplayOnOnlineStore }))} />
                 </div>
-                <div style={{ ...styles.toggleRow, borderBottom: "none" }}>
+                <div style={styles.toggleRow}>
                   <div>
                     <span style={styles.toggleLabel}>Track Inventory</span>
                     <span style={styles.toggleHint}>Monitor stock levels for this product</span>
                   </div>
                   <Switch isActive={newProduct?.trackStock ?? false} toggleSwitch={() => setnewProduct((prev) => ({ ...prev, trackStock: !prev.trackStock }))} />
                 </div>
+                <div style={{ ...styles.toggleRow, borderBottom: "none" }}>
+                  <div>
+                    <span style={styles.toggleLabel}>Scheduled Availability</span>
+                    <span style={styles.toggleHint}>Only show this product during specific hours</span>
+                  </div>
+                  <Switch isActive={!!(newProduct?.availableAfter || newProduct?.availableBefore)} toggleSwitch={() => {
+                    if (newProduct?.availableAfter || newProduct?.availableBefore) {
+                      setnewProduct((prev) => ({ ...prev, availableAfter: undefined, availableBefore: undefined }));
+                    } else {
+                      setnewProduct((prev) => ({ ...prev, availableAfter: "20:00", availableBefore: "23:59" }));
+                    }
+                  }} />
+                </div>
+                {(newProduct?.availableAfter || newProduct?.availableBefore) && (
+                  <div style={{ padding: "0 16px 12px", gap: 10, display: "flex", flexDirection: "row", alignItems: "center" }}>
+                    <FiClock size={16} color="#64748b" style={{ flexShrink: 0 }} />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+                      <span style={{ fontSize: 12, color: "#64748b" }}>Available from</span>
+                      <input
+                        type="time"
+                        style={{ ...styles.input, maxWidth: 160 }}
+                        value={newProduct?.availableAfter ?? ""}
+                        onChange={(ev) => setnewProduct((prev) => ({ ...prev, availableAfter: ev.target.value || undefined }))}
+                      />
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+                      <span style={{ fontSize: 12, color: "#64748b" }}>Until</span>
+                      <input
+                        type="time"
+                        style={{ ...styles.input, maxWidth: 160 }}
+                        value={newProduct?.availableBefore ?? ""}
+                        onChange={(ev) => setnewProduct((prev) => ({ ...prev, availableBefore: ev.target.value || undefined }))}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -625,7 +658,7 @@ function AddProductModal({
               {newProduct.options.length > 0 ? (
                 newProduct.options.map((option, index) => (
                   <OptionsItem
-                    key={option.id}
+                    key={`${option.id}-${dragKey}`}
                     item={option}
                     index={index}
                     setnewProduct={setnewProduct}
@@ -646,6 +679,7 @@ function AddProductModal({
                       if (dragHandledRef.current) {
                         setDragIndex(null);
                         setDragOverIndex(null);
+                        setDragKey((k) => k + 1);
                         return;
                       }
                       dragHandledRef.current = true;
@@ -666,6 +700,7 @@ function AddProductModal({
                       setDragIndex(null);
                       setDragOverIndex(null);
                       setselectedID(null);
+                      setDragKey((k) => k + 1);
                     }}
                   />
                 ))

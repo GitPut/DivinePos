@@ -107,7 +107,7 @@ function DropdownOption({
           >
             <span style={styles.dropdownText}>
               {value
-                ? `${value.label}${parseFloat(getDisplayPrice(value)) > 0 ? ` (+$${getDisplayPrice(value)})` : ""}`
+                ? `${value.label}${parseFloat(getDisplayPrice(value)) > 0 ? ` (+$${parseFloat(getDisplayPrice(value)).toFixed(2)})` : ""}`
                 : `Select ${label}`}
             </span>
             {openDropdown === id ? (
@@ -118,34 +118,52 @@ function DropdownOption({
           </button>
           {openDropdown === id && (
             <div style={styles.optionsList}>
-              {options.map((optionI, listIndex) => (
-                <button
-                  key={listIndex}
-                  id={optionI.id}
-                  onClick={() => {
-                    setValue({
-                      option: {
-                        label: optionI.label,
-                        priceIncrease:
-                          optionI.priceIncrease !== null
-                            ? optionI.priceIncrease
-                            : "0",
-                        id: optionI.id,
-                      },
-                      listIndex: listIndex,
-                    });
-                    setopenDropdown(null);
-                  }}
-                  style={styles.optionItem}
-                >
-                  <span style={styles.optionItemText}>
-                    {optionI.label}
-                    {parseFloat(getDisplayPrice(optionI)) > 0
-                      ? ` (+$${getDisplayPrice(optionI)})`
-                      : ""}
-                  </span>
-                </button>
-              ))}
+              {options.map((optionI, listIndex) => {
+                const priceNum = parseFloat(getDisplayPrice(optionI));
+                const isSelected = value?.id === optionI.id;
+                return (
+                  <button
+                    key={listIndex}
+                    id={optionI.id}
+                    onClick={() => {
+                      setValue({
+                        option: {
+                          label: optionI.label,
+                          priceIncrease:
+                            optionI.priceIncrease !== null
+                              ? optionI.priceIncrease
+                              : "0",
+                          id: optionI.id,
+                        },
+                        listIndex: listIndex,
+                      });
+                      setopenDropdown(null);
+                    }}
+                    onMouseEnter={(ev) => {
+                      if (!isSelected) ev.currentTarget.style.backgroundColor = "#f8fafc";
+                    }}
+                    onMouseLeave={(ev) => {
+                      if (!isSelected) ev.currentTarget.style.backgroundColor = "#ffffff";
+                    }}
+                    style={{
+                      ...styles.optionItem,
+                      ...(isSelected ? { backgroundColor: "#eff6ff" } : {}),
+                    }}
+                  >
+                    <span style={{
+                      ...styles.optionItemText,
+                      ...(isSelected ? { fontWeight: "600", color: "#1D294E" } : {}),
+                    }}>
+                      {optionI.label}
+                    </span>
+                    {priceNum > 0 && (
+                      <span style={styles.optionItemPrice}>
+                        +${priceNum.toFixed(2)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -181,7 +199,7 @@ function DropdownOption({
             ...(value ? { color: "#1a1a1a" } : {}),
           }}>
             {value
-              ? `${value.label}${parseFloat(getDisplayPrice(value)) > 0 ? ` (+$${getDisplayPrice(value)})` : ""}`
+              ? `${value.label}${parseFloat(getDisplayPrice(value)) > 0 ? ` (+$${parseFloat(getDisplayPrice(value)).toFixed(2)})` : ""}`
               : `Select ${label}`}
           </span>
           {value ? (
@@ -240,29 +258,49 @@ const styles: Record<string, React.CSSProperties> = {
   optionsList: {
     width: "100%",
     position: "absolute",
-    backgroundColor: "white",
+    backgroundColor: "#ffffff",
     borderRadius: 10,
     border: "1px solid #e2e8f0",
     overflow: "auto",
-    maxHeight: 44 * 4,
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-    marginTop: 4,
+    maxHeight: 260,
+    boxShadow: "0 10px 30px rgba(15,23,42,0.12), 0 2px 6px rgba(15,23,42,0.06)",
+    marginTop: 6,
+    padding: 4,
+    display: "flex",
+    flexDirection: "column",
   },
   optionItem: {
     width: "100%",
-    height: 44,
-    backgroundColor: "white",
-    padding: "0 14px",
+    minHeight: 44,
+    backgroundColor: "#ffffff",
+    padding: "10px 14px",
     border: "none",
-    borderBottom: "1px solid #f1f5f9",
+    borderRadius: 8,
     cursor: "pointer",
     textAlign: "left",
     display: "flex",
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    transition: "background-color 0.12s ease",
   },
   optionItemText: {
     fontSize: 14,
     color: "#1a1a1a",
+    fontWeight: "500",
+    flex: 1,
+    textAlign: "left",
+  },
+  optionItemPrice: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#6366f1",
+    backgroundColor: "#eef2ff",
+    padding: "3px 8px",
+    borderRadius: 6,
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   },
 };
 

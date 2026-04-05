@@ -37,7 +37,7 @@ function SingleSelectOptionGroup({
                   ? resolveOptionPrice(option, optionGroup, allOptions)
                   : option.priceIncrease ?? "0";
                 return parseFloat(displayPrice) > 0
-                  ? `${option.label} (+$${displayPrice})`
+                  ? `${option.label} (+$${parseFloat(displayPrice).toFixed(2)})`
                   : option.label;
               })()}
               onPress={() => {

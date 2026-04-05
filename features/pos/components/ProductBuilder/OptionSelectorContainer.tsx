@@ -44,7 +44,7 @@ function OptionSelectorContainer({
             ...(parseFloat(option.selectedTimes ?? '0') > 0 ? { color: "white" } : undefined),
           }}
         >{`${option.label} ${
-          option.priceIncrease ? `(+$${option.priceIncrease})` : ""
+          option.priceIncrease ? `(+$${parseFloat(option.priceIncrease).toFixed(2)})` : ""
         }`}</span>
       </div>
       <button style={styles.plusBtn} onClick={(e) => { e.stopPropagation(); onPlusPress(); }}>
